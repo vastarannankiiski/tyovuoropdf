@@ -154,13 +154,6 @@ a.bm { cursor: grab; }
       <button class="primary" id="btnIvuOpen" type="button" data-i="ivuBtnOpen"></button>
       <button id="btnIvuInfo" class="infobtn" type="button" hidden style="margin-left:auto" aria-expanded="false" aria-controls="ivuFxInfo" data-i="ivuInfoHint" data-attr="title">i</button>
     </div>
-    <div class="infobox ivu-steps" id="ivuStepsDesk">
-      <ol>
-        <li><span data-i="ivuStep1"></span> <a class="upd bm" id="ivuBm" href="#" draggable="true" data-i="ivuBmLabel"></a></li>
-        <li data-i="ivuStep2" data-html="1"></li>
-        <li data-i="ivuStep3" data-html="1"></li>
-      </ol>
-    </div>
     <div class="infobox ivu-steps" id="ivuFxInfo" hidden>
       <p data-i="ivuFxStep1" data-html="1"></p>
       <div class="btns" style="justify-content:flex-start"><button id="btnIvuCopyUs" type="button" data-i="ivuBtnCopyUs"></button></div>
@@ -236,7 +229,7 @@ a.bm { cursor: grab; }
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.13-web';
+var APP_VERSION = '1.71.14-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -2926,8 +2919,8 @@ var I18N = {
     ivuBmLabel: 'Hae IVU-vuorot',
     ivuStep1: 'Vedä vain kerran kirjanmerkkipalkkiin:',
     ivuInfoHint: 'Skriptin asennusohje',
-    ivuFxStep1: '<b>Skriptin asennus (tehdään vain kerran):</b> asenna Firefoxiin lisäosa <b>Violentmonkey</b>, paina alla <b>Kopioi skripti</b>, avaa Violentmonkey → + (uusi skripti), poista valmis teksti, liitä skripti ja tallenna.',
-    ivuFxStep3: 'Kun IVU on auki, napauta sivun vasemmassa alakulmassa olevaa painiketta <b>Hae IVU-vuorot</b>.',
+    ivuFxStep1: '<b>Skriptin asennus (tehdään vain kerran):</b> asenna selaimeen lisäosa <b>Violentmonkey</b> (Chromessa se voi pyytää sallimaan käyttäjäskriptit lisäosan asetuksista), paina alla <b>Kopioi skripti</b>, avaa Violentmonkey-lisäosan valikosta uusi skripti (+), poista valmis teksti, liitä skripti ja tallenna.',
+    ivuFxStep3: 'Kun IVU on auki, paina sivun vasemmassa alakulmassa olevaa painiketta <b>Hae IVU-vuorot</b>.',
     ivuBtnCopyUs: 'Kopioi skripti', ivuCopiedUs: 'Skripti kopioitu. Liitä se Violentmonkeyn uuteen skriptiin ja tallenna.',
     ivuStep2: 'Valitse jakso ja paina <b>Avaa IVU</b>. Kirjaudu IVU:un avautuvassa välilehdessä.',
     ivuStep3: 'Kun IVU on auki, paina kirjanmerkkipalkissa <b>Hae IVU-vuorot</b>.',
@@ -3000,8 +2993,8 @@ var I18N = {
     ivuBmLabel: 'Fetch IVU shifts',
     ivuStep1: 'Drag once to the bookmarks bar:',
     ivuInfoHint: 'Script installation instructions',
-    ivuFxStep1: '<b>Script installation (done only once):</b> install the <b>Violentmonkey</b> add-on in Firefox, press <b>Copy script</b> below, open Violentmonkey → + (new script), delete the template text, paste the script and save.',
-    ivuFxStep3: 'When IVU is open, tap the <b>Fetch IVU shifts</b> button in the bottom left corner of the page.',
+    ivuFxStep1: '<b>Script installation (done only once):</b> install the <b>Violentmonkey</b> add-on in your browser (in Chrome it may ask you to allow user scripts in the add-on settings), press <b>Copy script</b> below, open a new script (+) from the Violentmonkey add-on menu, delete the template text, paste the script and save.',
+    ivuFxStep3: 'When IVU is open, press the <b>Fetch IVU shifts</b> button in the bottom left corner of the page.',
     ivuBtnCopyUs: 'Copy script', ivuCopiedUs: 'Script copied. Paste it into a new Violentmonkey script and save.',
     ivuStep2: 'Select the period and press <b>Open IVU</b>. Sign in to IVU in the tab that opens.',
     ivuStep3: 'When IVU is open, click <b>Fetch IVU shifts</b> in the bookmarks bar.',
@@ -3683,7 +3676,6 @@ IVU_SCRIPT,
 '  mk(); setInterval(mk, 2000);',
 '})();'
 ].join('\n');
-var IVU_BOOKMARKLET = 'javascript:' + encodeURIComponent(IVU_SCRIPT.replace(/\n/g, ''));
 
 /* Vastaanotettu haku (m = {tvl:'result', fetched, days:{'YYYY-MM-DD': {status, json}}}) -> päivät tiedostolistaan */
 var ivuRaw = {};
@@ -3780,8 +3772,6 @@ $('btnIvuOpen').addEventListener('click', function () {
 $('btnIvuCopyUs').addEventListener('click', function () {
   copyText(IVU_USERSCRIPT).then(function (ok) { setIvuStatus(ok ? T('ivuCopiedUs') : T('ivuCopyFail'), ok ? 'ok' : 'err'); });
 });
-$('ivuBm').setAttribute('href', IVU_BOOKMARKLET);
-$('ivuBm').addEventListener('click', function (e) { e.preventDefault(); setIvuStatus(T('ivuBmClick')); });
 $('btnIvuRaw').addEventListener('click', function () {
   copyText(JSON.stringify(ivuRaw)).then(function (ok) { setIvuStatus(ok ? T('ivuRawCopied') : T('ivuCopyFail'), ok ? 'ok' : 'err'); });
 });
@@ -3793,7 +3783,7 @@ fillPeriods();
     !!(navigator.userAgentData && navigator.userAgentData.mobile);
   var fxAndroid = /Android/.test(ua) && /Firefox\//.test(ua);
   if (mobile && !fxAndroid) $('ivuCard').style.display = 'none';
-  if (fxAndroid) { $('ivuStepsDesk').hidden = true; $('ivuStepsFx').hidden = false; $('btnIvuInfo').hidden = false; }
+  if (!mobile || fxAndroid) { $('ivuStepsFx').hidden = false; $('btnIvuInfo').hidden = false; } /* tietokone ja Android-Firefox: sama käyttäjäskriptiohje */
   $('btnIvuInfo').addEventListener('click', function () {
     var box = $('ivuFxInfo'), open = box.hasAttribute('hidden');
     if (open) box.removeAttribute('hidden'); else box.setAttribute('hidden', '');
