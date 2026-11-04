@@ -236,7 +236,7 @@ a.bm { cursor: grab; }
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.11-web';
+var APP_VERSION = '1.71.12-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3653,7 +3653,7 @@ var IVU_SCRIPT = [
 "var out={tvl:'result',v:1,fetched:Date.now(),days:{}};",
 "for(var k=0;k<dates.length;k+=7){await Promise.all(dates.slice(k,k+7).map(async function(d){try{var r=await fetch(O+'/emp/rest/duty-schedule/details/'+d,{headers:{Authorization:'Bearer '+tok,Accept:'application/json'}});out.days[d]=r.ok?{status:r.status,json:await r.json()}:{status:r.status};}catch(e){out.days[d]={status:0,error:String(e)};}}));}",
 "if(op.closed){note('TyövuoroPdf-sivu on suljettu.',1);return;}",
-"op.postMessage(out,bo);note('Tiedot lähetetty TyövuoroPdf-sivulle. Voit palata sinne.');",
+"op.postMessage(out,bo);note('Tiedot lähetetty TyövuoroPdf-sivulle. Tämä välilehti suljetaan.');setTimeout(function(){window.close();},1500);",
 "})();"
 ].join('\n');
 /* Käyttäjäskripti (Violentmonkey / Tampermonkey, Firefox Android): lisää IVU-sivulle painikkeen, joka ajaa saman hakuskriptin. */
@@ -3749,6 +3749,7 @@ window.addEventListener('message', function (ev) {
     try { ev.source.postMessage({ tvl: 'dates', dates: periodDatesIso() }, IVU_ORIGIN); } catch (e) { return; }
     setIvuStatus(T('ivuFetching', { p: periodLabel(selectedPeriodStart()) }));
   } else if (m.tvl === 'result') {
+    try { window.focus(); } catch (e) { /* selain voi estää */ }
     ivuProcess(m);
   }
 });
