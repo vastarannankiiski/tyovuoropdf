@@ -238,7 +238,7 @@ a.bm { cursor: grab; }
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.17-web';
+var APP_VERSION = '1.71.18-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -2172,10 +2172,10 @@ function generateHtml(days, totals, startDate, endDate, appVersion, pageLayout, 
 /* ---------- uPayslip: palkkalaskelman tarkistus (v1.30.0-web; portti Pascal v1.39.1:stä) ---------- */
 var PAY_WORK = 1451, PAY_OT50 = 1540, PAY_EVENING = 1601, PAY_NIGHT = 1611, PAY_STANDBY = 1804,
   PAY_SAT1 = 1621, PAY_SAT2 = 1622, PAY_SUN = 1655, PAY_HOLIDAY = 2101, PAY_PEKKAS = 6900, PAY_KM = 8040, PAY_TRAINING = 6600, PAY_PARTDAY = 8020,
-  PAY_FILL = 1461, PAY_LOMAPALKKA = 5000, PAY_LOMALISA = 5010;
+  PAY_FILL = 1461, PAY_LOMAPALKKA = 5000, PAY_LOMALISA = 5010, PAY_ALARM = 1710;
 /* vertailtavat palkkalajit; indeksi 3 = sidonnaisuusaika (verrataan jakson summana) */
-var PAY_TYPES = [PAY_WORK, PAY_EVENING, PAY_NIGHT, PAY_STANDBY, PAY_SAT1, PAY_SAT2, PAY_SUN, PAY_HOLIDAY, PAY_TRAINING]; /* v1.50.0-web: 9. = koulutus 6600 */
-var PAY_TRAINING_IDX = 8;
+var PAY_TYPES = [PAY_WORK, PAY_EVENING, PAY_NIGHT, PAY_STANDBY, PAY_SAT1, PAY_SAT2, PAY_SUN, PAY_HOLIDAY, PAY_TRAINING, PAY_ALARM]; /* v1.50.0-web: 9. = koulutus 6600; v1.71.18-web: 10. = hälytystyölisä 1710 */
+var PAY_TRAINING_IDX = 8, PAY_ALARM_IDX = 9, PAY_HOLIDAY_IDX = 7;
 var PAY_STANDBY_IDX = 3;
 function isComparedCode(c) { return PAY_TYPES.indexOf(c) >= 0; }
 function isExtraCode(c) { return c === PAY_PEKKAS || c === PAY_KM || c === PAY_PARTDAY; }
@@ -2196,13 +2196,14 @@ function computeDayHours(days) {
       sat1: mins(d.info, 'Lauantailisä 1 HSL'), sat2: mins(d.info, 'Lauantailisä 2 HSL'),
       sun: mins(d.info, 'Sunnuntailisä') + mins(d.info, 'Pyhäpäivälisä'), holiday: holiday,
       xmas: mins(d.info, 'Joulutyölisä'),
+      alarm: mins(d.info, 'Hälytystyölisä'), /* v1.71.18-web: hälytystyölisä (1710), 1 h / kpl */
       km: d.info.has('Kilometrikorvaus') ? parseKmHund(d.info.get('Kilometrikorvaus')) : 0 /* v1.55.0-web: kilometrikorvaus (8040), sadasosina */
     };
   });
 }
 function hoursOfType(h, idx) {
   return [h.work - h.training /* 1451: koulutus maksetaan koodilla 6600 */, h.evening, h.night, h.standby + h.travel /* 1804 */,
-    h.sat1, h.sat2, h.sun, h.holiday, h.training][idx];
+    h.sat1, h.sat2, h.sun, h.holiday, h.training, h.alarm || 0][idx];
 }
 
 function isAllDigits(s) { return /^\d+$/.test(s); }
@@ -2329,7 +2330,7 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
     return [T('Työaika', 'Work time'), T('Iltalisä', 'Evening premium'), T('Yölisä', 'Night premium'),
       T('Sidonnaisuusaika', 'Standby time'), T('Lauantailisä', 'Saturday premium'),
       T('Lauantailisä 2', 'Saturday premium 2'), T('Sunnuntailisä', 'Sunday premium'),
-      T('Vapaapäivätyölisä', 'Day-off work premium'), T('Koulutus', 'Training')][idx] + ' (' + PAY_TYPES[idx] + ')';
+      T('Vapaapäivätyölisä', 'Day-off work premium'), T('Koulutus', 'Training'), T('Hälytystyölisä', 'Alarm duty premium')][idx] + ' (' + PAY_TYPES[idx] + ')';
   }
   function extraName(c) {
     return (c === PAY_PEKKAS ? T('Työajan lyhennys, pekkaspäivä', 'Working time reduction (PEKKAS day)')
@@ -2373,15 +2374,14 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
      puuttuvan osan (raja - Työaika - Koulutus) jakson viimeisen päivän Työaikaan (1451); loppu maksetaan koodilla 1804.
      Siirto tunnistetaan vain, jos palkkalaskelman luvut täsmäävät tähän: viimeisen 1451-päivän määrä = työvuorolistan
      Työaika + siirto ja 1804-summa = sidonnaisuusaika - siirto. Muuten vertailu tehdään normaalisti. */
-  var moveMin = 0, moveDate = null;
+  var moveMin = 0, moveDate = null, moveVRule = false;
   (function () {
-    var wT = 0, trT = 0, sbT = 0;
+    var wT = 0, trT = 0, sbT = 0, vT = 0;
     hours.forEach(function (hh) {
       wT += hoursOfType(hh, 0); trT += hoursOfType(hh, PAY_TRAINING_IDX); sbT += hoursOfType(hh, PAY_STANDBY_IDX);
+      vT += hoursOfType(hh, PAY_HOLIDAY_IDX);
     });
     var base = 80 * 60 - fillRed * 8 * 60;
-    var m = (wT + trT < base && wT + trT + sbT > base) ? base - (wT + trT) : 0;
-    if (m <= 0) return;
     var ld = null;
     slip.entries.forEach(function (e) {
       if (e.code === PAY_TYPES[0] && e.hasQty && e.dateFrom === e.dateTo && (ld === null || e.dateFrom > ld)) ld = e.dateFrom;
@@ -2391,7 +2391,18 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
     hours.forEach(function (hh) { if (parseDdMmYyyy(hh.dateStr) === ld) lw += hoursOfType(hh, 0); });
     var sLast = slipSum(slip, PAY_TYPES[0], true, ld);
     var sSb = slipSum(slip, PAY_TYPES[PAY_STANDBY_IDX], false, 0);
-    if (hoursMatch(lw + m, sLast.sum, sLast.count) && hoursMatch(sbT - m, sSb.sum, sSb.count)) { moveMin = m; moveDate = ld; }
+    /* v1.71.18-web: kaksi ehdokasta. 1) Työaika + Koulutus jää alle rajan. 2) Vapaapäivätyö (2101) maksetaan ylityönä eikä
+       lasketa 80 h:n rajaan: (Työaika + Koulutus - Vapaapäivätyö) jää alle rajan. Hyväksytään se, jonka luvut täsmäävät palkkalaskelmaan. */
+    var cands = [{ m: base - (wT + trT), v: false }, { m: base - (wT + trT - vT), v: true }];
+    for (var ci = 0; ci < cands.length; ci++) {
+      var m = cands[ci].m;
+      if (cands[ci].v && vT <= 0) continue;
+      if (!(m > 0 && m <= sbT)) continue;
+      if (hoursMatch(lw + m, sLast.sum, sLast.count) && hoursMatch(sbT - m, sSb.sum, sSb.count)) {
+        moveMin = m; moveDate = ld; moveVRule = cands[ci].v;
+        return;
+      }
+    }
   })();
   var totalWork = 0, xmasTot = 0;
   var listKm = 0, slipKm = slipSum(slip, PAY_KM, false, 0); /* v1.55.0-web: kilometrikorvaus (8040), sadasosina */
@@ -2454,8 +2465,8 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
     for (ty = 0; ty < PAY_TYPES.length; ty++) {
       var listMin = h ? hoursOfType(h, ty) : 0;
       listTot[ty] += listMin;
-      if (ty === PAY_STANDBY_IDX || ty === PAY_TRAINING_IDX) {
-        /* sidonnaisuusaika: palkkalaskelmassa koottuna jakson viimeiselle päivälle -> vain tiedoksi; koulutus (6600) verrataan jakson summana */
+      if (ty === PAY_STANDBY_IDX || ty === PAY_TRAINING_IDX || ty === PAY_ALARM_IDX) {
+        /* sidonnaisuusaika: palkkalaskelmassa koottuna jakson viimeiselle päivälle -> vain tiedoksi; koulutus (6600) ja hälytystyölisä (1710) verrataan jakson summana */
         if (listMin === 0) continue;
         dayLbl = first ? dateLabel(dt, h) : '';
         addInfoRow(dayLbl, typeName(ty), fmtMin(listMin), T('(jaksotasolla)', '(period level)'), first);
@@ -2495,7 +2506,7 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
 
   /* jakson tason rivit: palkkalaskelman usean päivän rivit */
   slip.entries.forEach(function (e) {
-    if (((isComparedCode(e.code) && e.code !== PAY_STANDBY && e.code !== PAY_TRAINING) || (isExtraCode(e.code) && e.code !== PAY_KM)) &&
+    if (((isComparedCode(e.code) && e.code !== PAY_STANDBY && e.code !== PAY_TRAINING && e.code !== PAY_ALARM) || (isExtraCode(e.code) && e.code !== PAY_KM)) &&
         e.dateFrom !== e.dateTo && e.hasQty)
       addRow(esc(dateFull(e.dateFrom) + ' - ' + dateFull(e.dateTo)), esc(e.name + ' (' + e.code + ')'),
         '-', slipQtyText(e.code, e.qty, T('kpl', 'pcs')), '', true, true);
@@ -2524,6 +2535,18 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
         fmtSigned(hundToMin(trSlip.sum) - trList), okt0, true);
     else
       addRow(T('Jakso yhteensä', 'Period total'), typeName(PAY_TRAINING_IDX), fmtMin(trList), '-', fmtSigned(-trList), okt0, true);
+  }
+
+  /* v1.71.18-web: hälytystyölisä (1710) jakson tasolla (palkkalaskelmassa jakson viimeisellä päivällä, työvuorolistassa ansaitsemispäivän kohdalla) */
+  var alList = listTot[PAY_ALARM_IDX], alSlip = slipTot[PAY_ALARM_IDX];
+  if (alList > 0 || alSlip.sum !== 0) {
+    var oka = hoursMatch(alList, alSlip.sum, alSlip.count);
+    if (!oka) diffCount++;
+    if (alSlip.count > 0)
+      addRow(T('Jakso yhteensä', 'Period total'), typeName(PAY_ALARM_IDX), fmtMin(alList), fmtSlip(alSlip.sum),
+        fmtSigned(hundToMin(alSlip.sum) - alList), oka, true);
+    else
+      addRow(T('Jakso yhteensä', 'Period total'), typeName(PAY_ALARM_IDX), fmtMin(alList), '-', fmtSigned(-alList), oka, true);
   }
 
   /* v1.55.0-web: kilometrikorvaus (8040) jakson tasolla: työvuorolistan km-summa vs. palkkalaskelman 8040-määrä */
@@ -2559,14 +2582,17 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
 
   /* ylityö (koko jakson taso): jakson Työaika yli 80 h */
   var excess = Math.max(0, totalWork - 80 * 60);
+  /* v1.71.18-web: kun siirto tunnistettiin vapaapäivätyö ylityönä -säännöllä, ylityö = vapaapäivätyö (80 h täyttyi siirrolla) */
+  if (moveVRule) excess = listTot[PAY_HOLIDAY_IDX];
   var ot50 = Math.min(excess, 12 * 60), ot100 = excess - ot50;
   var so = slipSum(slip, PAY_OT50, false, 0);
   var otName = T('Ylityö 50 % (1540)', 'Overtime 50 % (1540)');
   if (ot50 > 0 || so.sum !== 0) {
     var oko = hoursMatch(ot50, so.sum, so.count);
     if (!oko) diffCount++;
-    if (so.count > 0) addRow(T('Jakso', 'Period'), otName, fmtMin(ot50), fmtSlip(so.sum), fmtSigned(hundToMin(so.sum) - ot50), oko, true);
-    else addRow(T('Jakso', 'Period'), otName, fmtMin(ot50), '-', fmtSigned(-ot50), oko, true);
+    var otMark = moveVRule ? ' **' : '';
+    if (so.count > 0) addRow(T('Jakso', 'Period'), otName, fmtMin(ot50) + otMark, fmtSlip(so.sum), fmtSigned(hundToMin(so.sum) - ot50), oko, true);
+    else addRow(T('Jakso', 'Period'), otName, fmtMin(ot50) + otMark, '-', fmtSigned(-ot50), oko, true);
   }
   if (ot100 > 0)
     html.push('<tr class="ok day"><td>' + T('Jakso', 'Period') + '</td><td>' +
@@ -2583,6 +2609,14 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
         fmtMin(listTot[0]) + ' ja Sidonnaisuusaika ' + fmtMin(listTot[PAY_STANDBY_IDX]) + '; vertailussa on käytetty siirrettyjä arvoja (merkitty *).',
       'The payslip has moved ' + fmtMin(moveMin) + ' of standby time into the Work time (1451) of the last day of the period so that the 1451 hours of the period reach 80 h; the rest of the standby time is paid with code 1804. In the shift list, Work time is ' +
         fmtMin(listTot[0]) + ' and Standby time ' + fmtMin(listTot[PAY_STANDBY_IDX]) + '; the comparison uses the moved values (marked *).') + '</p>');
+  if (moveVRule)
+    html.push('<p class="note">** ' + T(
+      'Vapaapäivätyö (' + fmtMin(listTot[PAY_HOLIDAY_IDX]) + ') maksetaan ylityönä 50 % (1540) eikä se lasketa 80 h:n rajaan, joten sidonnaisuusaikaa siirrettiin Työaikaan niin paljon, että muu työaika täyttää 80 h. Ylityö 50 % on siksi vapaapäivätyön tunnit.',
+      'Day-off work (' + fmtMin(listTot[PAY_HOLIDAY_IDX]) + ') is paid as overtime 50 % (1540) and does not count towards the 80 h limit, so standby time was moved into Work time until the other work time reaches 80 h. Overtime 50 % is therefore the day-off work hours.') + '</p>');
+  if (alList > 0 || alSlip.sum !== 0)
+    html.push('<p class="note">' + T(
+      'Hälytystyölisä (1710): palkkalaskelmassa jakson viimeisenä päivänä; verrataan koko jakson summana. Työvuorolistassa päiväkohtainen rivi näyttää päivän, jona lisä on ansaittu (vain tiedoksi).',
+      'Alarm duty premium (1710): shown on the last day of the period in the payslip; compared as a period total. The per-day row shows the day it was earned (informational only).') + '</p>');
   html.push('<p class="note">' + T(
     'Sidonnaisuusaika (1804): palkkalaskelmassa kaikki sidonnaisuusajat on laskettu yhteen ja esitetty jakson viimeisenä päivänä, joten se verrataan koko jakson summana; päiväkohtaiset sidonnaisuusrivit ovat vain tiedoksi.',
     'Standby time (1804): the payslip sums all standby time and shows it on the last day of the period, so it is compared as a period total; the per-day standby rows are informational only.') + '</p>');
@@ -2603,7 +2637,7 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
   }
   if (ot50 > 0 || so.sum !== 0) {
     var oko2 = hoursMatch(ot50, so.sum, so.count);
-    html.push('<tr class="' + okCls(oko2) + '"><td>' + otName + '</td><td class="n">' + fmtMin(ot50) + '</td><td class="n">' +
+    html.push('<tr class="' + okCls(oko2) + '"><td>' + otName + '</td><td class="n">' + fmtMin(ot50) + (moveVRule ? ' **' : '') + '</td><td class="n">' +
       fmtSlip(so.sum) + '</td><td class="n">' + fmtSigned(hundToMin(so.sum) - ot50) + '</td>' + statusCell(oko2) + '</tr>');
   }
   if (ot100 > 0)
