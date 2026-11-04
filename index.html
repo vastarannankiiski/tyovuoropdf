@@ -154,6 +154,15 @@ a.bm { cursor: grab; }
       <button class="primary" id="btnIvuOpen" type="button" data-i="ivuBtnOpen"></button>
       <button id="btnIvuInfo" class="infobtn" type="button" hidden style="margin-left:auto" aria-expanded="false" aria-controls="ivuFxInfo" data-i="ivuInfoHint" data-attr="title">i</button>
     </div>
+    <div class="infobox ivu-steps" id="ivuDeskInfo" hidden>
+      <p><b data-i="ivuBmTitle"></b> <span data-i="ivuStep1"></span> <a class="upd bm" id="ivuBm" href="#" draggable="true" data-i="ivuBmLabel"></a></p>
+    </div>
+    <div class="infobox ivu-steps" id="ivuStepsDesk">
+      <ol>
+        <li data-i="ivuStep2" data-html="1"></li>
+        <li data-i="ivuStep3" data-html="1"></li>
+      </ol>
+    </div>
     <div class="infobox ivu-steps" id="ivuFxInfo" hidden>
       <p data-i="ivuFxStep1" data-html="1"></p>
       <div class="btns" style="justify-content:flex-start"><button id="btnIvuCopyUs" type="button" data-i="ivuBtnCopyUs"></button></div>
@@ -229,7 +238,7 @@ a.bm { cursor: grab; }
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.14-web';
+var APP_VERSION = '1.71.16-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -2917,8 +2926,9 @@ var I18N = {
     ivuIntro: 'Haku lukee työvuorot IVU:n omasta järjestelmästä suoraan tämän sivun muistiin: mitään ei tallenneta laitteelle eikä lähetetä minnekään. Vapaapäivät (VP, pekkanen) ohitetaan.',
     ivuPeriod: 'Jakso:', ivuBtnOpen: 'Avaa IVU…', ivuBtnCopy: 'Kopioi hakuskripti',
     ivuBmLabel: 'Hae IVU-vuorot',
-    ivuStep1: 'Vedä vain kerran kirjanmerkkipalkkiin:',
-    ivuInfoHint: 'Skriptin asennusohje',
+    ivuStep1: 'Vedä tämä linkki kirjanmerkkipalkkiin:',
+    ivuBmTitle: 'Kirjanmerkin asennus (tehdään vain kerran):',
+    ivuInfoHint: 'Asennusohje',
     ivuFxStep1: '<b>Skriptin asennus (tehdään vain kerran):</b> asenna selaimeen lisäosa <b>Violentmonkey</b> (Chromessa se voi pyytää sallimaan käyttäjäskriptit lisäosan asetuksista), paina alla <b>Kopioi skripti</b>, avaa Violentmonkey-lisäosan valikosta uusi skripti (+), poista valmis teksti, liitä skripti ja tallenna.',
     ivuFxStep3: 'Kun IVU on auki, paina sivun vasemmassa alakulmassa olevaa painiketta <b>Hae IVU-vuorot</b>.',
     ivuBtnCopyUs: 'Kopioi skripti', ivuCopiedUs: 'Skripti kopioitu. Liitä se Violentmonkeyn uuteen skriptiin ja tallenna.',
@@ -2991,7 +3001,8 @@ var I18N = {
     ivuIntro: 'The fetch reads your shifts from IVU straight into this page\'s memory: nothing is saved to your device or sent anywhere. Days off (VP, pekkanen) are skipped.',
     ivuPeriod: 'Period:', ivuBtnOpen: 'Open IVU…', ivuBtnCopy: 'Copy fetch script',
     ivuBmLabel: 'Fetch IVU shifts',
-    ivuStep1: 'Drag once to the bookmarks bar:',
+    ivuStep1: 'Drag this link to the bookmarks bar:',
+    ivuBmTitle: 'Bookmark installation (done only once):',
     ivuInfoHint: 'Script installation instructions',
     ivuFxStep1: '<b>Script installation (done only once):</b> install the <b>Violentmonkey</b> add-on in your browser (in Chrome it may ask you to allow user scripts in the add-on settings), press <b>Copy script</b> below, open a new script (+) from the Violentmonkey add-on menu, delete the template text, paste the script and save.',
     ivuFxStep3: 'When IVU is open, press the <b>Fetch IVU shifts</b> button in the bottom left corner of the page.',
@@ -3769,6 +3780,8 @@ $('btnIvuOpen').addEventListener('click', function () {
   var w = window.open(IVU_START, '_blank');
   setIvuStatus(w ? T('ivuOpened') : T('ivuPopup'), w ? '' : 'err');
 });
+$('ivuBm').setAttribute('href', 'javascript:' + encodeURIComponent(IVU_SCRIPT.replace(/\n/g, '')));
+$('ivuBm').addEventListener('click', function (e) { e.preventDefault(); setIvuStatus(T('ivuBmClick')); });
 $('btnIvuCopyUs').addEventListener('click', function () {
   copyText(IVU_USERSCRIPT).then(function (ok) { setIvuStatus(ok ? T('ivuCopiedUs') : T('ivuCopyFail'), ok ? 'ok' : 'err'); });
 });
@@ -3779,13 +3792,16 @@ fillPeriods();
 /* v1.71.10-web: puhelimessa/tabletissa IVU-haku vain Android-Firefoxissa (käyttäjäskripti); muissa mobiiliselaimissa osio piilotetaan */
 (function () {
   var ua = navigator.userAgent || '';
+  var infoBoxId = 'ivuFxInfo';
   var mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua) || (/Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1) ||
     !!(navigator.userAgentData && navigator.userAgentData.mobile);
   var fxAndroid = /Android/.test(ua) && /Firefox\//.test(ua);
   if (mobile && !fxAndroid) $('ivuCard').style.display = 'none';
-  if (!mobile || fxAndroid) { $('ivuStepsFx').hidden = false; $('btnIvuInfo').hidden = false; } /* tietokone ja Android-Firefox: sama käyttäjäskriptiohje */
+  /* Firefox (tietokone ja Android): Violentmonkey-skripti ("i"-painikkeen ohje); muu tietokoneselain (Chrome ym.): kirjanmerkki */
+  if (/Firefox\//.test(ua) && (!mobile || fxAndroid)) { $('ivuStepsDesk').hidden = true; $('ivuStepsFx').hidden = false; $('btnIvuInfo').hidden = false; infoBoxId = 'ivuFxInfo'; }
+  else if (!mobile) { $('btnIvuInfo').hidden = false; infoBoxId = 'ivuDeskInfo'; $('btnIvuInfo').setAttribute('aria-controls', infoBoxId); }
   $('btnIvuInfo').addEventListener('click', function () {
-    var box = $('ivuFxInfo'), open = box.hasAttribute('hidden');
+    var box = $(infoBoxId), open = box.hasAttribute('hidden');
     if (open) box.removeAttribute('hidden'); else box.setAttribute('hidden', '');
     this.setAttribute('aria-expanded', open ? 'true' : 'false');
   });
