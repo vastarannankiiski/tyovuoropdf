@@ -117,7 +117,6 @@ a.bm { cursor: grab; }
   <div class="hdr">
     <h1><span id="appTitle">TyövuoroPdf</span> <span id="ver" style="font-weight:400;color:var(--muted);font-size:.9rem"></span></h1>
     <div class="flags">
-      <a class="upd" id="btnUpdates" data-i="btnUpdates" href="https://www.dropbox.com/scl/fo/k512rij5fj75k7mv3pi06/AOsEBhwWKwvqWP55-0_vwbI?rlkey=5jxxnui9kldvnz58gk8jj763h&amp;dl=0" target="_blank" rel="noopener noreferrer"></a>
       <button type="button" class="flag" id="flagFi" data-lang="fi" aria-pressed="true" title="Suomi">
         <svg viewBox="0 0 18 11" preserveAspectRatio="none" aria-hidden="true"><rect width="18" height="11" fill="#fff"/><rect x="5" width="3" height="11" fill="#003580"/><rect y="4" width="18" height="3" fill="#003580"/></svg>
       </button>
@@ -238,7 +237,7 @@ a.bm { cursor: grab; }
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.18-web';
+var APP_VERSION = '1.71.21-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -2172,7 +2171,7 @@ function generateHtml(days, totals, startDate, endDate, appVersion, pageLayout, 
 /* ---------- uPayslip: palkkalaskelman tarkistus (v1.30.0-web; portti Pascal v1.39.1:stä) ---------- */
 var PAY_WORK = 1451, PAY_OT50 = 1540, PAY_EVENING = 1601, PAY_NIGHT = 1611, PAY_STANDBY = 1804,
   PAY_SAT1 = 1621, PAY_SAT2 = 1622, PAY_SUN = 1655, PAY_HOLIDAY = 2101, PAY_PEKKAS = 6900, PAY_KM = 8040, PAY_TRAINING = 6600, PAY_PARTDAY = 8020,
-  PAY_FILL = 1461, PAY_LOMAPALKKA = 5000, PAY_LOMALISA = 5010, PAY_ALARM = 1710;
+  PAY_FILL = 1461, PAY_LOMAPALKKA = 5000, PAY_LOMALISA = 5010, PAY_ALARM = 1710, PAY_BONUS_EUR = 4135; /* v1.71.20-web: tulospalkkio 4135 = euroja */
 /* vertailtavat palkkalajit; indeksi 3 = sidonnaisuusaika (verrataan jakson summana) */
 var PAY_TYPES = [PAY_WORK, PAY_EVENING, PAY_NIGHT, PAY_STANDBY, PAY_SAT1, PAY_SAT2, PAY_SUN, PAY_HOLIDAY, PAY_TRAINING, PAY_ALARM]; /* v1.50.0-web: 9. = koulutus 6600; v1.71.18-web: 10. = hälytystyölisä 1710 */
 var PAY_TRAINING_IDX = 8, PAY_ALARM_IDX = 9, PAY_HOLIDAY_IDX = 7;
@@ -2703,10 +2702,10 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
     if (!anyOther) {
       html.push('<h2>' + T('Muut palkkalajit (ei vertailua)', 'Other pay types (not compared)') + '</h2>');
       html.push('<table><tr><th>' + T('Koodi', 'Code') + '</th><th>' + T('Nimi', 'Name') + '</th><th class="n">' +
-        T('Määrä h,dd = h:mm', 'Quantity h.dd = h:mm') + '</th></tr>');
+        T('Määrä (h,dd = h:mm tai €)', 'Quantity (h.dd = h:mm or €)') + '</th></tr>');
       anyOther = true;
     }
-    html.push('<tr><td>' + c + '</td><td>' + esc(e.name) + '</td><td class="n">' + fmtSlip(slipSum(slip, c, false, 0).sum) + '</td></tr>');
+    html.push('<tr><td>' + c + '</td><td>' + esc(e.name) + '</td><td class="n">' + (c === PAY_BONUS_EUR ? fmtHund(slipSum(slip, c, false, 0).sum) + ' &euro;' : fmtSlip(slipSum(slip, c, false, 0).sum)) + '</td></tr>');
   });
   if (anyOther) html.push('</table>');
 
@@ -2843,7 +2842,12 @@ function ivuDayFromJson(js, stamp) {
   if (ivuStr(a.paidTime)) d.info.set('Laskennallinen työaika', ivuStr(a.paidTime));
   if (ivuStr(a.breakTime)) d.info.set('Taukoaika', ivuStr(a.breakTime));
   (a.accountingValues || []).forEach(function (kv) {
-    if (kv && ivuStr(kv.key) !== '' && ivuStr(kv.value) !== '') d.info.set(ivuStr(kv.key) === 'Työtunnit' ? 'Työaika' : ivuStr(kv.key), ivuStr(kv.value));
+    if (kv && ivuStr(kv.key) !== '' && ivuStr(kv.value) !== '') {
+      var kk = ivuStr(kv.key);
+      /* v1.71.19-web: hälytyskorvaus: PDF:ssä kentän nimi on katkaistu ("Emergency call compensatio..."), JSON:ssa se voi olla kokonainen tai suomeksi */
+      if (/^emergency call comp/i.test(kk) || /^hälytys/i.test(kk)) kk = 'Emergency call compensatio...';
+      d.info.set(kk === 'Työtunnit' ? 'Työaika' : kk, ivuStr(kv.value));
+    }
   });
   comps.forEach(function (c) {
     var title = ivuStr(c.displayType);
@@ -2997,7 +3001,7 @@ var I18N = {
     started: 'TyovuoroPdf {v} käynnistetty.',
     tbPrint: 'Tulosta / Tallenna PDF',
     tbHint: 'Valitse tulostimeksi &quot;Tallenna PDF:nä&quot;, paperikoko A4, marginaalit: ei mitään, poista otsikot ja alatunnisteet, mittakaava 100&nbsp;%.',
-    flagFi: 'Suomi', flagEn: 'English', btnUpdates: 'Tarkista päivitykset', updAvail: 'Uusi versio {v}!',
+    flagFi: 'Suomi', flagEn: 'English',
     btnPayslip: 'Palkkalaskelman tarkistaminen', btnPayOpen: 'Avaa tarkistusraportti',
     payNoFiles: 'Lisää ensin tiedostolistaan se työvuorolista (IVU-PDF), johon palkkalaskelma verrataan.',
     payChecking: 'Tarkistetaan palkkalaskelmaa: {name}...',
@@ -3072,7 +3076,7 @@ var I18N = {
     started: 'TyovuoroPdf {v} started.',
     tbPrint: 'Print / Save PDF',
     tbHint: 'Choose &quot;Save as PDF&quot; as the printer, paper size A4, margins: none, turn off headers and footers, scale 100&nbsp;%.',
-    flagFi: 'Suomi', flagEn: 'English', btnUpdates: 'Check for updates', updAvail: 'New version {v}!',
+    flagFi: 'Suomi', flagEn: 'English',
     btnPayslip: 'Check the payslip', btnPayOpen: 'Open the check report',
     payNoFiles: 'First add the shift list (IVU PDF) to the file list; the payslip is compared against it.',
     payChecking: 'Checking the payslip: {name}...',
@@ -3521,42 +3525,6 @@ function applyStaticTexts() {
     else if (el.getAttribute('data-html')) el.innerHTML = txt; else el.textContent = txt;
   });
   $('payInfo').innerHTML = T('payInfoHtml');
-  applyUpdateNotice();
-}
-/* ---------- uuden version tarkistus (hiljainen; virhe = ei ilmoitusta) ---------- */
-var VERSION_URL = 'https://raw.githubusercontent.com/vastarannankiiski/tyovuoropdf/main/versio_web.txt';
-var newVersion = null;
-function verParts(v) { return String(v).split('.').map(function (x) { return parseInt(x, 10) || 0; }); }
-function versionIsNewer(remote, local) {
-  var a = verParts(remote), b = verParts(local);
-  for (var i = 0; i < Math.max(a.length, b.length); i++) {
-    var x = a[i] || 0, y = b[i] || 0;
-    if (x !== y) return x > y;
-  }
-  return false;
-}
-function applyUpdateNotice() {
-  var el = $('btnUpdates');
-  if (!el) return;
-  if (newVersion) { el.textContent = T('updAvail', { v: newVersion }); el.style.fontWeight = '700'; }
-  else el.style.fontWeight = '';
-}
-function checkForUpdate() {
-  try {
-    if (typeof fetch !== 'function') return;
-    var ctl = (typeof AbortController === 'function') ? new AbortController() : null;
-    var tmo = setTimeout(function () { if (ctl) ctl.abort(); }, 8000);
-    fetch(VERSION_URL + '?t=' + Date.now(), { cache: 'no-store', signal: ctl ? ctl.signal : undefined })
-      .then(function (r) { if (!r.ok) throw new Error('http'); return r.text(); })
-      .then(function (txt) {
-        clearTimeout(tmo);
-        var m = /\d+(\.\d+)*/.exec(String(txt).slice(0, 200));
-        if (!m) return;
-        var local = String(TyoCore.APP_VERSION).replace(/-.*$/, '');
-        if (versionIsNewer(m[0], local)) { newVersion = m[0]; applyUpdateNotice(); }
-      })
-      .catch(function () { /* ei ilmoitusta */ });
-  } catch (e) { /* ei ilmoitusta */ }
 }
 function setUiLang(lang, fromUser) {
   uiLang = lang === 'en' ? 'en' : 'fi';
@@ -3848,7 +3816,6 @@ fillPeriods();
   setUiLang(lang, false);
   $('selOutLang').value = lang;
   log(T('started', { v: TyoCore.APP_VERSION }));
-  checkForUpdate();
 })();
 })();
 </script>
