@@ -237,7 +237,7 @@ a.bm { cursor: grab; }
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.25-web';
+var APP_VERSION = '1.71.27-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3784,9 +3784,12 @@ fillPeriods();
   var mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua) || (/Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1) ||
     !!(navigator.userAgentData && navigator.userAgentData.mobile);
   var fxAndroid = /Android/.test(ua) && /Firefox\//.test(ua);
-  if (mobile && !fxAndroid) $('ivuCard').style.display = 'none';
+  /* v1.71.27-web: Quetta (Android, Chromium, tukee Chrome-lisäosia kuten Violentmonkey) toimii kuten Firefox */
+  var quetta = /Quetta/i.test(ua) || !!(navigator.userAgentData && (navigator.userAgentData.brands || []).some(function (b) { return /Quetta/i.test(b.brand || ''); }));
+  var extMobile = fxAndroid || quetta;
+  if (mobile && !extMobile) $('ivuCard').style.display = 'none';
   /* Firefox (tietokone ja Android): Violentmonkey-skripti ("i"-painikkeen ohje); muu tietokoneselain (Chrome ym.): kirjanmerkki */
-  if (/Firefox\//.test(ua) && (!mobile || fxAndroid)) { $('ivuStepsDesk').hidden = true; $('ivuStepsFx').hidden = false; $('btnIvuInfo').hidden = false; infoBoxId = 'ivuFxInfo'; }
+  if ((/Firefox\//.test(ua) && (!mobile || fxAndroid)) || (mobile && quetta)) { $('ivuStepsDesk').hidden = true; $('ivuStepsFx').hidden = false; $('btnIvuInfo').hidden = false; infoBoxId = 'ivuFxInfo'; }
   else if (!mobile) { $('btnIvuInfo').hidden = false; infoBoxId = 'ivuDeskInfo'; $('btnIvuInfo').setAttribute('aria-controls', infoBoxId); }
   $('btnIvuInfo').addEventListener('click', function () {
     var box = $(infoBoxId), open = box.hasAttribute('hidden');
