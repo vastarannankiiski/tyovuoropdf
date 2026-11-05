@@ -105,6 +105,18 @@ a.bm { cursor: grab; }
 .upd { display: inline-block; padding: 4px 12px; border: 1px solid var(--line); border-radius: 6px; font-size: .85rem;
   color: var(--ink); text-decoration: none; background: var(--row-alt); margin-right: 6px; white-space: nowrap; }
 .upd:hover { border-color: var(--accent); }
+.nextbtn { min-height: 0; padding: 4px 12px; font-size: .85rem; border: 1px solid var(--line); border-radius: 6px; background: var(--row-alt); color: var(--ink); cursor: pointer; white-space: nowrap; }
+.nextbtn:hover { border-color: var(--accent); }
+.nextbtn[hidden] { display: none; }
+#nextOverlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
+#nextOverlay[hidden] { display: none; }
+#nextBox { background: var(--bg, #fff); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; max-width: 420px; width: 100%; padding: 16px 18px; box-shadow: 0 8px 30px rgba(0,0,0,.3); }
+#nextBox .ntop { font-size: .8rem; color: var(--muted); margin: 0 0 6px; }
+#nextBox h2 { margin: 0 0 10px; font-size: 1.15rem; }
+#nextBox dl { margin: 0 0 14px; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; }
+#nextBox dt { color: var(--muted); }
+#nextBox dd { margin: 0; font-weight: 700; word-break: break-word; }
+#nextBox .nmsg { margin: 0 0 14px; }
 .flag { padding: 0; min-height: 0; width: 38px; height: 26px; border: 2px solid var(--line); border-radius: 5px;
   overflow: hidden; background: none; line-height: 0; }
 .flag svg { width: 100%; height: 100%; display: block; }
@@ -113,6 +125,7 @@ a.bm { cursor: grab; }
 </style>
 </head>
 <body>
+<div id="nextOverlay" hidden><div id="nextBox" role="dialog" aria-modal="true" aria-labelledby="nextTitle"><p class="ntop" id="nextTop"></p><h2 id="nextTitle"></h2><div id="nextBody"></div><button type="button" class="primary" id="btnNextOk" data-i="nextOk"></button></div></div>
 <div class="wrap">
   <div class="hdr">
     <h1><span id="appTitle">TyövuoroPdf</span> <span id="ver" style="font-weight:400;color:var(--muted);font-size:.9rem"></span></h1>
@@ -120,6 +133,7 @@ a.bm { cursor: grab; }
       <button type="button" class="flag" id="flagFi" data-lang="fi" aria-pressed="true" title="Suomi">
         <svg viewBox="0 0 18 11" preserveAspectRatio="none" aria-hidden="true"><rect width="18" height="11" fill="#fff"/><rect x="5" width="3" height="11" fill="#003580"/><rect y="4" width="18" height="3" fill="#003580"/></svg>
       </button>
+      <button type="button" class="nextbtn" id="btnNext" data-i="btnNext"></button>
       <button type="button" class="flag" id="flagEn" data-lang="en" aria-pressed="false" title="English">
         <svg viewBox="0 0 60 30" preserveAspectRatio="none" aria-hidden="true"><clipPath id="ukS"><path d="M0,0 v30 h60 v-30 z"/></clipPath><clipPath id="ukT"><path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z"/></clipPath><g clip-path="url(#ukS)"><path d="M0,0 v30 h60 v-30 z" fill="#012169"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/><path d="M0,0 L60,30 M60,0 L0,30" clip-path="url(#ukT)" stroke="#C8102E" stroke-width="4"/><path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/><path d="M30,0 v30 M0,15 h60" stroke="#C8102E" stroke-width="6"/></g></svg>
       </button>
@@ -237,7 +251,7 @@ a.bm { cursor: grab; }
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.27-web';
+var APP_VERSION = '1.71.30-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -1242,19 +1256,19 @@ var FIELD_KM = 16; /* v1.55.0-web: Kilometrikorvaus (km): arvo on kilometrejä, 
 var FIELD_DAYLABEL = {
   fi: ['Työaika', 'Palkkatunnit', 'Palkaton tauko', 'Palkallinen tauko',
     'Taukoaika', 'Iltalisä', 'Yölisä',
-    'Lauantailisä 1', 'Lauantailisä 2', 'Sunnuntailisä', 'Pyhäpäivälisä', 'Joulutyölisä', 'Vapaapäivätyölisä', 'Hälytystyölisä', 'Koulutus', 'Matkustus', 'Kilometrikorvaus', 'Ylityö 50%', 'Ylityö 100%'],
+    'Lauantailisä 1', 'Lauantailisä 2', 'Sunnuntailisä', 'Pyhäpäivälisä', 'Joulutyölisä', 'Vapaapäivätyö', 'Hälytyskorvaus', 'Koulutus', 'Matkustus', 'Kilometrikorvaus', 'Ylityö 50%', 'Ylityö 100%'],
   en: ['Work time', 'Paid time', 'Unpaid break', 'Paid break',
     'Break time', 'Evening Premium', 'Night Premium',
-    'Saturday Premium 1', 'Saturday Premium 2', 'Sunday Premium', 'Public Holiday Premium', 'Christmas Premium', 'Day-off work premium', 'Emergency Call Premium', 'Training', 'Travel', 'Mileage allowance', 'Overtime 50%', 'Overtime 100%']
+    'Saturday Premium 1', 'Saturday Premium 2', 'Sunday Premium', 'Public Holiday Premium', 'Christmas Premium', 'Day-off work', 'Emergency Call Compensation', 'Training', 'Travel', 'Mileage allowance', 'Overtime 50%', 'Overtime 100%']
 };
 var FIELD_TOTALLABEL = {
   fi: ['Työaika', 'Palkkatunnit',
     'Palkaton taukoaika', 'Palkallinen taukoaika', 'Taukoaika',
     'Iltalisä',
-    'Yölisä', 'Lauantailisä 1', 'Lauantailisä 2', 'Sunnuntailisä', 'Pyhäpäivälisä', 'Joulutyölisä', 'Vapaapäivätyölisä', 'Hälytystyölisä', 'Koulutus', 'Matkustus', 'Kilometrikorvaus', 'Ylityö 50%', 'Ylityö 100%'],
+    'Yölisä', 'Lauantailisä 1', 'Lauantailisä 2', 'Sunnuntailisä', 'Pyhäpäivälisä', 'Joulutyölisä', 'Vapaapäivätyö', 'Hälytyskorvaus', 'Koulutus', 'Matkustus', 'Kilometrikorvaus', 'Ylityö 50%', 'Ylityö 100%'],
   en: ['Work time', 'Paid time', 'Unpaid break time', 'Paid break time', 'Break time',
     'Evening Premium', 'Night Premium',
-    'Saturday Premium 1', 'Saturday Premium 2', 'Sunday Premium', 'Public Holiday Premium', 'Christmas Premium', 'Day-off work premium', 'Emergency Call Premium', 'Training', 'Travel', 'Mileage allowance', 'Overtime 50%', 'Overtime 100%']
+    'Saturday Premium 1', 'Saturday Premium 2', 'Sunday Premium', 'Public Holiday Premium', 'Christmas Premium', 'Day-off work', 'Emergency Call Compensation', 'Training', 'Travel', 'Mileage allowance', 'Overtime 50%', 'Overtime 100%']
 };
 var WD_SHORT = ['ma', 'ti', 'ke', 'to', 'pe', 'la', 'su'];
 var WD_FULL = {
@@ -2329,7 +2343,7 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
     return [T('Työaika', 'Work time'), T('Iltalisä', 'Evening premium'), T('Yölisä', 'Night premium'),
       T('Sidonnaisuusaika', 'Standby time'), T('Lauantailisä', 'Saturday premium'),
       T('Lauantailisä 2', 'Saturday premium 2'), T('Sunnuntailisä', 'Sunday premium'),
-      T('Vapaapäivätyölisä', 'Day-off work premium'), T('Koulutus', 'Training'), T('Hälytystyölisä', 'Alarm duty premium')][idx] + ' (' + PAY_TYPES[idx] + ')';
+      T('Vapaapäivätyö', 'Day-off work'), T('Koulutus', 'Training'), T('Hälytyskorvaus', 'Alarm duty compensation')][idx] + ' (' + PAY_TYPES[idx] + ')';
   }
   function extraName(c) {
     return (c === PAY_PEKKAS ? T('Työajan lyhennys, pekkaspäivä', 'Working time reduction (PEKKAS day)')
@@ -2464,7 +2478,7 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
     for (ty = 0; ty < PAY_TYPES.length; ty++) {
       var listMin = h ? hoursOfType(h, ty) : 0;
       listTot[ty] += listMin;
-      if (ty === PAY_STANDBY_IDX || ty === PAY_TRAINING_IDX || ty === PAY_ALARM_IDX) {
+      if (ty === PAY_STANDBY_IDX || ty === PAY_TRAINING_IDX || ty === PAY_ALARM_IDX || ty === PAY_HOLIDAY_IDX) {
         /* sidonnaisuusaika: palkkalaskelmassa koottuna jakson viimeiselle päivälle -> vain tiedoksi; koulutus (6600) ja hälytystyölisä (1710) verrataan jakson summana */
         if (listMin === 0) continue;
         dayLbl = first ? dateLabel(dt, h) : '';
@@ -2505,7 +2519,7 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
 
   /* jakson tason rivit: palkkalaskelman usean päivän rivit */
   slip.entries.forEach(function (e) {
-    if (((isComparedCode(e.code) && e.code !== PAY_STANDBY && e.code !== PAY_TRAINING && e.code !== PAY_ALARM) || (isExtraCode(e.code) && e.code !== PAY_KM)) &&
+    if (((isComparedCode(e.code) && e.code !== PAY_STANDBY && e.code !== PAY_TRAINING && e.code !== PAY_ALARM && e.code !== PAY_HOLIDAY) || (isExtraCode(e.code) && e.code !== PAY_KM)) &&
         e.dateFrom !== e.dateTo && e.hasQty)
       addRow(esc(dateFull(e.dateFrom) + ' - ' + dateFull(e.dateTo)), esc(e.name + ' (' + e.code + ')'),
         '-', slipQtyText(e.code, e.qty, T('kpl', 'pcs')), '', true, true);
@@ -2534,6 +2548,18 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
         fmtSigned(hundToMin(trSlip.sum) - trList), okt0, true);
     else
       addRow(T('Jakso yhteensä', 'Period total'), typeName(PAY_TRAINING_IDX), fmtMin(trList), '-', fmtSigned(-trList), okt0, true);
+  }
+
+  /* v1.71.29-web: vapaapäivätyö (2101) jakson tasolla (kuten hälytyskorvaus) */
+  var hoList = listTot[PAY_HOLIDAY_IDX], hoSlip = slipTot[PAY_HOLIDAY_IDX];
+  if (hoList > 0 || hoSlip.sum !== 0) {
+    var okho = hoursMatch(hoList, hoSlip.sum, hoSlip.count);
+    if (!okho) diffCount++;
+    if (hoSlip.count > 0)
+      addRow(T('Jakso yhteensä', 'Period total'), typeName(PAY_HOLIDAY_IDX), fmtMin(hoList), fmtSlip(hoSlip.sum),
+        fmtSigned(hundToMin(hoSlip.sum) - hoList), okho, true);
+    else
+      addRow(T('Jakso yhteensä', 'Period total'), typeName(PAY_HOLIDAY_IDX), fmtMin(hoList), '-', fmtSigned(-hoList), okho, true);
   }
 
   /* v1.71.18-web: hälytystyölisä (1710) jakson tasolla (palkkalaskelmassa jakson viimeisellä päivällä, työvuorolistassa ansaitsemispäivän kohdalla) */
@@ -2988,6 +3014,11 @@ var I18N = {
     tbPrint: 'Tulosta / Tallenna PDF',
     tbHint: 'Valitse tulostimeksi &quot;Tallenna PDF:nä&quot;, paperikoko A4, marginaalit: ei mitään, poista otsikot ja alatunnisteet, mittakaava 100&nbsp;%.',
     flagFi: 'Suomi', flagEn: 'English',
+    btnNext: 'Seuraava vuoro', nextTitle: 'Seuraava vuoro', nextOk: 'OK', nextCar: 'Auton numero', nextCirc: 'Kiertonumero', nextTime: 'Lähtöaika',
+    nextLine: 'Linjan numero', nextRoute: 'Reitti', nextUnknown: 'ei tiedossa', nextType: 'Tapahtuma',
+    nextNone: 'Seuraavaa vuoroa ei löytynyt (haettu tämä päivä ja kaksi seuraavaa).',
+    nextOpened: 'IVU avattu. Kirjaudu IVU:un ja paina IVU-sivulla Hae IVU-vuorot (kirjanmerkki/painike): seuraavan vuoron tiedot näytetään ikkunassa.',
+    nextFetching: 'Haetaan seuraavaa vuoroa IVU:sta...',
     btnPayslip: 'Palkkalaskelman tarkistaminen', btnPayOpen: 'Avaa tarkistusraportti',
     payNoFiles: 'Lisää ensin tiedostolistaan se työvuorolista (IVU-PDF), johon palkkalaskelma verrataan.',
     payChecking: 'Tarkistetaan palkkalaskelmaa: {name}...',
@@ -3063,6 +3094,11 @@ var I18N = {
     tbPrint: 'Print / Save PDF',
     tbHint: 'Choose &quot;Save as PDF&quot; as the printer, paper size A4, margins: none, turn off headers and footers, scale 100&nbsp;%.',
     flagFi: 'Suomi', flagEn: 'English',
+    btnNext: 'Next shift', nextTitle: 'Next shift', nextOk: 'OK', nextCar: 'Vehicle number', nextCirc: 'Circulation number', nextTime: 'Departure time',
+    nextLine: 'Line number', nextRoute: 'Route', nextUnknown: 'not known', nextType: 'Event',
+    nextNone: 'No next shift found (today and the next two days were fetched).',
+    nextOpened: 'IVU opened. Log in to IVU and press Fetch IVU shifts (bookmark/button) on the IVU page: the next shift is shown in a window.',
+    nextFetching: 'Fetching the next shift from IVU...',
     btnPayslip: 'Check the payslip', btnPayOpen: 'Open the check report',
     payNoFiles: 'First add the shift list (IVU PDF) to the file list; the payslip is compared against it.',
     payChecking: 'Checking the payslip: {name}...',
@@ -3678,6 +3714,78 @@ IVU_SCRIPT,
 
 /* Vastaanotettu haku (m = {tvl:'result', fetched, days:{'YYYY-MM-DD': {status, json}}}) -> päivät tiedostolistaan */
 var ivuRaw = {};
+var ivuMode = 'period'; /* v1.71.30-web: 'next' = Seuraava vuoro -haku (vain tänään + 2 päivää) */
+function ivuIsoLocal(d) { return d.getFullYear() + '-' + pad2n(d.getMonth() + 1) + '-' + pad2n(d.getDate()); }
+function pad2n(n) { return (n < 10 ? '0' : '') + n; }
+function nextDatesIso() {
+  var out = [], d = new Date();
+  for (var i = 0; i < 3; i++) { var x = new Date(d.getFullYear(), d.getMonth(), d.getDate() + i); out.push(ivuIsoLocal(x)); }
+  return out;
+}
+function stripLine6(l) { var m = /^\d+/.exec(l); return (m && m[0].length === 4) ? l.substr(1) : l; }
+/* Etsii ensimmäisen ajon (Linja-ajo, Siirtoajo, Halliajo), joka alkaa nykyhetken jälkeen. Palauttaa {ev, abs} tai null; authFail kertoo kirjautumisvirheen. */
+function nextShiftFind(m) {
+  var now = Date.now(), found = null, authFail = false;
+  var keys = Object.keys(m.days || {}).filter(function (k) { return /^\d{4}-\d{2}-\d{2}$/.test(k); }).sort();
+  var stamp = (typeof m.fetched === 'number' && m.fetched > 0) ? m.fetched : now;
+  keys.forEach(function (k) {
+    if (found) return;
+    var e = m.days[k] || {};
+    if (e.status === 401 || e.status === 403) { authFail = true; return; }
+    if (e.status !== 200 || !e.json) return;
+    var r;
+    try { r = TyoCore.ivuDayFromJson(e.json, stamp); } catch (x) { return; }
+    if (!r || r.kind !== 'work' || !r.day || !r.day.events) return;
+    var p = k.split('-'), base = new Date(+p[0], +p[1] - 1, +p[2], 0, 0, 0).getTime();
+    var prev = -1, add = 0;
+    r.day.events.forEach(function (ev) {
+      var t = /^(\d{1,2})\.(\d{2})/.exec(ev.startTime || '');
+      if (!t) return;
+      var min = +t[1] * 60 + +t[2];
+      if (prev >= 0 && min < prev) add += 1440; /* keskiyön yli */
+      prev = min;
+      if (found) return;
+      if (!/^(Linja-ajo|Siirtoajo|Halliajo)/.test(ev.evType || '')) return;
+      var abs = base + (min + add) * 60000;
+      if (abs > now) found = { ev: ev, abs: abs };
+    });
+  });
+  return { found: found, authFail: authFail };
+}
+function nextShowDialog(rows, msg) {
+  $('nextTop').textContent = 'TyövuoroPdf ' + TyoCore.APP_VERSION;
+  $('nextTitle').textContent = T('nextTitle');
+  var body = $('nextBody');
+  body.textContent = '';
+  if (msg) { var pm = document.createElement('p'); pm.className = 'nmsg'; pm.textContent = msg; body.appendChild(pm); }
+  if (rows) {
+    var dl = document.createElement('dl');
+    rows.forEach(function (r) {
+      var dt = document.createElement('dt'), dd = document.createElement('dd');
+      dt.textContent = r[0]; dd.textContent = r[1]; dl.appendChild(dt); dl.appendChild(dd);
+    });
+    body.appendChild(dl);
+  }
+  $('nextOverlay').hidden = false;
+  $('btnNextOk').focus();
+}
+function nextProcess(m) {
+  if (!m || typeof m !== 'object' || m.tvl !== 'result' || !m.days || typeof m.days !== 'object') { nextShowDialog(null, T('ivuBad')); return; }
+  var res = nextShiftFind(m);
+  if (!res.found) { nextShowDialog(null, res.authFail ? T('ivuAuth') : T('nextNone')); return; }
+  var ev = res.found.ev, d = new Date(res.found.abs), unk = T('nextUnknown');
+  var today = new Date(), sameDay = d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
+  var timeTxt = (sameDay ? '' : d.getDate() + '.' + (d.getMonth() + 1) + '. ') + pad2n(d.getHours()) + '.' + pad2n(d.getMinutes());
+  var line = stripLine6(ev.linja || '');
+  nextShowDialog([
+    [T('nextCar'), ev.kulkuneuvo || unk],
+    [T('nextCirc'), ev.kierto || unk],
+    [T('nextTime'), timeTxt],
+    [T('nextLine'), line || unk],
+    [T('nextRoute'), (ev.fromLoc || '?') + ' \u2192 ' + (ev.toLoc || '?')],
+    [T('nextType'), String(ev.evType || '')]
+  ], '');
+}
 function ivuProcess(m) {
   if (!m || typeof m !== 'object' || m.tvl !== 'result' || !m.days || typeof m.days !== 'object') {
     setIvuStatus(T('ivuBad'), 'err'); return;
@@ -3737,14 +3845,16 @@ window.addEventListener('message', function (ev) {
   var m = ev.data;
   if (!m || typeof m !== 'object') return;
   if (m.tvl === 'hello') {
-    try { ev.source.postMessage({ tvl: 'dates', dates: periodDatesIso() }, IVU_ORIGIN); } catch (e) { return; }
-    setIvuStatus(T('ivuFetching', { p: periodLabel(selectedPeriodStart()) }));
+    try { ev.source.postMessage({ tvl: 'dates', dates: ivuMode === 'next' ? nextDatesIso() : periodDatesIso() }, IVU_ORIGIN); } catch (e) { return; }
+    if (ivuMode === 'next') setStatus(T('nextFetching'));
+    else setIvuStatus(T('ivuFetching', { p: periodLabel(selectedPeriodStart()) }));
   } else if (m.tvl === 'result') {
     try { window.focus(); } catch (e) { /* selain voi estää */ }
     /* v1.71.13-web: IVU-välilehden sulkee myös tämä sivu (avaajana saa sulkea avaamansa välilehden, vaikka sivun oma window.close() estettäisiin) */
     var src = ev.source;
     setTimeout(function () { try { if (src && !src.closed) src.close(); } catch (e) { /* ei väliä */ } }, 1200);
-    ivuProcess(m);
+    if (ivuMode === 'next') { ivuMode = 'period'; setStatus(''); nextProcess(m); }
+    else ivuProcess(m);
   }
 });
 
@@ -3764,7 +3874,16 @@ function legacyCopy(text) {
     return ok;
   } catch (e) { return false; }
 }
+$('btnNext').addEventListener('click', function () {
+  ivuMode = 'next';
+  var w = window.open(IVU_START, '_blank');
+  setStatus(w ? T('nextOpened') : T('ivuPopup'), w ? '' : 'err');
+});
+$('btnNextOk').addEventListener('click', function () { $('nextOverlay').hidden = true; });
+$('nextOverlay').addEventListener('click', function (e) { if (e.target === this) this.hidden = true; });
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('nextOverlay').hidden) $('nextOverlay').hidden = true; });
 $('btnIvuOpen').addEventListener('click', function () {
+  ivuMode = 'period';
   var w = window.open(IVU_START, '_blank');
   setIvuStatus(w ? T('ivuOpened') : T('ivuPopup'), w ? '' : 'err');
 });
@@ -3787,7 +3906,7 @@ fillPeriods();
   /* v1.71.27-web: Quetta (Android, Chromium, tukee Chrome-lisäosia kuten Violentmonkey) toimii kuten Firefox */
   var quetta = /Quetta/i.test(ua) || !!(navigator.userAgentData && (navigator.userAgentData.brands || []).some(function (b) { return /Quetta/i.test(b.brand || ''); }));
   var extMobile = fxAndroid || quetta;
-  if (mobile && !extMobile) $('ivuCard').style.display = 'none';
+  if (mobile && !extMobile) { $('ivuCard').style.display = 'none'; $('btnNext').hidden = true; }
   /* Firefox (tietokone ja Android): Violentmonkey-skripti ("i"-painikkeen ohje); muu tietokoneselain (Chrome ym.): kirjanmerkki */
   if ((/Firefox\//.test(ua) && (!mobile || fxAndroid)) || (mobile && quetta)) { $('ivuStepsDesk').hidden = true; $('ivuStepsFx').hidden = false; $('btnIvuInfo').hidden = false; infoBoxId = 'ivuFxInfo'; }
   else if (!mobile) { $('btnIvuInfo').hidden = false; infoBoxId = 'ivuDeskInfo'; $('btnIvuInfo').setAttribute('aria-controls', infoBoxId); }
