@@ -112,7 +112,6 @@ a.bm { cursor: grab; }
 #nextOverlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
 #nextOverlay[hidden] { display: none; }
 #nextBox { background: var(--bg, #fff); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; max-width: 420px; width: 100%; padding: 16px 18px; box-shadow: 0 8px 30px rgba(0,0,0,.3); }
-#nextBox .ntop { font-size: .8rem; color: var(--muted); margin: 0 0 6px; }
 #nextBox h2 { margin: 0 0 10px; font-size: 1.15rem; }
 #nextBox dl { margin: 0 0 14px; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; }
 #nextBox dt { color: var(--muted); }
@@ -126,7 +125,7 @@ a.bm { cursor: grab; }
 </style>
 </head>
 <body>
-<div id="nextOverlay" hidden><div id="nextBox" role="dialog" aria-modal="true" aria-labelledby="nextTitle"><p class="ntop" id="nextTop"></p><h2 id="nextTitle"></h2><div id="nextBody"></div><button type="button" class="primary" id="btnNextOk" data-i="nextOk"></button></div></div>
+<div id="nextOverlay" hidden><div id="nextBox" role="dialog" aria-modal="true" aria-labelledby="nextTitle"><h2 id="nextTitle"></h2><div id="nextBody"></div><button type="button" class="primary" id="btnNextOk" data-i="nextOk"></button></div></div>
 <div class="wrap">
   <div class="hdr">
     <h1><span id="appTitle">TyövuoroPdf</span> <span id="ver" style="font-weight:400;color:var(--muted);font-size:.9rem"></span></h1>
@@ -252,7 +251,7 @@ a.bm { cursor: grab; }
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.33-web';
+var APP_VERSION = '1.71.34-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3760,7 +3759,6 @@ function nextShiftFind(m) {
   return { found: found, authFail: authFail };
 }
 function nextShowDialog(rows, msg) {
-  $('nextTop').textContent = 'TyövuoroPdf ' + TyoCore.APP_VERSION;
   $('nextTitle').textContent = T('nextTitle');
   var body = $('nextBody');
   body.textContent = '';
