@@ -105,6 +105,7 @@ a.bm { cursor: grab; }
 .upd { display: inline-block; padding: 4px 12px; border: 1px solid var(--line); border-radius: 6px; font-size: .85rem;
   color: var(--ink); text-decoration: none; background: var(--row-alt); margin-right: 6px; white-space: nowrap; }
 .upd:hover { border-color: var(--accent); }
+.hdr .nextbtn { margin-top: 6px; }
 .nextbtn { min-height: 0; padding: 4px 12px; font-size: .85rem; border: 1px solid var(--line); border-radius: 6px; background: var(--row-alt); color: var(--ink); cursor: pointer; white-space: nowrap; }
 .nextbtn:hover { border-color: var(--accent); }
 .nextbtn[hidden] { display: none; }
@@ -129,11 +130,11 @@ a.bm { cursor: grab; }
 <div class="wrap">
   <div class="hdr">
     <h1><span id="appTitle">TyövuoroPdf</span> <span id="ver" style="font-weight:400;color:var(--muted);font-size:.9rem"></span></h1>
+    <button type="button" class="nextbtn" id="btnNext" data-i="btnNext"></button>
     <div class="flags">
       <button type="button" class="flag" id="flagFi" data-lang="fi" aria-pressed="true" title="Suomi">
         <svg viewBox="0 0 18 11" preserveAspectRatio="none" aria-hidden="true"><rect width="18" height="11" fill="#fff"/><rect x="5" width="3" height="11" fill="#003580"/><rect y="4" width="18" height="3" fill="#003580"/></svg>
       </button>
-      <button type="button" class="nextbtn" id="btnNext" data-i="btnNext"></button>
       <button type="button" class="flag" id="flagEn" data-lang="en" aria-pressed="false" title="English">
         <svg viewBox="0 0 60 30" preserveAspectRatio="none" aria-hidden="true"><clipPath id="ukS"><path d="M0,0 v30 h60 v-30 z"/></clipPath><clipPath id="ukT"><path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z"/></clipPath><g clip-path="url(#ukS)"><path d="M0,0 v30 h60 v-30 z" fill="#012169"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/><path d="M0,0 L60,30 M60,0 L0,30" clip-path="url(#ukT)" stroke="#C8102E" stroke-width="4"/><path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/><path d="M30,0 v30 M0,15 h60" stroke="#C8102E" stroke-width="6"/></g></svg>
       </button>
@@ -251,7 +252,7 @@ a.bm { cursor: grab; }
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.30-web';
+var APP_VERSION = '1.71.32-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3723,13 +3724,12 @@ function nextDatesIso() {
   return out;
 }
 function stripLine6(l) { var m = /^\d+/.exec(l); return (m && m[0].length === 4) ? l.substr(1) : l; }
-/* Etsii ensimmäisen ajon (Linja-ajo, Siirtoajo, Halliajo), joka alkaa nykyhetken jälkeen. Palauttaa {ev, abs} tai null; authFail kertoo kirjautumisvirheen. */
+/* Etsii ensimmäisen ajon (Linja-ajo, Siirtoajo, Halliajo), joka alkaa nykyhetken jälkeen. Palauttaa {ev, abs, nextLine} (nextLine = seuraavan Linja-ajon {abs} tai null, jos löydetty ajo on jo Linja-ajo); authFail kertoo kirjautumisvirheen. */
 function nextShiftFind(m) {
-  var now = Date.now(), found = null, authFail = false;
+  var now = Date.now(), all = [], authFail = false;
   var keys = Object.keys(m.days || {}).filter(function (k) { return /^\d{4}-\d{2}-\d{2}$/.test(k); }).sort();
   var stamp = (typeof m.fetched === 'number' && m.fetched > 0) ? m.fetched : now;
   keys.forEach(function (k) {
-    if (found) return;
     var e = m.days[k] || {};
     if (e.status === 401 || e.status === 403) { authFail = true; return; }
     if (e.status !== 200 || !e.json) return;
@@ -3744,12 +3744,19 @@ function nextShiftFind(m) {
       var min = +t[1] * 60 + +t[2];
       if (prev >= 0 && min < prev) add += 1440; /* keskiyön yli */
       prev = min;
-      if (found) return;
-      if (!/^(Linja-ajo|Siirtoajo|Halliajo)/.test(ev.evType || '')) return;
-      var abs = base + (min + add) * 60000;
-      if (abs > now) found = { ev: ev, abs: abs };
+      all.push({ ev: ev, abs: base + (min + add) * 60000 });
     });
   });
+  var found = null, nextLine = null;
+  for (var i = 0; i < all.length && !found; i++) {
+    if (/^(Linja-ajo|Siirtoajo|Halliajo)/.test(all[i].ev.evType || '') && all[i].abs > now) found = all[i];
+  }
+  if (found && !/^Linja-ajo/.test(found.ev.evType || '')) {
+    for (var k2 = all.indexOf(found) + 1; k2 < all.length; k2++) {
+      if (/^Linja-ajo/.test(all[k2].ev.evType || '') && all[k2].abs >= found.abs) { nextLine = all[k2]; break; }
+    }
+  }
+  if (found) found = { ev: found.ev, abs: found.abs, nextLine: nextLine };
   return { found: found, authFail: authFail };
 }
 function nextShowDialog(rows, msg) {
@@ -3774,15 +3781,22 @@ function nextProcess(m) {
   var res = nextShiftFind(m);
   if (!res.found) { nextShowDialog(null, res.authFail ? T('ivuAuth') : T('nextNone')); return; }
   var ev = res.found.ev, d = new Date(res.found.abs), unk = T('nextUnknown');
-  var today = new Date(), sameDay = d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
-  var timeTxt = (sameDay ? '' : d.getDate() + '.' + (d.getMonth() + 1) + '. ') + pad2n(d.getHours()) + '.' + pad2n(d.getMinutes());
+  var wd = (uiLang === 'en' ? ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'] : ['Su', 'Ma', 'Ti', 'Ke', 'To', 'Pe', 'La'])[d.getDay()];
+  var hm = function (x) { return pad2n(x.getHours()) + ':' + pad2n(x.getMinutes()); };
+  var timeTxt = hm(d) + ' (' + wd + ' ' + d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear() + ')';
   var line = stripLine6(ev.linja || '');
+  var route = (ev.fromLoc || '?') + ' \u2192 ' + (ev.toLoc || '?');
+  if (res.found.nextLine) {
+    var nd = new Date(res.found.nextLine.abs);
+    var sameDay = nd.getFullYear() === d.getFullYear() && nd.getMonth() === d.getMonth() && nd.getDate() === d.getDate();
+    route += ' (' + (sameDay ? '' : nd.getDate() + '.' + (nd.getMonth() + 1) + '. ') + hm(nd) + ')';
+  }
   nextShowDialog([
     [T('nextCar'), ev.kulkuneuvo || unk],
     [T('nextCirc'), ev.kierto || unk],
     [T('nextTime'), timeTxt],
     [T('nextLine'), line || unk],
-    [T('nextRoute'), (ev.fromLoc || '?') + ' \u2192 ' + (ev.toLoc || '?')],
+    [T('nextRoute'), route],
     [T('nextType'), String(ev.evType || '')]
   ], '');
 }
