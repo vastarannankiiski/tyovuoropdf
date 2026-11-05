@@ -237,7 +237,7 @@ a.bm { cursor: grab; }
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.21-web';
+var APP_VERSION = '1.71.25-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -2373,7 +2373,7 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
      puuttuvan osan (raja - Työaika - Koulutus) jakson viimeisen päivän Työaikaan (1451); loppu maksetaan koodilla 1804.
      Siirto tunnistetaan vain, jos palkkalaskelman luvut täsmäävät tähän: viimeisen 1451-päivän määrä = työvuorolistan
      Työaika + siirto ja 1804-summa = sidonnaisuusaika - siirto. Muuten vertailu tehdään normaalisti. */
-  var moveMin = 0, moveDate = null, moveVRule = false;
+  var moveMin = 0, moveDate = null, moveVRule = false, moveBase = 80 * 60;
   (function () {
     var wT = 0, trT = 0, sbT = 0, vT = 0;
     hours.forEach(function (hh) {
@@ -2398,7 +2398,7 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
       if (cands[ci].v && vT <= 0) continue;
       if (!(m > 0 && m <= sbT)) continue;
       if (hoursMatch(lw + m, sLast.sum, sLast.count) && hoursMatch(sbT - m, sSb.sum, sSb.count)) {
-        moveMin = m; moveDate = ld; moveVRule = cands[ci].v;
+        moveMin = m; moveDate = ld; moveVRule = cands[ci].v; moveBase = base;
         return;
       }
     }
@@ -2513,7 +2513,7 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
 
   /* sidonnaisuusaika (1804) jakson tasolla */
   var sbList = listTot[PAY_STANDBY_IDX] - moveMin, sbSlip = slipTot[PAY_STANDBY_IDX]; /* v1.59.0-web: miinus Työaikaan siirretty osa */
-  var sbMark = moveMin > 0 ? ' *' : '';
+  var sbMark = moveMin > 0 ? ' **' : '';
   if (sbList > 0 || sbSlip.sum !== 0) {
     var oks = hoursMatch(sbList, sbSlip.sum, sbSlip.count);
     if (!oks) diffCount++;
@@ -2589,9 +2589,8 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
   if (ot50 > 0 || so.sum !== 0) {
     var oko = hoursMatch(ot50, so.sum, so.count);
     if (!oko) diffCount++;
-    var otMark = moveVRule ? ' **' : '';
-    if (so.count > 0) addRow(T('Jakso', 'Period'), otName, fmtMin(ot50) + otMark, fmtSlip(so.sum), fmtSigned(hundToMin(so.sum) - ot50), oko, true);
-    else addRow(T('Jakso', 'Period'), otName, fmtMin(ot50) + otMark, '-', fmtSigned(-ot50), oko, true);
+    if (so.count > 0) addRow(T('Jakso', 'Period'), otName, fmtMin(ot50), fmtSlip(so.sum), fmtSigned(hundToMin(so.sum) - ot50), oko, true);
+    else addRow(T('Jakso', 'Period'), otName, fmtMin(ot50), '-', fmtSigned(-ot50), oko, true);
   }
   if (ot100 > 0)
     html.push('<tr class="ok day"><td>' + T('Jakso', 'Period') + '</td><td>' +
@@ -2602,23 +2601,13 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
       T('Joulutyölisä 200 % (koodi ei vielä tiedossa)', 'Christmas premium 200 % (code not known yet)') +
       '</td><td class="n">' + fmtMin(xmasTot) + '</td><td class="n">-</td><td class="n"></td><td class="st">?</td></tr>');
   html.push('</table>');
-  if (moveMin > 0)
-    html.push('<p class="note">* ' + T(
-      'Palkkalaskelma on siirtänyt sidonnaisuusaikaa ' + fmtMin(moveMin) + ' jakson viimeisen päivän Työaikaan (1451), jotta jakson 1451-tunnit täyttyvät 80 h:iin; loput sidonnaisuusajasta on maksettu koodilla 1804. Työvuorolistassa Työaika on ' +
-        fmtMin(listTot[0]) + ' ja Sidonnaisuusaika ' + fmtMin(listTot[PAY_STANDBY_IDX]) + '; vertailussa on käytetty siirrettyjä arvoja (merkitty *).',
-      'The payslip has moved ' + fmtMin(moveMin) + ' of standby time into the Work time (1451) of the last day of the period so that the 1451 hours of the period reach 80 h; the rest of the standby time is paid with code 1804. In the shift list, Work time is ' +
-        fmtMin(listTot[0]) + ' and Standby time ' + fmtMin(listTot[PAY_STANDBY_IDX]) + '; the comparison uses the moved values (marked *).') + '</p>');
-  if (moveVRule)
-    html.push('<p class="note">** ' + T(
-      'Vapaapäivätyö (' + fmtMin(listTot[PAY_HOLIDAY_IDX]) + ') maksetaan ylityönä 50 % (1540) eikä se lasketa 80 h:n rajaan, joten sidonnaisuusaikaa siirrettiin Työaikaan niin paljon, että muu työaika täyttää 80 h. Ylityö 50 % on siksi vapaapäivätyön tunnit.',
-      'Day-off work (' + fmtMin(listTot[PAY_HOLIDAY_IDX]) + ') is paid as overtime 50 % (1540) and does not count towards the 80 h limit, so standby time was moved into Work time until the other work time reaches 80 h. Overtime 50 % is therefore the day-off work hours.') + '</p>');
-  if (alList > 0 || alSlip.sum !== 0)
-    html.push('<p class="note">' + T(
-      'Hälytystyölisä (1710): palkkalaskelmassa jakson viimeisenä päivänä; verrataan koko jakson summana. Työvuorolistassa päiväkohtainen rivi näyttää päivän, jona lisä on ansaittu (vain tiedoksi).',
-      'Alarm duty premium (1710): shown on the last day of the period in the payslip; compared as a period total. The per-day row shows the day it was earned (informational only).') + '</p>');
-  html.push('<p class="note">' + T(
-    'Sidonnaisuusaika (1804): palkkalaskelmassa kaikki sidonnaisuusajat on laskettu yhteen ja esitetty jakson viimeisenä päivänä, joten se verrataan koko jakson summana; päiväkohtaiset sidonnaisuusrivit ovat vain tiedoksi.',
-    'Standby time (1804): the payslip sums all standby time and shows it on the last day of the period, so it is compared as a period total; the per-day standby rows are informational only.') + '</p>');
+  /* v1.71.22-web: lyhyet selitykset (vain jos sidonnaisuusaikaa on siirretty työajaksi, eli tunnit < 80 h) */
+  if (moveMin > 0) {
+    html.push('<p class="note">* ' + T('Työaikaan lisätty sidonnaisuusaikaa: ' + fmtMin(moveBase) + ' - ' + fmtMin(moveBase - moveMin) + ' = ' + fmtMin(moveMin) + ' h',
+      'Standby time added to work time: ' + fmtMin(moveBase) + ' - ' + fmtMin(moveBase - moveMin) + ' = ' + fmtMin(moveMin) + ' h') + '</p>');
+    html.push('<p class="note">** ' + T('Sidonnaisuusaika: ' + fmtMin(listTot[PAY_STANDBY_IDX]) + ' - ' + fmtMin(moveMin) + ' = ' + fmtMin(listTot[PAY_STANDBY_IDX] - moveMin) + ' h',
+      'Standby time: ' + fmtMin(listTot[PAY_STANDBY_IDX]) + ' - ' + fmtMin(moveMin) + ' = ' + fmtMin(listTot[PAY_STANDBY_IDX] - moveMin) + ' h') + '</p>');
+  }
 
   /* yhteenveto */
   html.push('<h2>' + T('Yhteenveto', 'Summary') + '</h2>');
@@ -2630,13 +2619,13 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
     if (listTot[ty] === 0 && st.sum === 0) continue;
     var cmpTot = listTot[ty] + (ty === 0 ? moveMin : 0) - (ty === PAY_STANDBY_IDX ? moveMin : 0); /* v1.59.0-web */
     var okt = hoursMatch(cmpTot, st.sum, st.count);
-    html.push('<tr class="' + okCls(okt) + '"><td>' + typeName(ty) + '</td><td class="n">' + fmtMin(cmpTot) + (cmpTot !== listTot[ty] ? ' *' : '') +
+    html.push('<tr class="' + okCls(okt) + '"><td>' + typeName(ty) + '</td><td class="n">' + fmtMin(cmpTot) + (cmpTot !== listTot[ty] ? (ty === PAY_STANDBY_IDX ? ' **' : ' *') : '') +
       '</td><td class="n">' + fmtSlip(st.sum) + '</td><td class="n">' + fmtSigned(hundToMin(st.sum) - cmpTot) +
       '</td>' + statusCell(okt) + '</tr>');
   }
   if (ot50 > 0 || so.sum !== 0) {
     var oko2 = hoursMatch(ot50, so.sum, so.count);
-    html.push('<tr class="' + okCls(oko2) + '"><td>' + otName + '</td><td class="n">' + fmtMin(ot50) + (moveVRule ? ' **' : '') + '</td><td class="n">' +
+    html.push('<tr class="' + okCls(oko2) + '"><td>' + otName + '</td><td class="n">' + fmtMin(ot50) + '</td><td class="n">' +
       fmtSlip(so.sum) + '</td><td class="n">' + fmtSigned(hundToMin(so.sum) - ot50) + '</td>' + statusCell(oko2) + '</tr>');
   }
   if (ot100 > 0)
@@ -2709,9 +2698,6 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
   });
   if (anyOther) html.push('</table>');
 
-  html.push('<p class="note">' + T(
-    'Vain tunnit verrataan, euroja ei lasketa. Palkkalaskelman määrät ovat desimaalitunteja (pyöristys 0,01 h); pyöristyksestä johtuva ero ei ole poikkeama.',
-    'Only hours are compared, euros are not calculated. Payslip quantities are decimal hours (rounded to 0.01 h); a difference caused by rounding is not a deviation.') + '</p>');
   html.push('<p class="note">TyövuoroPdf ' + esc(appVersion) + '</p>');
   html.push('<p class="note">' + esc('© 2026 jyri@netti.fi') + '</p>');
   html.push('</div>');
@@ -3011,7 +2997,7 @@ var I18N = {
     payErrLog: 'VIRHE palkkalaskelman tarkistuksessa: {msg}', payErrStatus: 'Virhe palkkalaskelman tarkistuksessa: {msg}',
     payInfoHint: 'Tietoa palkkalaskelman tarkistamisesta',
     payInfoHtml: '<p><b>Palkkalaskelman tarkistaminen</b></p><p>Tarkistus vertaa palkkalaskelman tunteja työvuorolistoihin.</p><ol>' +
-      '<li>Lataa ensin kohdassa 1 (&quot;Valitse PDF(:t)…&quot; tai vetämällä sivulle) kaikki sen jakson IVU-työvuorolistat, jota tarkistettava palkkalaskelma koskee (kahden viikon jakso maanantaista sunnuntaihin). Käytä uusimpia työvuorolistoja, koska tietoja on voitu päivittää jälkeenpäin.</li>' +
+      '<li>Lataa ensin kohdassa 1 (&quot;Valitse PDF(:t)…&quot; tai vetämällä sivulle) kaikki sen jakson IVU-työvuorolistat, jota tarkistettava palkkalaskelma koskee (kahden viikon jakso maanantaista sunnuntaihin) tai lataa ne suoraan IVU:sta. Käytä uusimpia työvuorolistoja, koska tietoja on voitu päivittää jälkeenpäin.</li>' +
       '<li>Paina &quot;Palkkalaskelman tarkistaminen&quot; ja valitse palkkalaskelma (PDF).</li>' +
       '<li>Ohjelma varmistaa, että palkkalaskelman palkkakausi on sama kuin ladattujen työvuorojen jakso, ja avaa tarkistusraportin uuteen välilehteen, josta sen voi tulostaa yhdelle A4-sivulle.</li></ol>' +
       '<p>Vertailussa verrataan vain tunteja, ei euroja. Jos jakson työvuoroja puuttuu listalta, puuttuvat päivät näkyvät raportissa poikkeamina.</p>'
@@ -3086,7 +3072,7 @@ var I18N = {
     payErrLog: 'ERROR in payslip check: {msg}', payErrStatus: 'Error in payslip check: {msg}',
     payInfoHint: 'About the payslip check',
     payInfoHtml: '<p><b>Payslip check</b></p><p>The check compares the hours on the payslip with the shift lists.</p><ol>' +
-      '<li>First load in step 1 (&quot;Select PDF(s)…&quot; or by dragging onto the page) all the IVU shift lists of the period the payslip covers (a two-week period from Monday to Sunday). Use the latest shift lists, because the data may have been updated afterwards.</li>' +
+      '<li>First load in step 1 (&quot;Select PDF(s)…&quot; or by dragging onto the page) all the IVU shift lists of the period the payslip covers (a two-week period from Monday to Sunday) or download them directly from IVU. Use the latest shift lists, because the data may have been updated afterwards.</li>' +
       '<li>Press &quot;Check the payslip&quot; and select the payslip (PDF).</li>' +
       '<li>The program verifies that the pay period of the payslip is the same as the period of the loaded shifts, and opens the check report in a new tab, from where it can be printed on one A4 page.</li></ol>' +
       '<p>Only hours are compared, not euros. If shift days of the period are missing from the list, the missing days appear as deviations in the report.</p>'
@@ -3616,7 +3602,7 @@ function setIvuStatus(msg, cls) { var s = $('ivuStatus'); s.textContent = msg; s
 function periodStarts() {
   var n = new Date(), today = Date.UTC(n.getFullYear(), n.getMonth(), n.getDate());
   var cur = TyoCore.periodStartOf(today), out = [];
-  for (var k = -8; k <= 1; k++) { var ms = cur + k * 14 * TyoCore.DAY_MS; if (TyoCore.periodNumberText(TyoCore.formatDdMmYyyy(ms))) out.push(ms); } /* 8 edellistä, nykyinen ja seuraava (ei ennen jaksoa 001) */
+  for (var k = -8; k <= 1; k++) { var ms = cur + k * 14 * TyoCore.DAY_MS; var pn = TyoCore.periodNumberText(TyoCore.formatDdMmYyyy(ms)); if (pn && parseInt(pn.substr(0, 3), 10) >= 9) out.push(ms); } /* 8 edellistä, nykyinen ja seuraava (ei ennen jaksoa 001) */
   return { list: out, cur: cur };
 }
 function periodLabel(startMs) {
