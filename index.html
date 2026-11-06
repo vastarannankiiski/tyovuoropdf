@@ -255,7 +255,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.43-web';
+var APP_VERSION = '1.71.44-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3942,7 +3942,9 @@ fillPeriods();
     !!(navigator.userAgentData && navigator.userAgentData.mobile);
   var fxAndroid = /Android/.test(ua) && /Firefox\//.test(ua);
   /* v1.71.27-web: Quetta (Android, Chromium, tukee Chrome-lisäosia kuten Violentmonkey) toimii kuten Firefox */
-  var quetta = /Quetta/i.test(ua) || !!(navigator.userAgentData && (navigator.userAgentData.brands || []).some(function (b) { return /Quetta/i.test(b.brand || ''); }));
+  /* v1.71.44-web: myös Titanium (ent. Helium) kuten Quetta */
+  var extRe = /Quetta|Titanium|Helium/i;
+  var quetta = extRe.test(ua) || !!(navigator.userAgentData && (navigator.userAgentData.brands || []).some(function (b) { return extRe.test(b.brand || ''); }));
   var extMobile = fxAndroid || quetta;
   if (mobile && !extMobile) { $('ivuCard').style.display = 'none'; $('btnNext').hidden = true; }
   /* Firefox (tietokone ja Android): Violentmonkey-skripti ("i"-painikkeen ohje); muu tietokoneselain (Chrome ym.): kirjanmerkki */
