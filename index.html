@@ -111,9 +111,10 @@ a.bm { cursor: grab; }
 .nextbtn[hidden] { display: none; }
 #nextOverlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
 #nextOverlay[hidden] { display: none; }
-#nextBox { background: var(--bg, #fff); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; max-width: 420px; width: 100%; padding: 16px 18px; box-shadow: 0 8px 30px rgba(0,0,0,.3); }
+#nextBox { background: var(--bg, #fff); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; max-width: 420px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 16px 18px; box-shadow: 0 8px 30px rgba(0,0,0,.3); }
 #nextBox h2 { margin: 0 0 10px; font-size: 1.15rem; }
 #nextBox dl { margin: 0 0 14px; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; }
+#nextBox dl + dl { border-top: 1px solid var(--line); padding-top: 12px; }
 #nextBox dt { color: var(--muted); }
 #nextBox dd { margin: 0; font-weight: 700; word-break: break-word; }
 #nextBox .nmsg { margin: 0 0 14px; }
@@ -251,7 +252,7 @@ a.bm { cursor: grab; }
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.34-web';
+var APP_VERSION = '1.71.39-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3719,15 +3720,19 @@ function ivuIsoLocal(d) { return d.getFullYear() + '-' + pad2n(d.getMonth() + 1)
 function pad2n(n) { return (n < 10 ? '0' : '') + n; }
 function nextDatesIso() {
   var out = [], d = new Date();
-  for (var i = 0; i < 3; i++) { var x = new Date(d.getFullYear(), d.getMonth(), d.getDate() + i); out.push(ivuIsoLocal(x)); }
+  for (var i = 0; i < 4; i++) { var x = new Date(d.getFullYear(), d.getMonth(), d.getDate() + i); out.push(ivuIsoLocal(x)); } /* VÄLIAIKAINEN (1.71.35): 4 päivää, aiemmin 3 */
   return out;
 }
 function stripLine6(l) { var m = /^\d+/.exec(l); return (m && m[0].length === 4) ? l.substr(1) : l; }
-/* Etsii ensimmäisen ajon (Linja-ajo, Siirtoajo, Halliajo), joka alkaa nykyhetken jälkeen. Palauttaa {ev, abs, nextLine} (nextLine = seuraavan Linja-ajon {abs} tai null, jos löydetty ajo on jo Linja-ajo); authFail kertoo kirjautumisvirheen. */
+/* v1.71.36-web: Seuraava vuoro -lista. Etsii ensimmäisen tulevan tapahtuman (Linja-ajo, Halliajo, Siirtoajo, Vaihtoautosiirtymä) ja
+   palauttaa saman työpäivän listasta ja saman kiertonumeron tapahtumat, kunnes listalla on 2 Linja-ajoa.
+   Palauttaa {list:[{ev, abs, nextLine}], running, authFail}; running = löydetyn työpäivän lista on nyt käynnissä. */
+var NEXT_TYPES = /^(Linja-ajo|Halliajo|Siirtoajo|Vaihtoautosiirtymä)/;
 function nextShiftFind(m) {
-  var now = Date.now(), all = [], authFail = false;
+  var now = Date.now(), days = [], authFail = false;
   var keys = Object.keys(m.days || {}).filter(function (k) { return /^\d{4}-\d{2}-\d{2}$/.test(k); }).sort();
   var stamp = (typeof m.fetched === 'number' && m.fetched > 0) ? m.fetched : now;
+  function mins(t) { var x = /^(\d{1,2})\.(\d{2})/.exec(t || ''); return x ? +x[1] * 60 + +x[2] : -1; }
   keys.forEach(function (k) {
     var e = m.days[k] || {};
     if (e.status === 401 || e.status === 403) { authFail = true; return; }
@@ -3736,67 +3741,83 @@ function nextShiftFind(m) {
     try { r = TyoCore.ivuDayFromJson(e.json, stamp); } catch (x) { return; }
     if (!r || r.kind !== 'work' || !r.day || !r.day.events) return;
     var p = k.split('-'), base = new Date(+p[0], +p[1] - 1, +p[2], 0, 0, 0).getTime();
-    var prev = -1, add = 0;
+    var prev = -1, add = 0, evs = [];
     r.day.events.forEach(function (ev) {
-      var t = /^(\d{1,2})\.(\d{2})/.exec(ev.startTime || '');
-      if (!t) return;
-      var min = +t[1] * 60 + +t[2];
+      var min = mins(ev.startTime);
+      if (min < 0) return;
       if (prev >= 0 && min < prev) add += 1440; /* keskiyön yli */
       prev = min;
-      all.push({ ev: ev, abs: base + (min + add) * 60000 });
+      var abs = base + (min + add) * 60000, em = mins(ev.endTime), end = abs;
+      if (em >= 0) { var ea = em + add; if (ea < min + add) ea += 1440; end = base + ea * 60000; }
+      evs.push({ ev: ev, abs: abs, end: end });
     });
+    if (evs.length) days.push(evs);
   });
-  var found = null, nextLine = null;
-  for (var i = 0; i < all.length && !found; i++) {
-    if (/^(Linja-ajo|Siirtoajo|Halliajo)/.test(all[i].ev.evType || '') && all[i].abs > now) found = all[i];
-  }
-  if (found && !/^Linja-ajo/.test(found.ev.evType || '')) {
-    for (var k2 = all.indexOf(found) + 1; k2 < all.length; k2++) {
-      if (/^Linja-ajo/.test(all[k2].ev.evType || '') && all[k2].abs >= found.abs) { nextLine = all[k2]; break; }
+  var list = [], running = false, di, ei, evs;
+  for (di = 0; di < days.length && !list.length; di++) {
+    evs = days[di];
+    for (ei = 0; ei < evs.length; ei++) {
+      if (NEXT_TYPES.test(evs[ei].ev.evType || '') && evs[ei].abs > now) break;
     }
+    if (ei >= evs.length) continue;
+    running = evs[0].abs <= now && now <= evs[evs.length - 1].end;
+    var ref = '', n = 0, stopped = true;
+    for (var q = ei; q < evs.length; q++) {
+      if (!NEXT_TYPES.test(evs[q].ev.evType || '')) continue;
+      var kk = evs[q].ev.kierto || '';
+      if (kk !== '') { if (ref === '') ref = kk; else if (kk !== ref) break; }
+      var it = { ev: evs[q].ev, abs: evs[q].abs, end: evs[q].end };
+      list.push(it);
+      if (/^Linja-ajo/.test(it.ev.evType || '') && ++n >= 2) { stopped = false; break; }
+    }
+    if (stopped) { while (list.length > 1 && !list[list.length - 1].ev.kierto) list.pop(); } /* hännän Vaihtoautosiirtymä ilman kiertoa pois */
   }
-  if (found) found = { ev: found.ev, abs: found.abs, nextLine: nextLine };
-  return { found: found, authFail: authFail };
+  return { list: list, running: running, authFail: authFail };
 }
-function nextShowDialog(rows, msg) {
+function nextShowDialog(blocks, msg) {
   $('nextTitle').textContent = T('nextTitle');
   var body = $('nextBody');
   body.textContent = '';
   if (msg) { var pm = document.createElement('p'); pm.className = 'nmsg'; pm.textContent = msg; body.appendChild(pm); }
-  if (rows) {
+  (blocks || []).forEach(function (rows) {
     var dl = document.createElement('dl');
     rows.forEach(function (r) {
       var dt = document.createElement('dt'), dd = document.createElement('dd');
       dt.textContent = r[0]; dd.textContent = r[1]; dl.appendChild(dt); dl.appendChild(dd);
     });
     body.appendChild(dl);
-  }
+  });
   $('nextOverlay').hidden = false;
   $('btnNextOk').focus();
 }
 function nextProcess(m) {
   if (!m || typeof m !== 'object' || m.tvl !== 'result' || !m.days || typeof m.days !== 'object') { nextShowDialog(null, T('ivuBad')); return; }
   var res = nextShiftFind(m);
-  if (!res.found) { nextShowDialog(null, res.authFail ? T('ivuAuth') : T('nextNone')); return; }
-  var ev = res.found.ev, d = new Date(res.found.abs), unk = T('nextUnknown');
-  var wd = (uiLang === 'en' ? ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'] : ['Su', 'Ma', 'Ti', 'Ke', 'To', 'Pe', 'La'])[d.getDay()];
+  if (!res.list.length) { nextShowDialog(null, res.authFail ? T('ivuAuth') : T('nextNone')); return; }
+  var unk = T('nextUnknown');
+  var wdn = uiLang === 'en' ? ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'] : ['Su', 'Ma', 'Ti', 'Ke', 'To', 'Pe', 'La'];
   var hm = function (x) { return pad2n(x.getHours()) + ':' + pad2n(x.getMinutes()); };
-  var timeTxt = hm(d) + ' (' + wd + ' ' + d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear() + ')';
-  var line = stripLine6(ev.linja || '');
-  var route = (ev.fromLoc || '?') + ' \u2192 ' + (ev.toLoc || '?');
-  if (res.found.nextLine) {
-    var nd = new Date(res.found.nextLine.abs);
-    var sameDay = nd.getFullYear() === d.getFullYear() && nd.getMonth() === d.getMonth() && nd.getDate() === d.getDate();
-    route += ' (' + (sameDay ? '' : nd.getDate() + '.' + (nd.getMonth() + 1) + '. ') + hm(nd) + ')';
-  }
-  nextShowDialog([
-    [T('nextCar'), ev.kulkuneuvo || unk],
-    [T('nextCirc'), ev.kierto || unk],
-    [T('nextTime'), timeTxt],
-    [T('nextLine'), line || unk],
-    [T('nextRoute'), route],
-    [T('nextType'), String(ev.evType || '')]
-  ], '');
+  var carIdx = -1;
+  res.list.forEach(function (it, k) { if (carIdx < 0 && !/^Vaihtoautosiirtymä/.test(it.ev.evType || '')) carIdx = k; });
+  var blocks = res.list.map(function (it, k) {
+    var ev = it.ev, d = new Date(it.abs);
+    var timeTxt = hm(d);
+    if (k === 0 && !res.running) timeTxt += ' (' + wdn[d.getDay()] + ' ' + d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear() + ')';
+    var ln = stripLine6(ev.linja || '');
+    var route = (ln ? ln + ' ' : '') + (ev.fromLoc || '?') + ' → ' + (ev.toLoc || '?');
+    if (/^\d{1,2}\.\d{2}/.test(ev.endTime || '')) {
+      var nd = new Date(it.end);
+      var sameDay = nd.getFullYear() === d.getFullYear() && nd.getMonth() === d.getMonth() && nd.getDate() === d.getDate();
+      route += ' (' + (sameDay ? '' : nd.getDate() + '.' + (nd.getMonth() + 1) + '. ') + hm(nd) + ')';
+    }
+    var rows = [];
+    if (k === carIdx) { rows.push([T('nextCar'), ev.kulkuneuvo || unk]); rows.push([T('nextCirc'), ev.kierto || unk]); }
+    rows.push([T('nextType'), String(ev.evType || '').replace(/\s*\([^)]*\)\s*$/, '')]);
+    rows.push([T('nextTime'), timeTxt]);
+    rows.push([T('nextRoute'), route]);
+    return rows;
+  });
+  nextShowDialog(blocks, '');
 }
 function ivuProcess(m) {
   if (!m || typeof m !== 'object' || m.tvl !== 'result' || !m.days || typeof m.days !== 'object') {
