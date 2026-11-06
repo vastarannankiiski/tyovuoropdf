@@ -190,6 +190,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
         <li data-i="ivuFxStep3" data-html="1"></li>
       </ol>
     </div>
+    <p class="sub" id="ivuChromeNote" hidden data-i="ivuChromeNote"></p>
     <div class="status" id="ivuStatus" role="status" aria-live="polite"></div>
     <div class="btns" style="justify-content:flex-start"><button id="btnIvuRaw" type="button" hidden data-i="ivuBtnRaw"></button></div>
   </details>
@@ -255,7 +256,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.45-web';
+var APP_VERSION = '1.71.46-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -2984,6 +2985,7 @@ var I18N = {
     ivuBmTitle: 'Kirjanmerkin asennus (tehdään vain kerran):',
     ivuInfoHint: 'Asennusohje',
     ivuFxStep1: '<b>Skriptin asennus (tehdään vain kerran):</b> asenna selaimeen lisäosa <b>Violentmonkey</b>, paina alla <b>Kopioi skripti</b>, avaa Violentmonkey-lisäosan valikosta uusi skripti (+), poista valmis teksti, liitä skripti ja tallenna.',
+    ivuChromeNote: 'Huom: tavallinen Android-Chrome ei tue skriptejä. Tarvitset selaimen, johon voi asentaa Violentmonkeyn (esim. Firefox, Quetta tai Titanium).',
     ivuFxStep3: 'Kun IVU on auki, paina sivun vasemmassa alakulmassa olevaa painiketta <b>Hae IVU-vuorot</b>.',
     ivuBtnCopyUs: 'Kopioi skripti', ivuCopiedUs: 'Skripti kopioitu. Liitä se Violentmonkeyn uuteen skriptiin ja tallenna.',
     ivuStep2: 'Valitse jakso ja paina <b>Avaa IVU</b>. Kirjaudu IVU:un avautuvassa välilehdessä.',
@@ -3064,6 +3066,7 @@ var I18N = {
     ivuBmTitle: 'Bookmark installation (done only once):',
     ivuInfoHint: 'Script installation instructions',
     ivuFxStep1: '<b>Script installation (done only once):</b> install the <b>Violentmonkey</b> add-on in your browser, press <b>Copy script</b> below, open a new script (+) from the Violentmonkey add-on menu, delete the template text, paste the script and save.',
+    ivuChromeNote: 'Note: regular Android Chrome does not support userscripts. You need a browser that can install Violentmonkey (e.g. Firefox, Quetta or Titanium).',
     ivuFxStep3: 'When IVU is open, press the <b>Fetch IVU shifts</b> button in the bottom left corner of the page.',
     ivuBtnCopyUs: 'Copy script', ivuCopiedUs: 'Script copied. Paste it into a new Violentmonkey script and save.',
     ivuStep2: 'Select the period and press <b>Open IVU</b>. Sign in to IVU in the tab that opens.',
@@ -3945,11 +3948,10 @@ fillPeriods();
   /* v1.71.44-web: myös Titanium (ent. Helium) kuten Quetta */
   var extRe = /Quetta|Titanium|Helium/i;
   var quetta = extRe.test(ua) || !!(navigator.userAgentData && (navigator.userAgentData.brands || []).some(function (b) { return extRe.test(b.brand || ''); }));
-  /* v1.71.45-web: Titanium esiintyy tavallisena Android-Chromena (UA ilman selaimen nimeä) -> Androidin Chromium-selain, jonka tuotemerkkilistassa ei ole "Google Chrome" (eikä WebView), katsotaan laajennuksia tukevaksi */
-  var brands = (navigator.userAgentData && navigator.userAgentData.brands) || [];
-  if (!quetta && /Android/.test(ua) && /Chrome\//.test(ua) && brands.length > 0 &&
-      !brands.some(function (b) { return /Google Chrome|WebView/i.test(b.brand || ''); })) quetta = true;
   var extMobile = fxAndroid || quetta;
+  /* v1.71.46-web: Titanium näyttää täsmälleen Android-Chromelta -> kaikilla Android-selaimilla osio näytetään (Violentmonkey-ohje + huomautus); iPhone/iPad: piilossa */
+  var androidOther = mobile && !extMobile && /Android/.test(ua);
+  if (androidOther) { quetta = true; extMobile = true; $('ivuChromeNote').hidden = false; }
   if (mobile && !extMobile) { $('ivuCard').style.display = 'none'; $('btnNext').hidden = true; }
   /* Firefox (tietokone ja Android): Violentmonkey-skripti ("i"-painikkeen ohje); muu tietokoneselain (Chrome ym.): kirjanmerkki */
   if ((/Firefox\//.test(ua) && (!mobile || fxAndroid)) || (mobile && quetta)) { $('ivuStepsDesk').hidden = true; $('ivuStepsFx').hidden = false; $('btnIvuInfo').hidden = false; infoBoxId = 'ivuFxInfo'; }
