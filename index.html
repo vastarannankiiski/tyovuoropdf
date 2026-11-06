@@ -256,7 +256,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.46-web';
+var APP_VERSION = '1.71.47-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3688,7 +3688,7 @@ var IVU_SCRIPT = [
 "var out={tvl:'result',v:1,fetched:Date.now(),days:{}};",
 "for(var k=0;k<dates.length;k+=7){await Promise.all(dates.slice(k,k+7).map(async function(d){try{var r=await fetch(O+'/emp/rest/duty-schedule/details/'+d,{headers:{Authorization:'Bearer '+tok,Accept:'application/json'}});out.days[d]=r.ok?{status:r.status,json:await r.json()}:{status:r.status};}catch(e){out.days[d]={status:0,error:String(e)};}}));}",
 "if(op.closed){note('TyövuoroPdf-sivu on suljettu.',1);return;}",
-"op.postMessage(out,bo);note('Tiedot lähetetty TyövuoroPdf-sivulle. Tämä välilehti suljetaan.');setTimeout(function(){window.close();},1500);",
+"op.postMessage(out,bo);note('Tiedot lähetetty TyövuoroPdf-sivulle. Tämä välilehti suljetaan.');setTimeout(function(){window.close();},300);",
 "})();"
 ].join('\n');
 /* Käyttäjäskripti (Violentmonkey / Tampermonkey, Firefox Android): lisää IVU-sivulle painikkeen, joka ajaa saman hakuskriptin. */
