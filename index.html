@@ -24,6 +24,13 @@ body {
   font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
 }
 .wrap { max-width: 760px; margin: 0 auto; padding: 16px; }
+.cols, .col { display: contents; }
+/* v1.71.48-web: leveällä ja riittävän korkealla näytöllä (tietokone, vaakasuuntainen tabletti) kaksi palstaa rinnakkain */
+@media (min-width: 900px) and (min-height: 500px) {
+  .wrap { max-width: 1200px; }
+  .cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 16px; align-items: start; }
+  .col { display: block; min-width: 0; }
+}
 h1 { font-size: 1.35rem; margin: 4px 0 2px; }
 .infobtn { width: 2.1rem; padding: 6px 0; font-weight: 700; font-style: italic; border-radius: 50%; }
 .infobox { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--row-alt); font-size: .92rem; }
@@ -145,6 +152,8 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
   </div>
   <p class="sub" data-i="sub"></p>
 
+  <div class="cols">
+  <div class="col">
   <div class="card">
     <h2 data-i="h1"></h2>
     <div class="drop" id="drop">
@@ -195,6 +204,8 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
     <div class="btns" style="justify-content:flex-start"><button id="btnIvuRaw" type="button" hidden data-i="ivuBtnRaw"></button></div>
   </details>
 
+  </div>
+  <div class="col">
   <div class="card">
     <h2 data-i="h2"></h2>
     <fieldset>
@@ -246,6 +257,8 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
     <summary data-i="logTitle"></summary>
     <pre class="log" id="log"></pre>
   </details>
+  </div>
+  </div>
 
   <div class="foot">&copy; 2026 jyri@netti.fi</div>
 </div>
@@ -256,7 +269,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.47-web';
+var APP_VERSION = '1.71.48-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
