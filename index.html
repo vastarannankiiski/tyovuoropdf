@@ -255,7 +255,7 @@ a.bm { cursor: grab; }
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.41-web';
+var APP_VERSION = '1.71.42-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3723,7 +3723,7 @@ function ivuIsoLocal(d) { return d.getFullYear() + '-' + pad2n(d.getMonth() + 1)
 function pad2n(n) { return (n < 10 ? '0' : '') + n; }
 function nextDatesIso() {
   var out = [], d = new Date();
-  for (var i = 0; i < 4; i++) { var x = new Date(d.getFullYear(), d.getMonth(), d.getDate() + i); out.push(ivuIsoLocal(x)); } /* VÄLIAIKAINEN (1.71.35): 4 päivää, aiemmin 3 */
+  for (var i = 0; i < 3; i++) { var x = new Date(d.getFullYear(), d.getMonth(), d.getDate() + i); out.push(ivuIsoLocal(x)); }
   return out;
 }
 function stripLine6(l) { var m = /^\d+/.exec(l); return (m && m[0].length === 4) ? l.substr(1) : l; }
