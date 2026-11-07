@@ -242,7 +242,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
     <h2 data-i="h3"></h2>
     <div class="btns" style="justify-content:flex-start;margin-top:0">
       <button class="primary" id="btnConvert" type="button" disabled data-i="btnConvert"></button>
-      <button id="btnPayslip" type="button" disabled data-i="btnPayslip"></button>
+      <button class="primary" id="btnPayslip" type="button" disabled data-i="btnPayslip"></button>
       <button id="btnPayInfo" class="infobtn" type="button" aria-expanded="false" aria-controls="payInfo" data-i="payInfoHint" data-attr="title">i</button>
       <input type="file" id="payInput" accept=".pdf,application/pdf" hidden>
     </div>
@@ -278,7 +278,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.55-web';
+var APP_VERSION = '1.71.56-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -2993,7 +2993,7 @@ var I18N = {
     optTiming: 'Ajantasauspysäkit (kellonkuva + pysäkin nimi + aika reitillä)',
     optSummary: 'Lisää koko jakson yhteenveto listan loppuun',
     lblFont: 'Taulukon fonttikoko:', lblOutLang: 'Tulosteen kieli:', optRetro: 'Retro look',
-    h3: '3. Luo työvuorolista', btnConvert: 'Muunna PDF:ksi', btnOpen: 'Avaa tulostusnäkymä',
+    h3: '3. Luo työvuorolista / Tarkista palkkalaskelma', btnConvert: 'Muunna PDF:ksi', btnOpen: 'Avaa tulostusnäkymä',
     printHint: 'Tulostusnäkymässä paina <b>Tulosta / Tallenna PDF</b> ja valitse tulostimeksi <b>Tallenna PDF:nä</b> (A4, ei marginaaleja, ei otsikoita/alatunnisteita).',
     logTitle: 'Loki',
     colFile: 'Tiedosto', colDates: 'Päivämäärät', noFiles: 'Ei valittuja tiedostoja.',
@@ -3073,7 +3073,7 @@ var I18N = {
     optTiming: 'Timing stops (clock icon + stop name + time on the route)',
     optSummary: 'Add the summary of the whole period at the end of the list',
     lblFont: 'Table font size:', lblOutLang: 'Output language:', optRetro: 'Retro look',
-    h3: '3. Create the work schedule', btnConvert: 'Convert to PDF', btnOpen: 'Open print view',
+    h3: '3. Create the work schedule / Check the payslip', btnConvert: 'Convert to PDF', btnOpen: 'Open print view',
     printHint: 'In the print view press <b>Print / Save PDF</b> and choose <b>Save as PDF</b> as the printer (A4, no margins, no headers/footers).',
     logTitle: 'Log',
     colFile: 'File', colDates: 'Dates', noFiles: 'No files selected.',
