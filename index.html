@@ -181,7 +181,6 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 
   <details class="card" id="ivuCard" open>
     <summary style="font-weight:600;color:var(--ink);font-size:1.05rem" data-i="ivuTitle"></summary>
-    <p class="sub" style="margin-top:10px" data-i="ivuIntro"></p>
     <div class="row">
       <label for="selPeriod" data-i="ivuPeriod"></label>
       <select id="selPeriod"></select>
@@ -279,7 +278,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.54-web';
+var APP_VERSION = '1.71.55-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3001,14 +3000,13 @@ var I18N = {
     removeThis: 'Poista tämä tiedosto', removeNamed: 'Poista ',
     selectToStart: 'Valitse tiedosto(t) aloittaaksesi.',
     ivuTitle: 'Tai hae jakso suoraan IVU:sta (ei tallenna tiedostoja laitteelle)',
-    ivuIntro: 'Haku lukee työvuorot IVU:n omasta järjestelmästä suoraan tämän sivun muistiin: mitään ei tallenneta laitteelle eikä lähetetä minnekään. Vapaapäivät (VP, pekkanen) ohitetaan.',
     ivuPeriod: 'Jakso:', ivuBtnOpen: 'Avaa IVU…', ivuBtnCopy: 'Kopioi hakuskripti',
     ivuBmLabel: 'Hae IVU-vuorot',
     ivuStep1: 'Vedä tämä linkki kirjanmerkkipalkkiin:',
     ivuBmTitle: 'Kirjanmerkin asennus (tehdään vain kerran):',
     ivuInfoHint: 'Asennusohje',
     ivuFxStep1: '<b>Skriptin asennus (tehdään vain kerran):</b> asenna selaimeen lisäosa <b>Violentmonkey</b>.<span class="chromonly"> Salli sille käyttäjän skriptit: avaa selaimen laajennukset-sivu, valitse Violentmonkeyn <b>Tiedot</b> ja kytke päälle <b>Allow User Scripts</b> (Salli käyttäjän skriptit). Ilman tätä skripti ei toimi eikä anna siitä mitään ilmoitusta.</span> Paina alla <b>Kopioi skripti</b>, avaa Violentmonkey-lisäosan valikosta uusi skripti (+), poista valmis teksti, liitä skripti ja tallenna.',
-    ivuChromeNote: 'Huom: tavallinen Android-Chrome ei tue skriptejä. Tarvitset selaimen, johon voi asentaa Violentmonkeyn (esim. Firefox, Quetta tai Titanium).',
+    ivuChromeNote: 'Huom: tavallinen Android-Chrome ei tue skriptejä. Tarvitset selaimen, johon voi asentaa Violentmonkeyn (esim. Firefox, Quetta, Titanium tai Vivaldi).',
     ivuFxStep3: 'Kun IVU on auki, paina sivun vasemmassa alakulmassa olevaa painiketta <b>Hae IVU-vuorot</b>.',
     ivuBtnCopyUs: 'Kopioi skripti', ivuCopiedUs: 'Skripti kopioitu. Liitä se Violentmonkeyn uuteen skriptiin ja tallenna.',
     ivuStep2: 'Valitse jakso ja paina <b>Avaa IVU</b>. Kirjaudu IVU:un avautuvassa välilehdessä.',
@@ -3082,14 +3080,13 @@ var I18N = {
     removeThis: 'Remove this file', removeNamed: 'Remove ',
     selectToStart: 'Select file(s) to get started.',
     ivuTitle: 'Or fetch the period straight from IVU (nothing is saved to your device)',
-    ivuIntro: 'The fetch reads your shifts from IVU straight into this page\'s memory: nothing is saved to your device or sent anywhere. Days off (VP, pekkanen) are skipped.',
     ivuPeriod: 'Period:', ivuBtnOpen: 'Open IVU…', ivuBtnCopy: 'Copy fetch script',
     ivuBmLabel: 'Fetch IVU shifts',
     ivuStep1: 'Drag this link to the bookmarks bar:',
     ivuBmTitle: 'Bookmark installation (done only once):',
     ivuInfoHint: 'Script installation instructions',
     ivuFxStep1: '<b>Script installation (done only once):</b> install the <b>Violentmonkey</b> add-on in your browser.<span class="chromonly"> Allow user scripts for it: open your browser\'s extensions page, choose Violentmonkey <b>Details</b> and turn on <b>Allow User Scripts</b>. Without this the script does not work and gives no notice.</span> Press <b>Copy script</b> below, open a new script (+) from the Violentmonkey add-on menu, delete the template text, paste the script and save.',
-    ivuChromeNote: 'Note: regular Android Chrome does not support userscripts. You need a browser that can install Violentmonkey (e.g. Firefox, Quetta or Titanium).',
+    ivuChromeNote: 'Note: regular Android Chrome does not support userscripts. You need a browser that can install Violentmonkey (e.g. Firefox, Quetta, Titanium or Vivaldi).',
     ivuFxStep3: 'When IVU is open, press the <b>Fetch IVU shifts</b> button in the bottom left corner of the page.',
     ivuBtnCopyUs: 'Copy script', ivuCopiedUs: 'Script copied. Paste it into a new Violentmonkey script and save.',
     ivuStep2: 'Select the period and press <b>Open IVU</b>. Sign in to IVU in the tab that opens.',
@@ -3990,8 +3987,14 @@ fillPeriods();
   var quetta = extRe.test(ua) || !!(navigator.userAgentData && (navigator.userAgentData.brands || []).some(function (b) { return extRe.test(b.brand || ''); }));
   var extMobile = fxAndroid || quetta;
   /* v1.71.46-web: Titanium näyttää täsmälleen Android-Chromelta -> kaikilla Android-selaimilla osio näytetään (Violentmonkey-ohje + huomautus); iPhone/iPad: piilossa */
+  var brands = (navigator.userAgentData && navigator.userAgentData.brands) || [];
   var androidOther = mobile && !extMobile && /Android/.test(ua);
-  if (androidOther) { quetta = true; extMobile = true; $('ivuChromeNote').hidden = false; }
+  if (androidOther) {
+    quetta = true; extMobile = true;
+    /* v1.71.55-web: huomautus vain Androidin Google Chromessa (tuotemerkki "Google Chrome", ei Edge/Opera/Samsung/Vivaldi) */
+    var gChrome = brands.some(function (b) { return /Google Chrome/i.test(b.brand || ''); }) && !/EdgA|OPR\/|SamsungBrowser|Vivaldi|Brave/i.test(ua);
+    $('ivuChromeNote').hidden = !gChrome;
+  }
   if (mobile && !extMobile) { $('ivuCard').style.display = 'none'; $('btnNext').hidden = true; }
   /* Firefox (tietokone ja Android): Violentmonkey-skripti ("i"-painikkeen ohje); muu tietokoneselain (Chrome ym.): kirjanmerkki */
   if ((/Firefox\//.test(ua) && (!mobile || fxAndroid)) || (mobile && quetta)) { $('ivuStepsDesk').hidden = true; $('ivuStepsFx').hidden = false; $('btnIvuInfo').hidden = false; infoBoxId = 'ivuFxInfo'; }
