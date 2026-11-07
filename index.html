@@ -126,10 +126,8 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 #nextBox h2 { margin: 0; font-size: 1.15rem; }
 #nextBox #nextClock { justify-self: end; font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 600; }
 #nextBox dl { margin: 0 0 14px; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; }
-#nextBox .nblk { position: relative; padding-left: 26px; }
+#nextBox .nblk { position: relative; }
 #nextBox .nblk + .nblk { border-top: 1px solid var(--line); padding-top: 12px; }
-#nextBox .nnum { position: absolute; left: 0; top: 0; font-weight: 700; color: var(--accent); }
-#nextBox .nblk + .nblk .nnum { top: 12px; }
 #nextBox dt { color: var(--muted); }
 #nextBox dd { margin: 0; font-weight: 700; word-break: break-word; }
 #nextBox .nblk.done dd { color: var(--muted); }
@@ -278,7 +276,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.56-web';
+var APP_VERSION = '1.71.58-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3043,6 +3041,7 @@ var I18N = {
     flagFi: 'Suomi', flagEn: 'English',
     btnNext: 'Seuraavat vuorot', nextTitle: 'Seuraavat vuorot', nextOk: 'Sulje', nextCar: 'Auton numero', nextCirc: 'Kiertonumero', nextTime: 'Lähtöaika',
     nextLine: 'Linjan numero', nextRoute: 'Reitti', nextUnknown: 'ei tiedossa', nextType: 'Tapahtuma',
+    nextAllDone: 'Kaikki listan tapahtumat on ajettu. Hae tiedot uudelleen IVU:sta.',
     nextNone: 'Seuraavia vuoroja ei löytynyt (haettu tämä päivä ja kaksi seuraavaa).',
     nextOpened: 'IVU avattu. Kirjaudu IVU:un ja paina IVU-sivulla Hae IVU-vuorot (kirjanmerkki/painike): seuraavan vuoron tiedot näytetään ikkunassa.',
     nextFetching: 'Haetaan seuraavaa vuoroa IVU:sta...',
@@ -3123,6 +3122,7 @@ var I18N = {
     flagFi: 'Suomi', flagEn: 'English',
     btnNext: 'Next shifts', nextTitle: 'Next shifts', nextOk: 'Close', nextCar: 'Vehicle number', nextCirc: 'Circulation number', nextTime: 'Departure time',
     nextLine: 'Line number', nextRoute: 'Route', nextUnknown: 'not known', nextType: 'Event',
+    nextAllDone: 'All events in the list are done. Fetch the data from IVU again.',
     nextNone: 'No next shifts found (today and the next two days were fetched).',
     nextOpened: 'IVU opened. Log in to IVU and press Fetch IVU shifts (bookmark/button) on the IVU page: the next shift is shown in a window.',
     nextFetching: 'Fetching the next shift from IVU...',
@@ -3783,7 +3783,7 @@ function nextShiftFind(m) {
   for (di = 0; di < days.length && !list.length; di++) {
     evs = days[di];
     for (ei = 0; ei < evs.length; ei++) {
-      if (NEXT_TYPES.test(evs[ei].ev.evType || '') && evs[ei].end > now) break; /* meneillään oleva tai tuleva */
+      if (NEXT_TYPES.test(evs[ei].ev.evType || '') && evs[ei].end > now && evs[ei].abs + 900000 > now) break; /* meneillään oleva tai tuleva, ei jo listalta poistuva (alkamisesta alle 15 min) */
     }
     if (ei >= evs.length) continue;
     running = evs[0].abs <= now && now <= evs[evs.length - 1].end;
@@ -3803,8 +3803,15 @@ function nextClockTick() {
   var d = new Date();
   $('nextClock').textContent = pad2n(d.getHours()) + ':' + pad2n(d.getMinutes()) + ':' + pad2n(d.getSeconds());
   /* v1.71.51-web: päättynyt tapahtuma himmennetään */
-  var bl = $('nextBody').querySelectorAll('.nblk'), t = d.getTime();
-  for (var i = 0; i < bl.length; i++) bl[i].classList.toggle('done', +bl[i].getAttribute('data-end') <= t);
+  var body = $('nextBody'), bl = body.querySelectorAll('.nblk'), t = d.getTime();
+  for (var i = 0; i < bl.length; i++) {
+    var st = +bl[i].getAttribute('data-start');
+    if (st + 900000 <= t) bl[i].parentNode.removeChild(bl[i]); /* v1.71.58-web: 15 min suunnitellusta lähtöajasta -> pois listalta */
+    else bl[i].classList.toggle('done', st + 300000 <= t); /* 5 min suunnitellusta lähtöajasta -> himmeä */
+  }
+  if (body.querySelector('.nblk') === null && body.getAttribute('data-had') === '1' && !body.querySelector('.nmsg')) {
+    var pm = document.createElement('p'); pm.className = 'nmsg'; pm.textContent = T('nextAllDone'); body.appendChild(pm);
+  }
 }
 setInterval(function () { if (!$('nextOverlay').hidden) nextClockTick(); }, 1000);
 function nextShowDialog(blocks, msg, head) {
@@ -3821,9 +3828,10 @@ function nextShowDialog(blocks, msg, head) {
   body.textContent = '';
   body.scrollTop = 0;
   if (msg) { var pm = document.createElement('p'); pm.className = 'nmsg'; pm.textContent = msg; body.appendChild(pm); }
+  body.setAttribute('data-had', blocks && blocks.length ? '1' : '0');
   (blocks || []).forEach(function (rows, bi) {
-    var wrap = document.createElement('div'), num = document.createElement('span');
-    wrap.className = 'nblk'; if (rows.end) wrap.setAttribute('data-end', rows.end); num.className = 'nnum'; num.textContent = (bi + 1) + '.'; wrap.appendChild(num);
+    var wrap = document.createElement('div');
+    wrap.className = 'nblk'; if (rows.start) wrap.setAttribute('data-start', rows.start);
     var dl = document.createElement('dl');
     rows.forEach(function (r) {
       var dt = document.createElement('dt'), dd = document.createElement('dd');
@@ -3858,7 +3866,7 @@ function nextProcess(m) {
       [T('nextTime'), timeTxt],
       [T('nextRoute'), route]
     ];
-    rows.end = it.end;
+    rows.start = it.abs;
     return rows;
   });
   nextShowDialog(blocks, '', [[T('nextCirc'), res.kierto || unk], [T('nextCar'), res.car || unk]]);
