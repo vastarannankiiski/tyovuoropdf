@@ -118,8 +118,10 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 .nextbtn[hidden] { display: none; }
 #nextOverlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
 #nextOverlay[hidden] { display: none; }
-#nextBox { background: var(--bg, #fff); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; max-width: 420px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 16px 18px; box-shadow: 0 8px 30px rgba(0,0,0,.3); }
-#nextBox h2 { margin: 0 0 10px; font-size: 1.15rem; }
+#nextBox { background: var(--bg, #fff); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; max-width: 420px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; padding: 16px 18px; box-shadow: 0 8px 30px rgba(0,0,0,.3); }
+#nextBox #nextTop { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 0 0 10px; }
+#nextBox h2 { margin: 0; font-size: 1.15rem; }
+#nextBox #nextClock { font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 600; }
 #nextBox dl { margin: 0 0 14px; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; }
 #nextBox .nblk { position: relative; padding-left: 26px; }
 #nextBox .nblk + .nblk { border-top: 1px solid var(--line); padding-top: 12px; }
@@ -128,6 +130,11 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 #nextBox dt { color: var(--muted); }
 #nextBox dd { margin: 0; font-weight: 700; word-break: break-word; }
 #nextBox .nmsg { margin: 0 0 14px; }
+#nextBox #nextHead2 { display: flex; flex-wrap: wrap; gap: 4px 18px; padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
+#nextBox #nextHead2[hidden] { display: none; }
+#nextBox #nextHead2 .l { color: var(--muted); }
+#nextBox #nextBody { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+#nextBox #btnNextOk { align-self: flex-start; margin-top: 10px; }
 .flag { padding: 0; min-height: 0; width: 38px; height: 26px; border: 2px solid var(--line); border-radius: 5px;
   overflow: hidden; background: none; line-height: 0; }
 .flag svg { width: 100%; height: 100%; display: block; }
@@ -136,7 +143,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 </style>
 </head>
 <body>
-<div id="nextOverlay" hidden><div id="nextBox" role="dialog" aria-modal="true" aria-labelledby="nextTitle"><h2 id="nextTitle"></h2><div id="nextBody"></div><button type="button" class="primary" id="btnNextOk" data-i="nextOk"></button></div></div>
+<div id="nextOverlay" hidden><div id="nextBox" role="dialog" aria-modal="true" aria-labelledby="nextTitle"><div id="nextTop"><h2 id="nextTitle"></h2><span id="nextClock" aria-label="kello"></span></div><div id="nextHead2" hidden></div><div id="nextBody"></div><button type="button" class="primary" id="btnNextOk" data-i="nextOk"></button></div></div>
 <div class="wrap">
   <div class="hdr">
     <h1><span id="appTitle">TyövuoroPdf</span> <span id="ver" style="font-weight:400;color:var(--muted);font-size:.9rem"></span></h1>
@@ -269,7 +276,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.48-web';
+var APP_VERSION = '1.71.50-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3033,9 +3040,9 @@ var I18N = {
     tbPrint: 'Tulosta / Tallenna PDF',
     tbHint: 'Valitse tulostimeksi &quot;Tallenna PDF:nä&quot;, paperikoko A4, marginaalit: ei mitään, poista otsikot ja alatunnisteet, mittakaava 100&nbsp;%.',
     flagFi: 'Suomi', flagEn: 'English',
-    btnNext: 'Seuraava vuoro', nextTitle: 'Seuraava vuoro', nextOk: 'OK', nextCar: 'Auton numero', nextCirc: 'Kiertonumero', nextTime: 'Lähtöaika',
+    btnNext: 'Seuraavat vuorot', nextTitle: 'Seuraavat vuorot', nextOk: 'OK', nextCar: 'Auton numero', nextCirc: 'Kiertonumero', nextTime: 'Lähtöaika',
     nextLine: 'Linjan numero', nextRoute: 'Reitti', nextUnknown: 'ei tiedossa', nextType: 'Tapahtuma',
-    nextNone: 'Seuraavaa vuoroa ei löytynyt (haettu tämä päivä ja kaksi seuraavaa).',
+    nextNone: 'Seuraavia vuoroja ei löytynyt (haettu tämä päivä ja kaksi seuraavaa).',
     nextOpened: 'IVU avattu. Kirjaudu IVU:un ja paina IVU-sivulla Hae IVU-vuorot (kirjanmerkki/painike): seuraavan vuoron tiedot näytetään ikkunassa.',
     nextFetching: 'Haetaan seuraavaa vuoroa IVU:sta...',
     btnPayslip: 'Palkkalaskelman tarkistaminen', btnPayOpen: 'Avaa tarkistusraportti',
@@ -3114,9 +3121,9 @@ var I18N = {
     tbPrint: 'Print / Save PDF',
     tbHint: 'Choose &quot;Save as PDF&quot; as the printer, paper size A4, margins: none, turn off headers and footers, scale 100&nbsp;%.',
     flagFi: 'Suomi', flagEn: 'English',
-    btnNext: 'Next shift', nextTitle: 'Next shift', nextOk: 'OK', nextCar: 'Vehicle number', nextCirc: 'Circulation number', nextTime: 'Departure time',
+    btnNext: 'Next shifts', nextTitle: 'Next shifts', nextOk: 'OK', nextCar: 'Vehicle number', nextCirc: 'Circulation number', nextTime: 'Departure time',
     nextLine: 'Line number', nextRoute: 'Route', nextUnknown: 'not known', nextType: 'Event',
-    nextNone: 'No next shift found (today and the next two days were fetched).',
+    nextNone: 'No next shifts found (today and the next two days were fetched).',
     nextOpened: 'IVU opened. Log in to IVU and press Fetch IVU shifts (bookmark/button) on the IVU page: the next shift is shown in a window.',
     nextFetching: 'Fetching the next shift from IVU...',
     btnPayslip: 'Check the payslip', btnPayOpen: 'Open the check report',
@@ -3743,9 +3750,9 @@ function nextDatesIso() {
   return out;
 }
 function stripLine6(l) { var m = /^\d+/.exec(l); return (m && m[0].length === 4) ? l.substr(1) : l; }
-/* v1.71.36-web: Seuraava vuoro -lista. Etsii ensimmäisen tulevan tapahtuman (Linja-ajo, Halliajo, Siirtoajo, Vaihtoautosiirtymä) ja
-   palauttaa saman työpäivän listasta ja saman kiertonumeron tapahtumat, kunnes listalla on 2 Linja-ajoa.
-   Palauttaa {list:[{ev, abs, nextLine}], running, authFail}; running = löydetyn työpäivän lista on nyt käynnissä. */
+/* v1.71.49-web: Seuraavat vuorot -lista. Etsii ensimmäisen tapahtuman (Linja-ajo, Halliajo, Siirtoajo, Vaihtoautosiirtymä), joka on meneillään tai
+   alkamatta, ja palauttaa kaikki saman työpäivän listan saman kiertonumeron tapahtumat siitä eteenpäin.
+   Palauttaa {list:[{ev, abs, end}], kierto, car, running, authFail}; running = löydetyn työpäivän lista on nyt käynnissä. */
 var NEXT_TYPES = /^(Linja-ajo|Halliajo|Siirtoajo|Vaihtoautosiirtymä)/;
 function nextShiftFind(m) {
   var now = Date.now(), days = [], authFail = false;
@@ -3772,31 +3779,44 @@ function nextShiftFind(m) {
     });
     if (evs.length) days.push(evs);
   });
-  var list = [], running = false, di, ei, evs;
+  var list = [], running = false, kierto = '', car = '', di, ei, evs;
   for (di = 0; di < days.length && !list.length; di++) {
     evs = days[di];
     for (ei = 0; ei < evs.length; ei++) {
-      if (NEXT_TYPES.test(evs[ei].ev.evType || '') && evs[ei].abs > now) break;
+      if (NEXT_TYPES.test(evs[ei].ev.evType || '') && evs[ei].end > now) break; /* meneillään oleva tai tuleva */
     }
     if (ei >= evs.length) continue;
     running = evs[0].abs <= now && now <= evs[evs.length - 1].end;
-    var ref = '', n = 0, stopped = true;
+    var boundary = false;
     for (var q = ei; q < evs.length; q++) {
       if (!NEXT_TYPES.test(evs[q].ev.evType || '')) continue;
       var kk = evs[q].ev.kierto || '';
-      if (kk !== '') { if (ref === '') ref = kk; else if (kk !== ref) break; }
-      var it = { ev: evs[q].ev, abs: evs[q].abs, end: evs[q].end };
-      list.push(it);
-      if (/^Linja-ajo/.test(it.ev.evType || '') && ++n >= 2) { stopped = false; break; }
+      if (kk !== '') { if (kierto === '') kierto = kk; else if (kk !== kierto) { boundary = true; break; } }
+      if (car === '' && evs[q].ev.kulkuneuvo) car = evs[q].ev.kulkuneuvo;
+      list.push({ ev: evs[q].ev, abs: evs[q].abs, end: evs[q].end });
     }
-    if (stopped) { while (list.length > 1 && !list[list.length - 1].ev.kierto) list.pop(); } /* hännän Vaihtoautosiirtymä ilman kiertoa pois */
+    if (boundary) { while (list.length > 1 && !list[list.length - 1].ev.kierto) list.pop(); } /* hännän Vaihtoautosiirtymä ilman kiertoa pois */
   }
-  return { list: list, running: running, authFail: authFail };
+  return { list: list, kierto: kierto, car: car, running: running, authFail: authFail };
 }
-function nextShowDialog(blocks, msg) {
+function nextClockTick() {
+  var d = new Date();
+  $('nextClock').textContent = pad2n(d.getHours()) + ':' + pad2n(d.getMinutes()) + ':' + pad2n(d.getSeconds());
+}
+setInterval(function () { if (!$('nextOverlay').hidden) nextClockTick(); }, 1000);
+function nextShowDialog(blocks, msg, head) {
   $('nextTitle').textContent = T('nextTitle');
+  nextClockTick();
+  var hd = $('nextHead2');
+  hd.textContent = '';
+  (head || []).forEach(function (h) {
+    var sp = document.createElement('span'), lb = document.createElement('span'), b = document.createElement('b');
+    lb.className = 'l'; lb.textContent = h[0] + ' '; b.textContent = h[1]; sp.appendChild(lb); sp.appendChild(b); hd.appendChild(sp);
+  });
+  hd.hidden = !(head && head.length);
   var body = $('nextBody');
   body.textContent = '';
+  body.scrollTop = 0;
   if (msg) { var pm = document.createElement('p'); pm.className = 'nmsg'; pm.textContent = msg; body.appendChild(pm); }
   (blocks || []).forEach(function (rows, bi) {
     var wrap = document.createElement('div'), num = document.createElement('span');
@@ -3818,8 +3838,6 @@ function nextProcess(m) {
   var unk = T('nextUnknown');
   var wdn = uiLang === 'en' ? ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'] : ['Su', 'Ma', 'Ti', 'Ke', 'To', 'Pe', 'La'];
   var hm = function (x) { return pad2n(x.getHours()) + ':' + pad2n(x.getMinutes()); };
-  var carIdx = -1;
-  res.list.forEach(function (it, k) { if (carIdx < 0 && !/^Vaihtoautosiirtymä/.test(it.ev.evType || '')) carIdx = k; });
   var blocks = res.list.map(function (it, k) {
     var ev = it.ev, d = new Date(it.abs);
     var timeTxt = hm(d);
@@ -3831,14 +3849,13 @@ function nextProcess(m) {
       var sameDay = nd.getFullYear() === d.getFullYear() && nd.getMonth() === d.getMonth() && nd.getDate() === d.getDate();
       route += ' (' + (sameDay ? '' : nd.getDate() + '.' + (nd.getMonth() + 1) + '. ') + hm(nd) + ')';
     }
-    var rows = [];
-    if (k === carIdx) { rows.push([T('nextCar'), ev.kulkuneuvo || unk]); rows.push([T('nextCirc'), ev.kierto || unk]); }
-    rows.push([T('nextType'), String(ev.evType || '').replace(/\s*\([^)]*\)\s*$/, '')]);
-    rows.push([T('nextTime'), timeTxt]);
-    rows.push([T('nextRoute'), route]);
-    return rows;
+    return [
+      [T('nextType'), String(ev.evType || '').replace(/\s*\([^)]*\)\s*$/, '')],
+      [T('nextTime'), timeTxt],
+      [T('nextRoute'), route]
+    ];
   });
-  nextShowDialog(blocks, '');
+  nextShowDialog(blocks, '', [[T('nextCirc'), res.kierto || unk], [T('nextCar'), res.car || unk]]);
 }
 function ivuProcess(m) {
   if (!m || typeof m !== 'object' || m.tvl !== 'result' || !m.days || typeof m.days !== 'object') {
