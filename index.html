@@ -114,6 +114,19 @@ a.bm { cursor: grab; }
   color: var(--ink); text-decoration: none; background: var(--row-alt); margin-right: 6px; white-space: nowrap; }
 .upd:hover { border-color: var(--accent); }
 .hdr .nextbtn { margin-top: 6px; }
+#ver { font-weight: 400; color: var(--muted); font-size: .9rem; }
+/* v1.71.61-web: kapea näyttö (puhelin pystyssä): otsikkorivi yhdelle riville */
+@media (max-width: 480px) {
+  .wrap { padding: 12px; }
+  .hdr { flex-wrap: nowrap; align-items: center; gap: 0 4px; }
+  .hdr h1 { font-size: .95rem; white-space: nowrap; margin: 4px 0; }
+  #ver { font-size: .65rem; }
+  .vsuf { display: none; }
+  .hdr .nextbtn { margin-top: 0; font-size: .65rem; padding: 3px 6px; }
+  .hdr .flags .upd { font-size: .65rem; padding: 3px 5px; margin-right: 0; }
+  .flags { gap: 5px; padding-top: 0; }
+  .hdr .flags .flag { width: 26px; height: 18px; border-width: 2px; }
+}
 .nextbtn { min-height: 0; padding: 4px 12px; font-size: .85rem; border: 1px solid var(--accent); border-radius: 6px; background: var(--accent); color: var(--accent-ink); font-weight: 600; cursor: pointer; white-space: nowrap; }
 button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightness(1.08); }
 .nextbtn[hidden] { display: none; }
@@ -131,7 +144,8 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 #nextBox h2 { white-space: nowrap; }
 @media (max-width: 480px) { #nextBox #nextTop { display: flex; flex-wrap: wrap; justify-content: space-between; } }
 #nextBox h2 { margin: 0; font-size: 1.15rem; }
-#nextBox #nextClock { justify-self: end; font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 600; }
+#nextBox #nextClock { justify-self: end; font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
+#nextBox #nextClock.dim { color: var(--muted); }
 #nextBox dl { margin: 0 0 14px; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; }
 #nextBox .nblk { position: relative; }
 #nextBox .nblk + .nblk { border-top: 1px solid var(--line); padding-top: 12px; }
@@ -152,10 +166,10 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 </head>
 <body>
 <div id="infoOverlay" hidden><div id="infoBox" role="dialog" aria-modal="true" aria-labelledby="infoTitle"><div id="infoTop"><h2 id="infoTitle"></h2><button type="button" class="primary small" id="btnInfoClose" data-i="nextOk"></button></div><pre id="infoText"></pre></div></div>
-<div id="nextOverlay" hidden><div id="nextBox" role="dialog" aria-modal="true" aria-labelledby="nextTitle"><div id="nextTop"><h2 id="nextTitle"></h2><button type="button" class="primary small" id="btnNextOk" data-i="nextOk"></button><span id="nextClock" aria-label="kello"></span></div><div id="nextHead2" hidden></div><div id="nextBody"></div></div></div>
+<div id="nextOverlay" hidden><div id="nextBox" role="dialog" aria-modal="true" aria-labelledby="nextTitle"><div id="nextTop"><h2 id="nextTitle"></h2><button type="button" class="primary small" id="btnNextOk" data-i="nextOk"></button><span id="nextClock" aria-label="ajastin"></span></div><div id="nextHead2" hidden></div><div id="nextBody"></div></div></div>
 <div class="wrap">
   <div class="hdr">
-    <h1><span id="appTitle">TyövuoroPdf</span> <span id="ver" style="font-weight:400;color:var(--muted);font-size:.9rem"></span></h1>
+    <h1><span id="appTitle">TyövuoroPdf</span> <span id="ver"></span></h1>
     <button type="button" class="nextbtn" id="btnNext" data-i="btnNext"></button>
     <div class="flags">
       <a class="upd" id="linkInfo" href="https://github.com/vastarannankiiski/tyovuoropdf/blob/main/LueMinut.txt" target="_blank" rel="noopener">???</a>
@@ -285,7 +299,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.60-web';
+var APP_VERSION = '1.71.61-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3163,7 +3177,8 @@ function $(id) { return document.getElementById(id); }
 function log(s) { var l = $('log'); l.textContent += s + '\n'; l.scrollTop = l.scrollHeight; }
 function setStatus(msg, cls) { var s = $('status'); s.textContent = msg; s.className = 'status' + (cls ? ' ' + cls : ''); }
 
-$('ver').textContent = TyoCore.APP_VERSION;
+(function () { var v = TyoCore.APP_VERSION, m = /^(.*?)(-web)$/.exec(v), e = $('ver'); e.textContent = m ? m[1] : v;
+  if (m) { var sp = document.createElement('span'); sp.className = 'vsuf'; sp.textContent = m[2]; e.appendChild(sp); } })();
 
 (function fillFonts() {
   var sel = $('selFont');
@@ -3811,18 +3826,24 @@ function nextShiftFind(m) {
   return { list: list, kierto: kierto, car: car, running: running, authFail: authFail };
 }
 function nextClockTick() {
-  var d = new Date();
-  $('nextClock').textContent = pad2n(d.getHours()) + ':' + pad2n(d.getMinutes()) + ':' + pad2n(d.getSeconds());
-  /* v1.71.51-web: päättynyt tapahtuma himmennetään */
-  var body = $('nextBody'), bl = body.querySelectorAll('.nblk'), t = d.getTime();
+  var d = new Date(), t = d.getTime();
+  /* v1.71.57/58: lähtöajasta 5 min -> himmeä, 15 min -> pois listalta */
+  var body = $('nextBody'), bl = body.querySelectorAll('.nblk');
   for (var i = 0; i < bl.length; i++) {
     var st = +bl[i].getAttribute('data-start');
-    if (st + 900000 <= t) bl[i].parentNode.removeChild(bl[i]); /* v1.71.58-web: 15 min suunnitellusta lähtöajasta -> pois listalta */
-    else bl[i].classList.toggle('done', st + 300000 <= t); /* 5 min suunnitellusta lähtöajasta -> himmeä */
+    if (st + 900000 <= t) bl[i].parentNode.removeChild(bl[i]);
+    else bl[i].classList.toggle('done', st + 300000 <= t);
   }
-  if (body.querySelector('.nblk') === null && body.getAttribute('data-had') === '1' && !body.querySelector('.nmsg')) {
+  var first = body.querySelector('.nblk');
+  if (first === null && body.getAttribute('data-had') === '1' && !body.querySelector('.nmsg')) {
     var pm = document.createElement('p'); pm.className = 'nmsg'; pm.textContent = T('nextAllDone'); body.appendChild(pm);
   }
+  /* v1.71.61-web: ajastin: +hh:mm:ss = aikaa seuraavan (listan ensimmäisen) tapahtuman lähtöön; lähtöajan jälkeen -hh:mm:ss = lähdöstä kulunut aika (himmeä 5 min jälkeen) */
+  var clk = $('nextClock');
+  if (first === null) { clk.textContent = ''; clk.classList.remove('dim'); return; }
+  var diff = +first.getAttribute('data-start') - t, sec = diff > 0 ? Math.ceil(diff / 1000) : Math.floor(-diff / 1000);
+  clk.textContent = (diff > 0 ? '+' : '-') + pad2n(Math.floor(sec / 3600)) + ':' + pad2n(Math.floor(sec / 60) % 60) + ':' + pad2n(sec % 60);
+  clk.classList.toggle('dim', first.classList.contains('done'));
 }
 setInterval(function () { if (!$('nextOverlay').hidden) nextClockTick(); }, 1000);
 function nextShowDialog(blocks, msg, head) {
