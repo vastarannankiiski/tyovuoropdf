@@ -316,7 +316,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.65-web';
+var APP_VERSION = '1.71.66-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3901,7 +3901,7 @@ function nextProcess(m) {
   var hm = function (x) { return pad2n(x.getHours()) + ':' + pad2n(x.getMinutes()); };
   var blocks = res.list.map(function (it, k) {
     var ev = it.ev, d = new Date(it.abs);
-    var timeTxt = hm(d);
+    var timeTxt = hm(d) + ' ' + String(ev.evType || '').replace(/\s*\([^)]*\)\s*$/, ''); /* v1.71.66-web: tapahtuman nimi lähtöajan perässä */
     if (k === 0 && !res.running) timeTxt += ' (' + wdn[d.getDay()] + ' ' + d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear() + ')';
     var ln = /^Linja-ajo/.test(ev.evType || '') ? stripLine6(ev.linja || '') : ''; /* v1.71.65-web: linjanumero vain Linja-ajoissa */
     var route = (ln ? ln + ' ' : '') + (ev.fromLoc || '?') + ' → ' + (ev.toLoc || '?');
@@ -3911,7 +3911,6 @@ function nextProcess(m) {
       route += ' (' + (sameDay ? '' : nd.getDate() + '.' + (nd.getMonth() + 1) + '. ') + hm(nd) + ')';
     }
     var rows = [
-      [T('nextType'), String(ev.evType || '').replace(/\s*\([^)]*\)\s*$/, '')],
       [T('nextTime'), timeTxt],
       [T('nextRoute'), route]
     ];
