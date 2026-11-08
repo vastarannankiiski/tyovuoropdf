@@ -295,6 +295,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
       <div class="status ok" id="resultMsg"></div>
       <div class="btns" style="justify-content:flex-start">
         <button class="primary big" id="btnOpen" type="button" data-i="btnOpen"></button>
+        <button class="primary big" id="btnSummary" type="button" data-i="btnSummary"></button>
       </div>
       <p class="sub" style="margin-top:8px" data-i="printHint" data-html="1"></p>
     </div>
@@ -316,7 +317,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.66-web';
+var APP_VERSION = '1.71.68-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -1348,6 +1349,7 @@ var LANG = {
     colKierto: 'LIJ koodi', colTime: 'Aika', colLine: 'Linja', colEvent: 'Tapahtuma', colRoute: 'Reitti',
     totalsTitle: 'Koko työvuorolistan yhteenveto', version: 'TyovuoroPdf versio ',
     workDays: 'Työpäivät', daysSuffix: ' kpl', holidayDays: 'Lomapäivät',
+    sumTitle: 'Jakson yhteenveto', sumColDay: 'Päivä', sumColShift: 'Vuoro', sumColTime: 'Työaika', sumColInfo: 'Päivän yhteenveto',
     linjaAjo: 'Linja-ajo', halliajo: 'Halliajo', siirtoajo: 'Siirtoajo',
     vaihtoauto: 'Vaihtoautosiirtymä', autonVaihto: 'Auton vaihto',
     sidonnaisuus: 'Sidonnaisuusaika', odotus: 'Odotusaika', tauko: 'Tauko', paid: 'palkallinen', unpaid: 'palkaton',
@@ -1358,6 +1360,7 @@ var LANG = {
     colKierto: 'LIJ code', colTime: 'Time', colLine: 'Line', colEvent: 'Event', colRoute: 'Route',
     totalsTitle: 'Full schedule summary', version: 'TyovuoroPdf version ',
     workDays: 'Work days', daysSuffix: '', holidayDays: 'Holiday days',
+    sumTitle: 'Period summary', sumColDay: 'Day', sumColShift: 'Shift', sumColTime: 'Work time', sumColInfo: 'Daily summary',
     linjaAjo: 'Scheduled Service', halliajo: 'Depot run', siirtoajo: 'Transfer run',
     vaihtoauto: 'Changeover run', autonVaihto: 'Bus changeover',
     sidonnaisuus: 'Standby time', odotus: 'Wait time', tauko: 'Break', paid: 'paid', unpaid: 'unpaid',
@@ -1714,8 +1717,57 @@ function convertDays(allDays, opts) {
     opts.includeSummary !== false, lang, opts.extraHead || '', opts.extraBody || '', buildDataChunks(days), opts.retro === true);
   var range = p.start === p.end ? niceDate(p.start, lang) : niceDate(p.start, lang) + ' - ' + niceDate(p.end, lang);
   var num = periodNumberText(p.start).substr(0, 3); /* v1.39.1-web: vain jaksonumero */
-  return { html: html, days: days.length, start: p.start, end: p.end,
+  var summaryHtml = generateSummaryHtml(disp.days, disp.totals, range, num, opts.appVersion || APP_VERSION, lang, opts.extraHead || '', opts.extraBody || ''); /* v1.71.67-web */
+  return { html: html, summaryHtml: summaryHtml, days: days.length, start: p.start, end: p.end,
     title: L(lang).title + (num ? num + ' ' : '') + range };
+}
+
+/* v1.71.67-web: jakson yhteenveto yhdellä A4-sivulla: jokaisen päivän yhteenvetorivi + koko jakson yhteenveto.
+   Fontti pienennetään tarvittaessa, kunnes sisältö mahtuu sivulle. */
+function generateSummaryHtml(days, totals, range, periodNum, appVersion, lang, extraHead, extraBody) {
+  var T = L(lang);
+  var titleText = T.sumTitle + (periodNum ? ' ' + periodNum : '') + ' ' + range;
+  var css = [
+    '* { box-sizing: border-box; }',
+    'html, body { margin:0; padding:0; }',
+    'body { font-family: Arial, Helvetica, sans-serif; color:#111; }',
+    '@page { size: A4 portrait; margin: 0; }',
+    '.page { width:' + PAGE_W_MM + 'mm; height:' + PAGE_H_MM + 'mm; padding:' + MARGIN_TOP_MM + 'mm ' + MARGIN_SIDE_MM + 'mm ' + MARGIN_BOTTOM_MM + 'mm; overflow:hidden; background:#fff; }',
+    '.sum-title { text-align:center; font-size:15pt; font-weight:700; margin:0 0 4mm; }',
+    '.sum-title .title-date { font-size:7.5pt; font-weight:400; color:#888; }',
+    'table.sum { width:100%; border-collapse:collapse; font-size:9pt; }',
+    'table.sum th { text-align:left; font-weight:700; border-bottom:1.5px solid #000; padding:1mm 1.5mm; }',
+    'table.sum td { vertical-align:top; padding:1.2mm 1.5mm; border-bottom:0.5px solid #999; }',
+    'table.sum td.d { white-space:nowrap; font-weight:700; }',
+    'table.sum td.s, table.sum td.t { white-space:nowrap; }',
+    'table.sum td.i { font-size:0.92em; }',
+    '.sum-tot { margin-top:4mm; border:1.5px solid #000; padding:2mm 3mm; font-size:9.5pt; }',
+    '.sum-tot .tt-title { font-weight:700; margin-bottom:1mm; }',
+    '.sum-tot .tt-line { line-height:1.45; }',
+    '.sum-tot .tt-version { margin-top:1.5mm; font-size:7.5pt; color:#888; }',
+    '@media print { html, body { background:#fff; } }'
+  ].join('\n');
+  var rows = '';
+  for (var i = 0; i < days.length; i++) {
+    var d = days[i];
+    var wt = d.workStart || d.workEnd ? (d.workStart || '') + ' - ' + (d.workEnd || '') : '';
+    rows += '<tr><td class="d">' + esc(d.weekdayFull + ' ' + niceDate(d.dateStr, lang)) + '</td><td class="s">' + esc(d.shiftCode || '') +
+      '</td><td class="t">' + esc(wt) + '</td><td class="i">' + esc(d.summaryLine || '') + '</td></tr>\n';
+  }
+  var tot = '<div class="sum-tot"><div class="tt-title">' + esc(T.totalsTitle) + ' (' + esc(range) + ')</div>';
+  for (var k = 0; k < totals.length; k++) tot += '<div class="tt-line">' + esc(totals[k].label + ': ' + totals[k].value) + '</div>\n';
+  tot += '<div class="tt-version">' + esc(T.version) + esc(appVersion) + ' &nbsp; ' + esc('© 2026 jyri@netti.fi') + '</div></div>';
+  var fit = '<script>(function(){var pg=document.querySelector(".page"),tb=pg.querySelector("table.sum"),fs=9;' +
+    'function ok(){return pg.scrollHeight<=pg.clientHeight+1;}' +
+    'while(!ok()&&fs>4){fs-=0.25;tb.style.fontSize=fs+"pt";}})();<\/script>';
+  var body = '<div id="output"><div class="page">' +
+    '<div class="sum-title">' + esc(titleText) + ' <span class="title-date">(' + esc(niceDate(todayDdMmYyyy(), lang)) + ')</span></div>\n' +
+    '<table class="sum"><thead><tr><th>' + esc(T.sumColDay) + '</th><th>' + esc(T.sumColShift) + '</th><th>' + esc(T.sumColTime) + '</th><th>' + esc(T.sumColInfo) + '</th></tr></thead>\n<tbody>\n' + rows + '</tbody></table>\n' +
+    tot + '</div></div>\n' + fit;
+  return '<!doctype html>\n<html lang="' + lang + '"><head><meta charset="utf-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+    '<title>' + esc(titleText) + '</title>\n<style>\n' + css + '\n</style>' + (extraHead || '') + '</head>\n' +
+    '<body>\n' + (extraBody ? extraBody.top || '' : '') + body + '\n' + (extraBody ? extraBody.bottom || '' : '') + '</body></html>';
 }
 
 /* ---------- uHtmlGen ---------- */
@@ -3012,7 +3064,7 @@ var PDFJS_WORKER = "/**\n * @licstart The following is the entire license notice
 var MAX_FILES = 14;
 var files = [];      /* {key, name, days, dateStrs, firstVal} */
 var busy = false;
-var lastUrl = null;
+var lastUrl = null, lastSumUrl = null;
 var pdfjsPromise = null;
 var uiLang = 'fi';
 
@@ -3031,7 +3083,7 @@ var I18N = {
     optTiming: 'Ajantasauspysäkit (kellonkuva + pysäkin nimi + aika reitillä)',
     optSummary: 'Lisää koko jakson yhteenveto listan loppuun',
     lblFont: 'Taulukon fonttikoko:', lblOutLang: 'Tulosteen kieli:', optRetro: 'Retro look',
-    h3: '3. Luo työvuorolista / Tarkista palkkalaskelma', btnConvert: 'Muunna PDF:ksi', btnOpen: 'Avaa tulostusnäkymä',
+    h3: '3. Luo työvuorolista / Tarkista palkkalaskelma', btnConvert: 'Tee työvuorolista', btnOpen: 'Avaa tulostusnäkymä', btnSummary: 'Jakson yhteenveto',
     printHint: 'Tulostusnäkymässä paina <b>Tulosta / Tallenna PDF</b> ja valitse tulostimeksi <b>Tallenna PDF:nä</b> (A4, ei marginaaleja, ei otsikoita/alatunnisteita).',
     logTitle: 'Loki',
     colFile: 'Tiedosto', colDates: 'Päivämäärät', noFiles: 'Ei valittuja tiedostoja.',
@@ -3113,7 +3165,7 @@ var I18N = {
     optTiming: 'Timing stops (clock icon + stop name + time on the route)',
     optSummary: 'Add the summary of the whole period at the end of the list',
     lblFont: 'Table font size:', lblOutLang: 'Output language:', optRetro: 'Retro look',
-    h3: '3. Create the work schedule / Check the payslip', btnConvert: 'Convert to PDF', btnOpen: 'Open print view',
+    h3: '3. Create the work schedule / Check the payslip', btnConvert: 'Convert to PDF', btnOpen: 'Open print view', btnSummary: 'Show period summary',
     printHint: 'In the print view press <b>Print / Save PDF</b> and choose <b>Save as PDF</b> as the printer (A4, no margins, no headers/footers).',
     logTitle: 'Log',
     colFile: 'File', colDates: 'Dates', noFiles: 'No files selected.',
@@ -3597,6 +3649,8 @@ function convert() {
     });
     if (lastUrl) { try { URL.revokeObjectURL(lastUrl); } catch (e) { /* */ } }
     lastUrl = URL.createObjectURL(new Blob([res.html], { type: 'text/html;charset=utf-8' }));
+    if (lastSumUrl) { try { URL.revokeObjectURL(lastSumUrl); } catch (e) { /* */ } }
+    lastSumUrl = URL.createObjectURL(new Blob([res.summaryHtml], { type: 'text/html;charset=utf-8' }));
     $('resultMsg').textContent = T('done', { title: res.title, n: res.days });
     $('result').style.display = 'block';
     setStatus(T('doneStatus', { title: res.title }), 'ok');
@@ -3667,6 +3721,11 @@ $('payInput').addEventListener('change', function (e) {
   if (f) checkPayslipFile(f);
 });
 $('btnPayOpen').addEventListener('click', function () { if (!openPayReport()) location.href = payUrl; });
+$('btnSummary').addEventListener('click', function () {
+  if (!lastSumUrl) return;
+  var w = window.open(lastSumUrl, '_blank');
+  if (!w) location.href = lastSumUrl;
+});
 $('btnOpen').addEventListener('click', function () {
   if (!lastUrl) return;
   var w = window.open(lastUrl, '_blank');
