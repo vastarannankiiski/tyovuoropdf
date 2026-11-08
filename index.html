@@ -316,7 +316,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.64-web';
+var APP_VERSION = '1.71.65-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3903,7 +3903,7 @@ function nextProcess(m) {
     var ev = it.ev, d = new Date(it.abs);
     var timeTxt = hm(d);
     if (k === 0 && !res.running) timeTxt += ' (' + wdn[d.getDay()] + ' ' + d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear() + ')';
-    var ln = stripLine6(ev.linja || '');
+    var ln = /^Linja-ajo/.test(ev.evType || '') ? stripLine6(ev.linja || '') : ''; /* v1.71.65-web: linjanumero vain Linja-ajoissa */
     var route = (ln ? ln + ' ' : '') + (ev.fromLoc || '?') + ' → ' + (ev.toLoc || '?');
     if (/^\d{1,2}\.\d{2}/.test(ev.endTime || '')) {
       var nd = new Date(it.end);
