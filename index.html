@@ -115,7 +115,7 @@ a.bm { cursor: grab; }
 .upd:hover { border-color: var(--accent); }
 .hdr .nextbtn { margin-top: 6px; }
 #ver { font-weight: 400; color: var(--muted); font-size: .9rem; }
-/* v1.71.62-web: kapea näyttö (puhelin tai tabletti pystyssä, alle 620 px): otsikkorivi yhdelle riville */
+/* v1.71.63-web: kapea näyttö (puhelin tai tabletti pystyssä, alle 620 px): otsikkorivi yhdelle riville; koko kasvaa näytön leveyden mukaan */
 @media (max-width: 620px) {
   .wrap { padding: 12px; }
   .hdr { flex-wrap: nowrap; align-items: center; gap: 0 4px; }
@@ -126,6 +126,23 @@ a.bm { cursor: grab; }
   .hdr .flags .upd { font-size: .65rem; padding: 3px 5px; margin-right: 0; }
   .flags { gap: 5px; padding-top: 0; }
   .hdr .flags .flag { width: 26px; height: 18px; border-width: 2px; }
+}
+@media (min-width: 390px) and (max-width: 620px) {
+  .hdr h1 { font-size: 1.05rem; }
+  #ver { font-size: .72rem; }
+  .hdr .nextbtn { font-size: .72rem; padding: 4px 7px; }
+  .hdr .flags .upd { font-size: .72rem; padding: 4px 6px; }
+  .flags { gap: 6px; }
+  .hdr .flags .flag { width: 29px; height: 20px; }
+}
+@media (min-width: 480px) and (max-width: 620px) {
+  .hdr { gap: 0 6px; }
+  .hdr h1 { font-size: 1.2rem; }
+  #ver { font-size: .8rem; }
+  .hdr .nextbtn { font-size: .8rem; padding: 5px 9px; }
+  .hdr .flags .upd { font-size: .8rem; padding: 5px 8px; }
+  .flags { gap: 7px; }
+  .hdr .flags .flag { width: 34px; height: 23px; }
 }
 .nextbtn { min-height: 0; padding: 4px 12px; font-size: .85rem; border: 1px solid var(--accent); border-radius: 6px; background: var(--accent); color: var(--accent-ink); font-weight: 600; cursor: pointer; white-space: nowrap; }
 button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightness(1.08); }
@@ -299,7 +316,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.62-web';
+var APP_VERSION = '1.71.64-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
