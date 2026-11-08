@@ -115,8 +115,8 @@ a.bm { cursor: grab; }
 .upd:hover { border-color: var(--accent); }
 .hdr .nextbtn { margin-top: 6px; }
 #ver { font-weight: 400; color: var(--muted); font-size: .9rem; }
-/* v1.71.61-web: kapea näyttö (puhelin pystyssä): otsikkorivi yhdelle riville */
-@media (max-width: 480px) {
+/* v1.71.62-web: kapea näyttö (puhelin tai tabletti pystyssä, alle 620 px): otsikkorivi yhdelle riville */
+@media (max-width: 620px) {
   .wrap { padding: 12px; }
   .hdr { flex-wrap: nowrap; align-items: center; gap: 0 4px; }
   .hdr h1 { font-size: .95rem; white-space: nowrap; margin: 4px 0; }
@@ -299,7 +299,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.61-web';
+var APP_VERSION = '1.71.62-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
