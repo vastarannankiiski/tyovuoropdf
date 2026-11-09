@@ -169,6 +169,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 #nextBox dt { color: var(--muted); }
 #nextBox dd { margin: 0; font-weight: 700; word-break: break-word; }
 #nextBox .nblk.done dd { color: var(--muted); }
+#nextBox .nblk.done { opacity: .5; } /* v1.71.69-web: lähtöajan jälkeen vielä himmeämpi */
 #nextBox .nmsg { margin: 0 0 14px; }
 #nextBox #nextHead2 { display: flex; flex-wrap: wrap; gap: 4px 18px; padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
 #nextBox #nextHead2[hidden] { display: none; }
@@ -268,6 +269,8 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
       <label for="selFont" data-i="lblFont"></label>
       <select id="selFont"></select>
       <span style="color:var(--muted)">pt</span>
+      <label for="selSpacing" style="margin-left:18px" data-i="lblSpacing"></label>
+      <select id="selSpacing"></select>
     </div>
     <div class="row">
       <label for="selOutLang" data-i="lblOutLang"></label>
@@ -317,7 +320,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.68-web';
+var APP_VERSION = '1.71.71-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -1714,7 +1717,7 @@ function convertDays(allDays, opts) {
   var p = getPeriodDates(days);
   var html = generateHtml(disp.days, disp.totals, p.start, p.end, opts.appVersion || APP_VERSION,
     opts.pageLayout || 'reader', opts.tableFontSize === undefined ? DEFAULT_TABLE_FONT_SIZE : opts.tableFontSize,
-    opts.includeSummary !== false, lang, opts.extraHead || '', opts.extraBody || '', buildDataChunks(days), opts.retro === true);
+    opts.includeSummary !== false, lang, opts.extraHead || '', opts.extraBody || '', buildDataChunks(days), opts.retro === true, opts.rowSpacing);
   var range = p.start === p.end ? niceDate(p.start, lang) : niceDate(p.start, lang) + ' - ' + niceDate(p.end, lang);
   var num = periodNumberText(p.start).substr(0, 3); /* v1.39.1-web: vain jaksonumero */
   var summaryHtml = generateSummaryHtml(disp.days, disp.totals, range, num, opts.appVersion || APP_VERSION, lang, opts.extraHead || '', opts.extraBody || ''); /* v1.71.67-web */
@@ -1774,7 +1777,9 @@ function generateSummaryHtml(days, totals, range, periodNum, appVersion, lang, e
 var PAGE_W_MM = 210, PAGE_H_MM = 297, MARGIN_SIDE_MM = 12, MARGIN_TOP_MM = 6, MARGIN_BOTTOM_MM = 6;
 var FOLD_GAP_MM = 6, PACK_GAP_MM = 4, CONTENT_W_MM = PAGE_W_MM - 2 * MARGIN_SIDE_MM;
 
-function cssTemplate(fontSize, lang) {
+function cssTemplate(fontSize, lang, spacing) {
+  var sp = spacing > 0 ? spacing : 1; /* v1.71.70-web: rivivälin kerroin (1 = oletus); skaalaa solujen ylä-/alatäytön ja rivikorkeuden */
+  function k(x) { return (Math.round(x * sp * 1000) / 1000) + ''; }
   /* v1.20.1: Aika- ja Tapahtuma-sarakkeen leveys skaalataan fonttikoon mukaan,
      jotta pisin teksti (esim. "Bus changeover") mahtuu aina yhdelle riville.
      Luvut = pisimmän sisällön leveys 11 pt:llä, 0.1 mm:n tarkkuudella. */
@@ -1816,8 +1821,8 @@ function cssTemplate(fontSize, lang) {
     '  padding: 1mm 1mm; background:#eef1f4;',
     '}',
     'table.shift td {',
-    '  padding: 0.8mm 1mm; border-bottom: 0.4pt solid #ccc; vertical-align:top;',
-    '  overflow-wrap: normal; word-break: normal; line-height:1.2;',
+    '  padding: ' + k(0.8) + 'mm 1mm; border-bottom: 0.4pt solid #ccc; vertical-align:top;',
+    '  overflow-wrap: normal; word-break: normal; line-height:' + k(1.2) + ';',
     '}',
     'table.shift td.kierto { font-weight:400 !important; }',
     'table.shift th:nth-child(3), table.shift td:nth-child(3) { text-align:center; text-indent:-2.8mm; }',
@@ -2181,8 +2186,10 @@ function renderRetroDayCard(d, idx, lang) {
     '</div>';
 }
 
-function retroCss(fontSize) {
+function retroCss(fontSize, spacing) {
   var fs = Math.max(8, fontSize - 1);
+  var sp = spacing > 0 ? spacing : 1;
+  function k(x) { return (Math.round(x * sp * 1000) / 1000) + ''; }
   return [
     '.title-block { font-size:14pt; font-weight:400; letter-spacing:0; margin:0 0 4mm 0; }',
     '.page > .r-pg { position:absolute; right:12mm; top:1.5mm; font-size:9pt; font-weight:700; }',
@@ -2193,7 +2200,7 @@ function retroCss(fontSize) {
     'table.rt { width:100%; border-collapse:collapse; table-layout:fixed; font-size:' + fs + 'pt; }',
     'table.rt col.r1 { width:27mm; } table.rt col.r2 { width:30mm; } table.rt col.r3 { width:9mm; }',
     'table.rt col.r4 { width:29mm; } table.rt col.r5 { width:auto; }',
-    'table.rt td { padding:1.15mm 1mm; vertical-align:top; line-height:1.25; border:none; }',
+    'table.rt td { padding:' + k(1.15) + 'mm 1mm; vertical-align:top; line-height:' + k(1.25) + '; border:none; }',
     'table.rt td.ic { text-align:center; padding:0; font-size:' + (fs - 1) + 'pt; }',
     'table.rt td.ic img.ri { image-rendering:pixelated; display:inline-block; margin-top:0.6mm; }',
     '.r-foot { display:flex; justify-content:flex-end; margin-top:5mm; padding-top:1.5mm; border-top:0.5pt solid #000; }',
@@ -2267,14 +2274,14 @@ var TVL_JS = [
   '})();'
 ].join('\n');
 
-function generateHtml(days, totals, startDate, endDate, appVersion, pageLayout, tableFontSize, includeSummary, lang, extraHead, extraBody, dataChunks, retro) {
+function generateHtml(days, totals, startDate, endDate, appVersion, pageLayout, tableFontSize, includeSummary, lang, extraHead, extraBody, dataChunks, retro, rowSpacing) {
   lang = lang === 'en' ? 'en' : 'fi';
   if (tableFontSize < MIN_TABLE_FONT_SIZE) tableFontSize = MIN_TABLE_FONT_SIZE;
   if (tableFontSize > MAX_TABLE_FONT_SIZE) tableFontSize = MAX_TABLE_FONT_SIZE;
-  var css = cssTemplate(tableFontSize, lang);
+  var css = cssTemplate(tableFontSize, lang, rowSpacing);
   var js = pageLayout === 'flow' ? jsContinuous() : pageLayout === 'paper' ? jsPaperSaving() : pageLayout === 'one' ? jsOnePerPage() : jsReaderFriendly();
   if (pageLayout === 'flow') css += '\n.daycard.cont .day-header::after, .daycard.cont .r-day::after { content:" (' + (lang === 'en' ? 'cont.' : 'jatkuu') + ')"; font-weight:400; }';
-  if (retro) { css += '\n' + retroCss(tableFontSize); js += '\n' + jsRetroPageNumbers(); } /* retro: sama sivutus kuin normaalisti + sivunumerot */
+  if (retro) { css += '\n' + retroCss(tableFontSize, rowSpacing); js += '\n' + jsRetroPageNumbers(); } /* retro: sama sivutus kuin normaalisti + sivunumerot */
   var range = startDate === endDate ? niceDate(startDate, lang) : niceDate(startDate, lang) + ' - ' + niceDate(endDate, lang);
   var num = periodNumberText(startDate).substr(0, 3); /* v1.39.1-web: vain jaksonumero */
   var titleText = L(lang).title + (num ? num + ' ' : '') + range;
@@ -3082,7 +3089,7 @@ var I18N = {
     optFlow: 'Paperia säästävä (päivät peräkkäin, päivä jatkuu seuraavalle sivulle)',
     optTiming: 'Ajantasauspysäkit (kellonkuva + pysäkin nimi + aika reitillä)',
     optSummary: 'Lisää koko jakson yhteenveto listan loppuun',
-    lblFont: 'Taulukon fonttikoko:', lblOutLang: 'Tulosteen kieli:', optRetro: 'Retro look',
+    lblFont: 'Taulukon fonttikoko:', lblSpacing: 'Rivinväli:', lblOutLang: 'Tulosteen kieli:', optRetro: 'Retro look',
     h3: '3. Luo työvuorolista / Tarkista palkkalaskelma', btnConvert: 'Tee työvuorolista', btnOpen: 'Avaa tulostusnäkymä', btnSummary: 'Jakson yhteenveto',
     printHint: 'Tulostusnäkymässä paina <b>Tulosta / Tallenna PDF</b> ja valitse tulostimeksi <b>Tallenna PDF:nä</b> (A4, ei marginaaleja, ei otsikoita/alatunnisteita).',
     logTitle: 'Loki',
@@ -3164,7 +3171,7 @@ var I18N = {
     optFlow: 'Paper-saving (days run on, a day continues on the next page)',
     optTiming: 'Timing stops (clock icon + stop name + time on the route)',
     optSummary: 'Add the summary of the whole period at the end of the list',
-    lblFont: 'Table font size:', lblOutLang: 'Output language:', optRetro: 'Retro look',
+    lblFont: 'Table font size:', lblSpacing: 'Line spacing:', lblOutLang: 'Output language:', optRetro: 'Retro look',
     h3: '3. Create the work schedule / Check the payslip', btnConvert: 'Convert to PDF', btnOpen: 'Open print view', btnSummary: 'Show period summary',
     printHint: 'In the print view press <b>Print / Save PDF</b> and choose <b>Save as PDF</b> as the printer (A4, no margins, no headers/footers).',
     logTitle: 'Log',
@@ -3244,6 +3251,14 @@ function T(key, vars) {
 
 function $(id) { return document.getElementById(id); }
 function log(s) { var l = $('log'); l.textContent += s + '\n'; l.scrollTop = l.scrollHeight; }
+/* v1.71.71-web: virhetilanteessa avataan loki-ikkuna ja vieritetään se näkyviin (tilarivi on sivun yläosassa) */
+function showLogError() {
+  var l = $('log'), d = l.parentNode;
+  while (d && d.tagName !== 'DETAILS') d = d.parentNode;
+  if (d) d.open = true;
+  l.scrollTop = l.scrollHeight;
+  try { l.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { l.scrollIntoView(); }
+}
 function setStatus(msg, cls) { var s = $('status'); s.textContent = msg; s.className = 'status' + (cls ? ' ' + cls : ''); }
 
 (function () { var v = TyoCore.APP_VERSION, m = /^(.*?)(-web)$/.exec(v), e = $('ver'); e.textContent = m ? m[1] : v;
@@ -3258,6 +3273,21 @@ function setStatus(msg, cls) { var s = $('status'); s.textContent = msg; s.class
     sel.appendChild(o);
   }
 })();
+
+/* v1.71.70-web: rivinväli prosentteina oletuksesta (100 % = aiempi riviväli) */
+(function fillSpacing() {
+  var sel = $('selSpacing');
+  for (var n = 70; n <= 150; n += 10) {
+    var o = document.createElement('option');
+    o.value = n; o.textContent = n + ' %';
+    if (n === 100) o.selected = true;
+    sel.appendChild(o);
+  }
+})();
+function selectedSpacing() {
+  var v = parseInt($('selSpacing').value, 10);
+  return isNaN(v) ? 1 : Math.max(0.5, Math.min(2, v / 100));
+}
 
 function selectedFontSize() {
   var v = parseInt($('selFont').value, 10);
@@ -3444,6 +3474,7 @@ function updateButtons() {
   $('btnConvert').disabled = busy || files.length === 0;
   $('btnPayslip').disabled = busy || files.length === 0;
   $('selFont').disabled = busy;
+  $('selSpacing').disabled = busy;
   $('selOutLang').disabled = busy;
   $('chkTiming').disabled = busy;
   $('chkSummary').disabled = busy;
@@ -3625,6 +3656,7 @@ async function checkPayslipFile(file) {
     var em = e && e.message ? e.message : String(e);
     log(T('payErrLog', { msg: em }));
     setStatus(T('payErrStatus', { msg: em }), 'err');
+    showLogError();
   } finally {
     busy = false; updateButtons();
   }
@@ -3644,6 +3676,7 @@ function convert() {
       retro: $('chkRetro').checked,
       pageLayout: layout,
       tableFontSize: selectedFontSize(),
+      rowSpacing: selectedSpacing(),
       extraHead: TOOLBAR_CSS,
       extraBody: { top: toolbarTop(), bottom: FIT_SCRIPT }
     });
@@ -3659,6 +3692,7 @@ function convert() {
     var msg = e && e.message ? e.message : String(e);
     log(T('convErrLog', { msg: msg }));
     setStatus(T('convErrStatus', { msg: msg }), 'err');
+    showLogError();
   }
 }
 
@@ -3738,7 +3772,7 @@ $('chkRetro').addEventListener('change', function () {
   if (this.checked) { fontBeforeRetro = selectedFontSize(); f.value = '10'; }
   else if (selectedFontSize() === 10) f.value = String(fontBeforeRetro);
 });
-['chkTiming', 'chkSummary', 'chkRetro', 'selFont', 'selOutLang'].forEach(function (id) { $(id).addEventListener('change', hideResult); });
+['chkTiming', 'chkSummary', 'chkRetro', 'selFont', 'selSpacing', 'selOutLang'].forEach(function (id) { $(id).addEventListener('change', hideResult); });
 Array.prototype.forEach.call(document.querySelectorAll('input[name=layout]'), function (r) { r.addEventListener('change', hideResult); });
 ['flagFi', 'flagEn'].forEach(function (id) {
   $(id).addEventListener('click', function () { if (!busy) setUiLang(this.getAttribute('data-lang'), true); });
@@ -3885,7 +3919,7 @@ function nextShiftFind(m) {
   for (di = 0; di < days.length && !list.length; di++) {
     evs = days[di];
     for (ei = 0; ei < evs.length; ei++) {
-      if (NEXT_TYPES.test(evs[ei].ev.evType || '') && evs[ei].end > now && evs[ei].abs + 900000 > now) break; /* meneillään oleva tai tuleva, ei jo listalta poistuva (alkamisesta alle 15 min) */
+      if (NEXT_TYPES.test(evs[ei].ev.evType || '') && evs[ei].end > now && evs[ei].abs + 120000 > now) break; /* meneillään oleva tai tuleva, ei jo listalta poistuva (alkamisesta alle 2 min) */
     }
     if (ei >= evs.length) continue;
     running = evs[0].abs <= now && now <= evs[evs.length - 1].end;
@@ -3903,18 +3937,18 @@ function nextShiftFind(m) {
 }
 function nextClockTick() {
   var d = new Date(), t = d.getTime();
-  /* v1.71.57/58: lähtöajasta 5 min -> himmeä, 15 min -> pois listalta */
+  /* v1.71.69-web: lähtöajan jälkeen -> vielä himmeämpi, lähtöajasta 2 min -> pois listalta */
   var body = $('nextBody'), bl = body.querySelectorAll('.nblk');
   for (var i = 0; i < bl.length; i++) {
     var st = +bl[i].getAttribute('data-start');
-    if (st + 900000 <= t) bl[i].parentNode.removeChild(bl[i]);
-    else bl[i].classList.toggle('done', st + 300000 <= t);
+    if (st + 120000 <= t) bl[i].parentNode.removeChild(bl[i]);
+    else bl[i].classList.toggle('done', st <= t);
   }
   var first = body.querySelector('.nblk');
   if (first === null && body.getAttribute('data-had') === '1' && !body.querySelector('.nmsg')) {
     var pm = document.createElement('p'); pm.className = 'nmsg'; pm.textContent = T('nextAllDone'); body.appendChild(pm);
   }
-  /* v1.71.61-web: ajastin: +hh:mm:ss = aikaa seuraavan (listan ensimmäisen) tapahtuman lähtöön; lähtöajan jälkeen -hh:mm:ss = lähdöstä kulunut aika (himmeä 5 min jälkeen) */
+  /* v1.71.61-web: ajastin: +hh:mm:ss = aikaa seuraavan (listan ensimmäisen) tapahtuman lähtöön; lähtöajan jälkeen -hh:mm:ss = lähdöstä kulunut aika (himmeä lähtöajan jälkeen, tapahtuma poistuu 2 min kuluttua) */
   var clk = $('nextClock');
   if (first === null) { clk.textContent = ''; clk.classList.remove('dim'); return; }
   var diff = +first.getAttribute('data-start') - t, sec = diff > 0 ? Math.ceil(diff / 1000) : Math.floor(-diff / 1000);
