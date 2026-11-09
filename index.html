@@ -99,6 +99,7 @@ legend { padding: 0; font-weight: 600; margin-bottom: 4px; }
 .warn { background: var(--warn-bg); color: var(--warn-ink); border-radius: 8px; padding: 8px 10px;
   margin-top: 10px; font-size: .9rem; display: none; }
 details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
+pre.log .logerr { color: var(--danger); font-weight: 600; }
 pre.log { background: var(--row-alt); border: 1px solid var(--line); border-radius: 8px; padding: 8px;
   max-height: 220px; overflow: auto; white-space: pre-wrap; font-size: .8rem; margin: 8px 0 0; }
 .result { display: none; }
@@ -114,6 +115,14 @@ a.bm { cursor: grab; }
   color: var(--ink); text-decoration: none; background: var(--row-alt); margin-right: 6px; white-space: nowrap; }
 .upd:hover { border-color: var(--accent); }
 .hdr .nextbtn { margin-top: 6px; }
+/* v1.71.74-web: koko näytön painikkeet (otsikkorivi + Seuraavat vuorot -ikkuna) */
+.fsbtn { display: inline-flex; align-items: center; justify-content: center; min-height: 0; padding: 4px 7px; border: 1px solid var(--line);
+  border-radius: 6px; background: var(--row-alt); color: var(--ink); cursor: pointer; line-height: 1; }
+.fsbtn:hover:not(:disabled) { border-color: var(--accent); background: var(--row-alt); }
+.fsbtn[hidden] { display: none; }
+html.isfs .fsbtn .i-enter, html:not(.isfs) .fsbtn .i-exit { display: none; }
+#nextBox #nextR { justify-self: end; display: flex; align-items: center; gap: 8px; }
+#nextBox #nextR #nextClock { justify-self: auto; }
 #ver { font-weight: 400; color: var(--muted); font-size: .9rem; }
 /* v1.71.63-web: kapea näyttö (puhelin tai tabletti pystyssä, alle 620 px): otsikkorivi yhdelle riville; koko kasvaa näytön leveyden mukaan */
 @media (max-width: 620px) {
@@ -124,6 +133,8 @@ a.bm { cursor: grab; }
   .vsuf { display: none; }
   .hdr .nextbtn { margin-top: 0; font-size: .65rem; padding: 3px 6px; }
   .hdr .flags .upd { font-size: .65rem; padding: 3px 5px; margin-right: 0; }
+  .hdr .fsbtn { padding: 3px 5px; }
+  .hdr .fsbtn svg { width: 12px; height: 12px; }
   .flags { gap: 5px; padding-top: 0; }
   .hdr .flags .flag { width: 26px; height: 18px; border-width: 2px; }
 }
@@ -134,6 +145,17 @@ a.bm { cursor: grab; }
   .hdr .flags .upd { font-size: .72rem; padding: 4px 6px; }
   .flags { gap: 6px; }
   .hdr .flags .flag { width: 29px; height: 20px; }
+}
+/* v1.71.74-web: koko näytön painike vie tilaa -> tiivistetään otsikkoriviä alle 430 px */
+@media (max-width: 429px) {
+  .hdr h1 { font-size: .9rem; }
+  #ver { font-size: .6rem; }
+  .hdr .nextbtn { font-size: .66rem; padding: 3px 5px; }
+  .hdr .flags .upd { font-size: .66rem; padding: 3px 4px; }
+  .flags { gap: 4px; }
+  .hdr .flags .flag { width: 24px; height: 17px; }
+  .hdr .fsbtn { padding: 3px 4px; }
+  .hdr .fsbtn svg { width: 11px; height: 11px; }
 }
 @media (min-width: 480px) and (max-width: 620px) {
   .hdr { gap: 0 6px; }
@@ -159,7 +181,8 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 #nextBox { background: var(--bg, #fff); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; max-width: 440px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; padding: 16px 18px; box-shadow: 0 8px 30px rgba(0,0,0,.3); }
 #nextBox #nextTop { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin: 0 0 10px; }
 #nextBox h2 { white-space: nowrap; }
-@media (max-width: 480px) { #nextBox #nextTop { display: flex; flex-wrap: wrap; justify-content: space-between; } }
+@media (max-width: 480px) { #nextBox #nextTop { display: flex; flex-wrap: nowrap; justify-content: space-between; gap: 6px; } #nextBox h2 { font-size: .9rem; } #nextBox #btnNextOk { font-size: .8rem; padding: 4px 9px; } #nextBox #nextR { gap: 4px; } #nextBox #nextR .fsbtn { padding: 3px 5px; } #nextBox #nextR .fsbtn svg { width: 12px; height: 12px; } #nextBox #nextClock { font-size: .82rem; } }
+@media (max-width: 379px) { #nextBox #nextTop { flex-wrap: wrap; } #nextBox #nextR { margin-left: auto; } }
 #nextBox h2 { margin: 0; font-size: 1.15rem; }
 #nextBox #nextClock { justify-self: end; font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
 #nextBox #nextClock.dim { color: var(--muted); }
@@ -184,12 +207,13 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 </head>
 <body>
 <div id="infoOverlay" hidden><div id="infoBox" role="dialog" aria-modal="true" aria-labelledby="infoTitle"><div id="infoTop"><h2 id="infoTitle"></h2><button type="button" class="primary small" id="btnInfoClose" data-i="nextOk"></button></div><pre id="infoText"></pre></div></div>
-<div id="nextOverlay" hidden><div id="nextBox" role="dialog" aria-modal="true" aria-labelledby="nextTitle"><div id="nextTop"><h2 id="nextTitle"></h2><button type="button" class="primary small" id="btnNextOk" data-i="nextOk"></button><span id="nextClock" aria-label="ajastin"></span></div><div id="nextHead2" hidden></div><div id="nextBody"></div></div></div>
+<div id="nextOverlay" hidden><div id="nextBox" role="dialog" aria-modal="true" aria-labelledby="nextTitle"><div id="nextTop"><h2 id="nextTitle"></h2><button type="button" class="primary small" id="btnNextOk" data-i="nextOk"></button><span id="nextR"><button type="button" class="fsbtn" id="btnFsNext" aria-label="Koko näyttö"><svg class="i-enter" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M1 6V1h5M10 1h5v5M15 10v5h-5M6 15H1v-5" fill="none" stroke="currentColor" stroke-width="2"/></svg><svg class="i-exit" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M6 1v5H1M15 6h-5V1M10 15v-5h5M1 10h5v5" fill="none" stroke="currentColor" stroke-width="2"/></svg></button><span id="nextClock" aria-label="ajastin"></span></span></div><div id="nextHead2" hidden></div><div id="nextBody"></div></div></div>
 <div class="wrap">
   <div class="hdr">
     <h1><span id="appTitle">TyövuoroPdf</span> <span id="ver"></span></h1>
     <button type="button" class="nextbtn" id="btnNext" data-i="btnNext"></button>
     <div class="flags">
+      <button type="button" class="fsbtn" id="btnFs" aria-label="Koko näyttö"><svg class="i-enter" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M1 6V1h5M10 1h5v5M15 10v5h-5M6 15H1v-5" fill="none" stroke="currentColor" stroke-width="2"/></svg><svg class="i-exit" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M6 1v5H1M15 6h-5V1M10 15v-5h5M1 10h5v5" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
       <a class="upd" id="linkInfo" href="https://github.com/vastarannankiiski/tyovuoropdf/blob/main/LueMinut.txt" target="_blank" rel="noopener">???</a>
       <button type="button" class="flag" id="flagFi" data-lang="fi" aria-pressed="true" title="Suomi">
         <svg viewBox="0 0 18 11" preserveAspectRatio="none" aria-hidden="true"><rect width="18" height="11" fill="#fff"/><rect x="5" width="3" height="11" fill="#003580"/><rect y="4" width="18" height="3" fill="#003580"/></svg>
@@ -320,7 +344,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.71-web';
+var APP_VERSION = '1.71.74-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -1483,7 +1507,7 @@ function buildRowsForDay(raw, ins, showTimingStops, lang) {
     var insRec = null;
     for (var k = 0; k < ins.length; k++) if (ins[k].idx === i) { insRec = ins[k]; break; }
     if (insRec) {
-      rows.push({ kierto: insRec.oldKierto + ' ' + ARROW_OUT + ' ' + insRec.newKierto,
+      rows.push({ kierto: insRec.newKierto, /* v1.71.73-web: Auton vaihto -rivillä vain uusi kiertonumero */
         startT: formatOutTime(raw[i].startTime, lang), endT: formatOutTime(raw[i].startTime, lang), linja: '',
         tapahtuma: ICON_BUS + ARROW_OUT + ICON_BUS + ' ' + T.autonVaihto,
         reitti: insRec.loc, bold: false, kind: 'X' });
@@ -3089,7 +3113,7 @@ var I18N = {
     optFlow: 'Paperia säästävä (päivät peräkkäin, päivä jatkuu seuraavalle sivulle)',
     optTiming: 'Ajantasauspysäkit (kellonkuva + pysäkin nimi + aika reitillä)',
     optSummary: 'Lisää koko jakson yhteenveto listan loppuun',
-    lblFont: 'Taulukon fonttikoko:', lblSpacing: 'Rivinväli:', lblOutLang: 'Tulosteen kieli:', optRetro: 'Retro look',
+    lblFont: 'Taulukon fonttikoko:', lblSpacing: 'Rivinväli:', fsEnter: 'Koko näyttö', fsExit: 'Poistu koko näytöstä', lblOutLang: 'Tulosteen kieli:', optRetro: 'Retro look',
     h3: '3. Luo työvuorolista / Tarkista palkkalaskelma', btnConvert: 'Tee työvuorolista', btnOpen: 'Avaa tulostusnäkymä', btnSummary: 'Jakson yhteenveto',
     printHint: 'Tulostusnäkymässä paina <b>Tulosta / Tallenna PDF</b> ja valitse tulostimeksi <b>Tallenna PDF:nä</b> (A4, ei marginaaleja, ei otsikoita/alatunnisteita).',
     logTitle: 'Loki',
@@ -3171,7 +3195,7 @@ var I18N = {
     optFlow: 'Paper-saving (days run on, a day continues on the next page)',
     optTiming: 'Timing stops (clock icon + stop name + time on the route)',
     optSummary: 'Add the summary of the whole period at the end of the list',
-    lblFont: 'Table font size:', lblSpacing: 'Line spacing:', lblOutLang: 'Output language:', optRetro: 'Retro look',
+    lblFont: 'Table font size:', lblSpacing: 'Line spacing:', fsEnter: 'Full screen', fsExit: 'Exit full screen', lblOutLang: 'Output language:', optRetro: 'Retro look',
     h3: '3. Create the work schedule / Check the payslip', btnConvert: 'Convert to PDF', btnOpen: 'Open print view', btnSummary: 'Show period summary',
     printHint: 'In the print view press <b>Print / Save PDF</b> and choose <b>Save as PDF</b> as the printer (A4, no margins, no headers/footers).',
     logTitle: 'Log',
@@ -3250,8 +3274,40 @@ function T(key, vars) {
 }
 
 function $(id) { return document.getElementById(id); }
-function log(s) { var l = $('log'); l.textContent += s + '\n'; l.scrollTop = l.scrollHeight; }
+/* v1.71.72-web: virherivit (VIRHE / ERROR) näytetään lokissa punaisella, muut normaalivärisinä */
+function log(s) {
+  var l = $('log');
+  if (/^\s*(VIRHE|ERROR)\b/.test(s)) { var sp = document.createElement('span'); sp.className = 'logerr'; sp.textContent = s + '\n'; l.appendChild(sp); }
+  else l.appendChild(document.createTextNode(s + '\n'));
+  l.scrollTop = l.scrollHeight;
+}
 /* v1.71.71-web: virhetilanteessa avataan loki-ikkuna ja vieritetään se näkyviin (tilarivi on sivun yläosassa) */
+/* v1.71.74-web: koko näyttö (Fullscreen API; ei tuettu iPhonen Safarissa -> painikkeet piilotetaan) */
+function fsActive() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+function fsSupported() { return !!(document.fullscreenEnabled || document.webkitFullscreenEnabled); }
+function updateFs() {
+  var on = fsActive(), ok = fsSupported(), t = T(on ? 'fsExit' : 'fsEnter');
+  document.documentElement.classList.toggle('isfs', on);
+  ['btnFs', 'btnFsNext'].forEach(function (id) {
+    var b = $(id); b.hidden = !ok; b.title = t; b.setAttribute('aria-label', t);
+  });
+}
+function toggleFs() {
+  try {
+    if (fsActive()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); }
+    else {
+      var el = document.documentElement, f = el.requestFullscreen || el.webkitRequestFullscreen;
+      var r = f.call(el, { navigationUI: 'hide' });
+      if (r && r.catch) r.catch(function () { /* ei sallittu */ });
+    }
+  } catch (e) { /* ei tuettu */ }
+}
+$('btnFs').addEventListener('click', toggleFs);
+$('btnFsNext').addEventListener('click', toggleFs);
+document.addEventListener('fullscreenchange', updateFs);
+document.addEventListener('webkitfullscreenchange', updateFs);
+updateFs();
+
 function showLogError() {
   var l = $('log'), d = l.parentNode;
   while (d && d.tagName !== 'DETAILS') d = d.parentNode;
@@ -3714,6 +3770,7 @@ function setUiLang(lang, fromUser) {
   $('flagEn').setAttribute('aria-pressed', uiLang === 'en' ? 'true' : 'false');
   $('flagFi').title = I18N[uiLang].flagFi; $('flagEn').title = I18N[uiLang].flagEn;
   applyStaticTexts();
+  updateFs();
   if (fromUser) {
     $('selOutLang').value = uiLang; /* liput asettavat myös tulosteen kielen (kuten työpöytäohjelmassa) */
     try { localStorage.setItem('tyovuoropdf.lang', uiLang); } catch (e) { /* ei väliä */ }
