@@ -192,6 +192,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 #nextBox dl { margin: 0 0 14px; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; }
 #nextBox .nblk { position: relative; }
 #nextBox .nblk + .nblk { border-top: 1px solid var(--line); padding-top: 12px; }
+#nextBox .nblk + .nblk.brk { border-top: 5px double var(--ink); padding-top: 12px; } /* v1.71.76-web: tauko = tumma kaksoisviiva */
 #nextBox dt { color: var(--muted); }
 #nextBox dd { margin: 0; font-weight: 700; word-break: break-word; }
 #nextBox .nblk.done dd { color: var(--muted); }
@@ -347,7 +348,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.75-web';
+var APP_VERSION = '1.71.76-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3950,6 +3951,7 @@ function stripLine6(l) { var m = /^\d+/.exec(l); return (m && m[0].length === 4)
    alkamatta, ja palauttaa kaikki saman työpäivän listan saman kiertonumeron tapahtumat siitä eteenpäin.
    Palauttaa {list:[{ev, abs, end}], kierto, car, running, authFail}; running = löydetyn työpäivän lista on nyt käynnissä. */
 var NEXT_TYPES = /^(Linja-ajo|Halliajo|Siirtoajo|Vaihtoautosiirtymä)/;
+var NEXT_BREAK = /^(Tauko|Sidonnaisuusaika|Odotusaika)/i;
 function nextShiftFind(m) {
   var now = Date.now(), days = [], authFail = false;
   var keys = Object.keys(m.days || {}).filter(function (k) { return /^\d{4}-\d{2}-\d{2}$/.test(k); }).sort();
@@ -3983,15 +3985,17 @@ function nextShiftFind(m) {
     }
     if (ei >= evs.length) continue;
     running = evs[0].abs <= now && now <= evs[evs.length - 1].end;
-    var boundary = false;
+    /* v1.71.76-web: kaikki päivän (työvuorolistan) jäljellä olevat ajot, myös eri kierrot; tauon / sidonnaisuuden / odotuksen kohdalle merkitään katko (brk), itse tapahtumaa ei näytetä */
+    var gap = false;
     for (var q = ei; q < evs.length; q++) {
-      if (!NEXT_TYPES.test(evs[q].ev.evType || '')) continue;
+      var et = evs[q].ev.evType || '';
+      if (!NEXT_TYPES.test(et)) { if (NEXT_BREAK.test(et)) gap = true; continue; }
       var kk = evs[q].ev.kierto || '';
-      if (kk !== '') { if (kierto === '') kierto = kk; else if (kk !== kierto) { boundary = true; break; } }
+      if (kk !== '' && kierto === '') kierto = kk;
       if (car === '' && evs[q].ev.kulkuneuvo) car = evs[q].ev.kulkuneuvo;
-      list.push({ ev: evs[q].ev, abs: evs[q].abs, end: evs[q].end });
+      list.push({ ev: evs[q].ev, abs: evs[q].abs, end: evs[q].end, brk: gap && list.length > 0 });
+      gap = false;
     }
-    if (boundary) { while (list.length > 1 && !list[list.length - 1].ev.kierto) list.pop(); } /* hännän Vaihtoautosiirtymä ilman kiertoa pois */
   }
   return { list: list, kierto: kierto, car: car, running: running, authFail: authFail };
 }
@@ -4033,7 +4037,7 @@ function nextShowDialog(blocks, msg, head) {
   body.setAttribute('data-had', blocks && blocks.length ? '1' : '0');
   (blocks || []).forEach(function (rows, bi) {
     var wrap = document.createElement('div');
-    wrap.className = 'nblk'; if (rows.start) wrap.setAttribute('data-start', rows.start);
+    wrap.className = 'nblk' + (rows.brk ? ' brk' : ''); if (rows.start) wrap.setAttribute('data-start', rows.start);
     var dl = document.createElement('dl');
     rows.forEach(function (r) {
       var dt = document.createElement('dt'), dd = document.createElement('dd');
@@ -4052,6 +4056,7 @@ function nextProcess(m) {
   var unk = T('nextUnknown');
   var wdn = uiLang === 'en' ? ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'] : ['Su', 'Ma', 'Ti', 'Ke', 'To', 'Pe', 'La'];
   var hm = function (x) { return pad2n(x.getHours()) + ':' + pad2n(x.getMinutes()); };
+  var lastKierto = res.kierto, lastCar = res.car;
   var blocks = res.list.map(function (it, k) {
     var ev = it.ev, d = new Date(it.abs);
     var timeTxt = hm(d) + ' ' + String(ev.evType || '').replace(/\s*\([^)]*\)\s*$/, ''); /* v1.71.66-web: tapahtuman nimi lähtöajan perässä */
@@ -4067,7 +4072,15 @@ function nextProcess(m) {
       [T('nextTime'), timeTxt],
       [T('nextRoute'), route]
     ];
+    /* v1.71.76-web: kierto / auto vaihtuu päivän aikana -> näytetään uusi arvo ensimmäisessä sen jälkeisessä tapahtumassa */
+    var nk = ev.kierto || '', nc = ev.kulkuneuvo || '';
+    if (k > 0 && ((nk !== '' && nk !== lastKierto) || (nc !== '' && nc !== lastCar))) {
+      rows.unshift([T('nextCirc'), (nk || lastKierto || unk) + ' · ' + T('nextCar') + ' ' + (nc || lastCar || unk)]);
+    }
+    if (nk !== '') lastKierto = nk;
+    if (nc !== '') lastCar = nc;
     rows.start = it.abs;
+    if (it.brk) rows.brk = true;
     return rows;
   });
   nextShowDialog(blocks, '', [[T('nextCirc'), res.kierto || unk], [T('nextCar'), res.car || unk]]);
