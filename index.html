@@ -116,13 +116,16 @@ a.bm { cursor: grab; }
 .upd:hover { border-color: var(--accent); }
 .hdr .nextbtn { margin-top: 6px; }
 /* v1.71.74-web: koko näytön painikkeet (otsikkorivi + Seuraavat vuorot -ikkuna) */
-.fsbtn { display: inline-flex; align-items: center; justify-content: center; min-height: 0; padding: 4px 7px; border: 1px solid var(--line);
+.fsbtn { display: inline-flex; align-items: center; justify-content: center; min-height: 0; padding: 4px 9px; border: 1px solid var(--line);
   border-radius: 6px; background: var(--row-alt); color: var(--ink); cursor: pointer; line-height: 1; }
 .fsbtn:hover:not(:disabled) { border-color: var(--accent); background: var(--row-alt); }
 .fsbtn[hidden] { display: none; }
+.flags .fsbtn { align-self: stretch; } /* otsikkorivillä yhtä korkea kuin "???"-painike (flags-rivin korkein) */
+.fsbtn svg { width: 16px; height: 16px; }
 html.isfs .fsbtn .i-enter, html:not(.isfs) .fsbtn .i-exit { display: none; }
 #nextBox #nextR { justify-self: end; display: flex; align-items: center; gap: 8px; }
 #nextBox #nextR #nextClock { justify-self: auto; }
+#nextBox #nextR .fsbtn { min-height: 30px; min-width: 32px; } /* yhtä korkea kuin Sulje-painike */
 #ver { font-weight: 400; color: var(--muted); font-size: .9rem; }
 /* v1.71.63-web: kapea näyttö (puhelin tai tabletti pystyssä, alle 620 px): otsikkorivi yhdelle riville; koko kasvaa näytön leveyden mukaan */
 @media (max-width: 620px) {
@@ -133,8 +136,8 @@ html.isfs .fsbtn .i-enter, html:not(.isfs) .fsbtn .i-exit { display: none; }
   .vsuf { display: none; }
   .hdr .nextbtn { margin-top: 0; font-size: .65rem; padding: 3px 6px; }
   .hdr .flags .upd { font-size: .65rem; padding: 3px 5px; margin-right: 0; }
-  .hdr .fsbtn { padding: 3px 5px; }
-  .hdr .fsbtn svg { width: 12px; height: 12px; }
+  .hdr .fsbtn { padding: 3px 7px; }
+  .hdr .fsbtn svg { width: 14px; height: 14px; }
   .flags { gap: 5px; padding-top: 0; }
   .hdr .flags .flag { width: 26px; height: 18px; border-width: 2px; }
 }
@@ -154,8 +157,8 @@ html.isfs .fsbtn .i-enter, html:not(.isfs) .fsbtn .i-exit { display: none; }
   .hdr .flags .upd { font-size: .66rem; padding: 3px 4px; }
   .flags { gap: 4px; }
   .hdr .flags .flag { width: 24px; height: 17px; }
-  .hdr .fsbtn { padding: 3px 4px; }
-  .hdr .fsbtn svg { width: 11px; height: 11px; }
+  .hdr .fsbtn { padding: 3px 6px; }
+  .hdr .fsbtn svg { width: 13px; height: 13px; }
 }
 @media (min-width: 480px) and (max-width: 620px) {
   .hdr { gap: 0 6px; }
@@ -181,7 +184,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 #nextBox { background: var(--bg, #fff); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; max-width: 440px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; padding: 16px 18px; box-shadow: 0 8px 30px rgba(0,0,0,.3); }
 #nextBox #nextTop { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin: 0 0 10px; }
 #nextBox h2 { white-space: nowrap; }
-@media (max-width: 480px) { #nextBox #nextTop { display: flex; flex-wrap: nowrap; justify-content: space-between; gap: 6px; } #nextBox h2 { font-size: .9rem; } #nextBox #btnNextOk { font-size: .8rem; padding: 4px 9px; } #nextBox #nextR { gap: 4px; } #nextBox #nextR .fsbtn { padding: 3px 5px; } #nextBox #nextR .fsbtn svg { width: 12px; height: 12px; } #nextBox #nextClock { font-size: .82rem; } }
+@media (max-width: 480px) { #nextBox #nextTop { display: flex; flex-wrap: nowrap; justify-content: space-between; gap: 6px; } #nextBox h2 { font-size: .9rem; } #nextBox #btnNextOk { font-size: .8rem; padding: 4px 9px; } #nextBox #nextR { gap: 4px; } #nextBox #nextR .fsbtn { padding: 3px 5px; } #nextBox #nextR .fsbtn svg { width: 14px; height: 14px; } #nextBox #nextClock { font-size: .82rem; } }
 @media (max-width: 379px) { #nextBox #nextTop { flex-wrap: wrap; } #nextBox #nextR { margin-left: auto; } }
 #nextBox h2 { margin: 0; font-size: 1.15rem; }
 #nextBox #nextClock { justify-self: end; font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
@@ -207,13 +210,13 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 </head>
 <body>
 <div id="infoOverlay" hidden><div id="infoBox" role="dialog" aria-modal="true" aria-labelledby="infoTitle"><div id="infoTop"><h2 id="infoTitle"></h2><button type="button" class="primary small" id="btnInfoClose" data-i="nextOk"></button></div><pre id="infoText"></pre></div></div>
-<div id="nextOverlay" hidden><div id="nextBox" role="dialog" aria-modal="true" aria-labelledby="nextTitle"><div id="nextTop"><h2 id="nextTitle"></h2><button type="button" class="primary small" id="btnNextOk" data-i="nextOk"></button><span id="nextR"><button type="button" class="fsbtn" id="btnFsNext" aria-label="Koko näyttö"><svg class="i-enter" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M1 6V1h5M10 1h5v5M15 10v5h-5M6 15H1v-5" fill="none" stroke="currentColor" stroke-width="2"/></svg><svg class="i-exit" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M6 1v5H1M15 6h-5V1M10 15v-5h5M1 10h5v5" fill="none" stroke="currentColor" stroke-width="2"/></svg></button><span id="nextClock" aria-label="ajastin"></span></span></div><div id="nextHead2" hidden></div><div id="nextBody"></div></div></div>
+<div id="nextOverlay" hidden><div id="nextBox" role="dialog" aria-modal="true" aria-labelledby="nextTitle"><div id="nextTop"><h2 id="nextTitle"></h2><button type="button" class="primary small" id="btnNextOk" data-i="nextOk"></button><span id="nextR"><button type="button" class="fsbtn" id="btnFsNext" aria-label="Koko näyttö"><svg class="i-enter" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M1 6V1h5M10 1h5v5M15 10v5h-5M6 15H1v-5" fill="none" stroke="currentColor" stroke-width="2"/></svg><svg class="i-exit" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M6 1v5H1M15 6h-5V1M10 15v-5h5M1 10h5v5" fill="none" stroke="currentColor" stroke-width="2"/></svg></button><span id="nextClock" aria-label="ajastin"></span></span></div><div id="nextHead2" hidden></div><div id="nextBody"></div></div></div>
 <div class="wrap">
   <div class="hdr">
     <h1><span id="appTitle">TyövuoroPdf</span> <span id="ver"></span></h1>
     <button type="button" class="nextbtn" id="btnNext" data-i="btnNext"></button>
     <div class="flags">
-      <button type="button" class="fsbtn" id="btnFs" aria-label="Koko näyttö"><svg class="i-enter" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M1 6V1h5M10 1h5v5M15 10v5h-5M6 15H1v-5" fill="none" stroke="currentColor" stroke-width="2"/></svg><svg class="i-exit" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M6 1v5H1M15 6h-5V1M10 15v-5h5M1 10h5v5" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+      <button type="button" class="fsbtn" id="btnFs" aria-label="Koko näyttö"><svg class="i-enter" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M1 6V1h5M10 1h5v5M15 10v5h-5M6 15H1v-5" fill="none" stroke="currentColor" stroke-width="2"/></svg><svg class="i-exit" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M6 1v5H1M15 6h-5V1M10 15v-5h5M1 10h5v5" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
       <a class="upd" id="linkInfo" href="https://github.com/vastarannankiiski/tyovuoropdf/blob/main/LueMinut.txt" target="_blank" rel="noopener">???</a>
       <button type="button" class="flag" id="flagFi" data-lang="fi" aria-pressed="true" title="Suomi">
         <svg viewBox="0 0 18 11" preserveAspectRatio="none" aria-hidden="true"><rect width="18" height="11" fill="#fff"/><rect x="5" width="3" height="11" fill="#003580"/><rect y="4" width="18" height="3" fill="#003580"/></svg>
@@ -344,7 +347,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.74-web';
+var APP_VERSION = '1.71.75-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
