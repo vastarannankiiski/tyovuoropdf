@@ -196,8 +196,10 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 #nextBox .nblk { position: relative; }
 #nextBox .nblk + .nblk { border-top: 1px solid var(--line); padding-top: 12px; }
 #nextBox .nsep { grid-column: 1 / -1; border-top: 1px solid var(--line); margin: 2px 0; } /* v1.71.78-web */
-#nextBox dd .l { color: var(--muted); font-weight: 400; }
+#nextBox .nkh { grid-column: 1 / -1; font-weight: 700; }
+#nextBox .nkh .l, #nextBox dd .l { color: var(--muted); font-weight: 400; }
 #nextBox .nblk.pause { padding-bottom: 12px; }
+#nextBox .nblk.pause dt { min-width: var(--dtw, 0px); }
 #nextBox .nblk + .nblk.brk { border-top: 5px double var(--ink); padding-top: 12px; } /* v1.71.76-web: tauko = tumma kaksoisviiva */
 #nextBox dt { color: var(--muted); }
 #nextBox dd { margin: 0; font-weight: 700; word-break: break-word; }
@@ -355,7 +357,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.81-web';
+var APP_VERSION = '1.71.84-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -4115,17 +4117,28 @@ function nextShowDialog(blocks, msg, head) {
     if (rows.end) wrap.setAttribute('data-end', rows.end);
     var dl = document.createElement('dl');
     rows.forEach(function (r) {
+      if (rows.head && r === rows[0]) {
+        /* v1.71.82-web: uusi kierto/auto -rivi koko leveydelle (ei vaikuta Lähtöaika/Reitti-sarakkeiden sisennykseen) */
+        var kh = document.createElement('div'), kl = document.createElement('span');
+        kh.className = 'nkh'; kl.className = 'l'; kl.textContent = r[0] + ' '; kh.appendChild(kl);
+        r[1].forEach(function (pt) { var sp = document.createElement('span'); if (pt[1]) sp.className = 'l'; sp.textContent = pt[0]; kh.appendChild(sp); });
+        dl.appendChild(kh);
+        var sep0 = document.createElement('div'); sep0.className = 'nsep'; dl.appendChild(sep0);
+        return;
+      }
       var dt = document.createElement('dt'), dd = document.createElement('dd');
       dt.textContent = r[0];
       if (Array.isArray(r[1])) r[1].forEach(function (pt) { var sp = document.createElement('span'); if (pt[1]) sp.className = 'l'; sp.textContent = pt[0]; dd.appendChild(sp); });
       else dd.textContent = r[1];
       dl.appendChild(dt); dl.appendChild(dd);
-      if (rows.head && r === rows[0]) { var sep = document.createElement('div'); sep.className = 'nsep'; dl.appendChild(sep); }
     });
     wrap.appendChild(dl); body.appendChild(wrap);
   });
   nextClockTick();
   $('nextOverlay').hidden = false;
+  /* v1.71.84-web: Tauko-rivin aika samaan sisennykseen kuin ajotapahtumien: nimikesarakkeen leveys mitataan Lähtöaika-nimikkeestä */
+  var d0 = body.querySelector('.nblk:not(.pause) dt');
+  if (d0) body.style.setProperty('--dtw', d0.getBoundingClientRect().width + 'px');
   $('btnNextOk').focus();
 }
 function nextProcess(m) {
@@ -4161,7 +4174,10 @@ function nextProcess(m) {
       rows.head = true; /* v1.71.78-web: ohut vaakaviiva kierto/auto-rivin alle */
     }
     /* v1.71.77-web: kierto vaihtuu ja välissä tauko -> "Tauko hh:mm - hh:mm" kirkkaiden kaksoisviivojen välissä */
-    if (kChanged && it.tk) {
+    /* v1.71.83-web: tauko näytetään, kun taukoa seuraava kierto (ensimmäinen kierrollinen ajo tauon jälkeen, esim. Vaihtoautosiirtymän jälkeinen) eroaa edellisestä */
+    var nextK = '';
+    for (var jj = k; jj < res.list.length && nextK === ''; jj++) nextK = res.list[jj].ev.kierto || '';
+    if (it.tk && nextK !== '' && nextK !== lastKierto) {
       var tb = [[T('nextBreak'), hm(new Date(it.tk.s)) + ' - ' + hm(new Date(it.tk.e))]];
       tb.brk = true; tb.pause = true; tb.end = it.tk.e;
       blocks.push(tb);
