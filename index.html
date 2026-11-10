@@ -209,7 +209,10 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 #nextBox #nextHead2 { display: flex; flex-wrap: wrap; gap: 4px 18px; padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
 #nextBox #nextHead2[hidden] { display: none; }
 #nextBox #nextHead2 .l { color: var(--muted); }
-#nextBox #nextBody { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+#nextBox #nextBody { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+/* v1.71.89-web: kun ikkuna on auki, sivun "vedä alas päivittääksesi" (pull-to-refresh) ja vierityksen ketjutus estetään, ettei alaspäin vetäminen lataa sivua uudelleen ja sulje ikkunaa */
+html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body, html:has(#infoOverlay:not([hidden])), html:has(#infoOverlay:not([hidden])) body { overscroll-behavior: none; }
+#nextOverlay, #infoOverlay { overscroll-behavior: contain; touch-action: pan-x pan-y pinch-zoom; }
 .flag { padding: 0; min-height: 0; width: 38px; height: 26px; border: 2px solid var(--line); border-radius: 5px;
   overflow: hidden; background: none; line-height: 0; }
 .flag svg { width: 100%; height: 100%; display: block; }
@@ -357,7 +360,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.88-web';
+var APP_VERSION = '1.71.89-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
