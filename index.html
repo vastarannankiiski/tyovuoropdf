@@ -96,6 +96,9 @@ legend { padding: 0; font-weight: 600; margin-bottom: 4px; }
 .status { margin: 6px 0 0; min-height: 1.4em; }
 .status.err { color: var(--danger); }
 .status.ok { color: var(--ok); font-weight: 600; }
+.updnote { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 8px; padding: 8px 10px; border: 1px solid var(--accent);
+  border-radius: 8px; font-size: .9rem; }
+.updnote[hidden] { display: none; }
 .warn { background: var(--warn-bg); color: var(--warn-ink); border-radius: 8px; padding: 8px 10px;
   margin-top: 10px; font-size: .9rem; display: none; }
 details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
@@ -230,6 +233,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
       </button>
     </div>
   </div>
+  <div class="updnote" id="updNote" role="status" hidden><span id="updTxt"></span> <button type="button" class="primary small" id="btnUpdReload" data-i="updReload"></button></div>
   <p class="sub" data-i="sub"></p>
 
   <div class="cols">
@@ -351,7 +355,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.78-web';
+var APP_VERSION = '1.71.81-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -2369,6 +2373,22 @@ function computeDayHours(days) {
     };
   });
 }
+/* v1.71.81-web: viikkokohtainen tavoitetuntimäärän vähennys. Jokainen viikko (ma-su) vaatii 5 työpäivää (8 h); pekkaspäivä ja vuosilomapäivä
+   täyttää kukin yhden työpäivän, mutta viikon vaatimus ei mene alle nollan (esim. 6 lomapäivää viikossa vähentää vain 5 pv).
+   leaveMs / pekkaMs = lomapäivien ja pekkaspäivien päivämäärät (ms). Palauttaa {leave, pekka} = tavoitetta pienentävät päivät. */
+function weeklyReductions(leaveMs, pekkaMs) {
+  var wk = {};
+  function slot(ms) { var k = periodStartOf(ms) + 7 * DAY_MS * Math.floor((ms - periodStartOf(ms)) / (7 * DAY_MS)); return wk[k] || (wk[k] = { l: 0, p: 0 }); }
+  leaveMs.forEach(function (ms) { slot(ms).l++; });
+  pekkaMs.forEach(function (ms) { slot(ms).p++; });
+  var leave = 0, pekka = 0;
+  Object.keys(wk).forEach(function (k) {
+    var w = wk[k], pk = Math.min(5, w.p);
+    pekka += pk;
+    leave += Math.min(w.l, 5 - pk);
+  });
+  return { leave: leave, pekka: pekka };
+}
 function hoursOfType(h, idx) {
   return [h.work - h.training /* 1451: koulutus maksetaan koodilla 6600 */, h.evening, h.night, h.standby + h.travel /* 1804 */,
     h.sat1, h.sat2, h.sun, h.holiday, h.training, h.alarm || 0][idx];
@@ -2534,8 +2554,14 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
   var listLeave = hours.filter(function (h) { return h.leave; }).length;
   /* v1.41.1: ylimääräiset työpäivät (työpäivät + pekkaspäivät > 10) -> lomapäivät eivät pienennä 80 h rajaa */
   var fillWork = hours.filter(function (h) { return !h.leave; }).length;
-  var fillPekka = slip.entries.filter(function (e) { return e.hasQty && e.code === PAY_PEKKAS; }).length;
-  var fillRed = Math.min(listLeave, Math.max(0, 10 - fillWork - fillPekka));
+  var pekkaEntries = slip.entries.filter(function (e) { return e.hasQty && e.code === PAY_PEKKAS; });
+  var leaveDates = hours.filter(function (h) { return h.leave; }).map(function (h) { return parseDdMmYyyy(h.dateStr); }).filter(function (x) { return x !== null; });
+  var pekkaDates = pekkaEntries.map(function (e) { return e.dateFrom; }).filter(function (x) { return typeof x === 'number'; });
+  /* v1.71.81-web: viikkokohtainen enimmäisvähennys (5 pv / vko); pekkapäivät ilman päivämäärää lasketaan kokonaan */
+  var wr = weeklyReductions(leaveDates, pekkaDates);
+  var fillPekka = wr.pekka + Math.max(0, pekkaEntries.length - pekkaDates.length);
+  var fillRed = Math.min(wr.leave + Math.max(0, listLeave - leaveDates.length), Math.max(0, 10 - fillWork - pekkaEntries.length));
+  var redDays = fillRed + fillPekka; /* tavoitetuntimäärää (80 h) pienentävät päivät: 8 h / pv */
 
   /* v1.59.0-web: sidonnaisuusajan siirto. Jos Työaika + Koulutus jää alle 80 h:n rajan (lomapäivillä vähennettynä), mutta
      Työaika + Koulutus + Sidonnaisuusaika (sis. matkustus) ylittää sen, palkkalaskelma siirtää sidonnaisuusajasta rajaan
@@ -2549,7 +2575,7 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
       wT += hoursOfType(hh, 0); trT += hoursOfType(hh, PAY_TRAINING_IDX); sbT += hoursOfType(hh, PAY_STANDBY_IDX);
       vT += hoursOfType(hh, PAY_HOLIDAY_IDX);
     });
-    var base = 80 * 60 - fillRed * 8 * 60;
+    var base = 80 * 60 - redDays * 8 * 60; /* v1.71.80-web: myös pekkaspäivät pienentävät tavoitetuntimäärää 8 h/pv; v1.71.81-web: lomapäivät viikkokohtaisesti */
     var ld = null;
     slip.entries.forEach(function (e) {
       if (e.code === PAY_TYPES[0] && e.hasQty && e.dateFrom === e.dateTo && (ld === null || e.dateFrom > ld)) ld = e.dateFrom;
@@ -2750,7 +2776,7 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
       fmtDaysSigned(hol.sum - listLeave * 100) + ' ' + T('pv', 'days'), okh, true);
   }
   /* v1.52.0-web: koulutus (listTot[8]) ja matkustus (sisältyy listTot[3]:een) lasketaan palkkatunneiksi, joten ne vähentävät täyttötunteja */
-  var fillExp = Math.max(0, 80 * 60 - fillRed * 8 * 60 - (listTot[0] + listTot[PAY_TRAINING_IDX] + listTot[PAY_STANDBY_IDX]));
+  var fillExp = Math.max(0, 80 * 60 - redDays * 8 * 60 - (listTot[0] + listTot[PAY_TRAINING_IDX] + listTot[PAY_STANDBY_IDX]));
   var fillSlip = slipSum(slip, PAY_FILL, false, 0);
   var fillName = T('Täyttötunnit (1461)', 'Top-up hours (1461)');
   if (fillExp > 0 || fillSlip.sum !== 0) {
@@ -2761,7 +2787,7 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
   }
 
   /* ylityö (koko jakson taso): jakson Työaika yli 80 h */
-  var excess = Math.max(0, totalWork - 80 * 60);
+  var excess = Math.max(0, totalWork - (80 * 60 - redDays * 8 * 60)); /* v1.71.81-web: ylityö alkaa 80 h - (pekkas- ja lomapäivät) x 8 h jälkeen */
   /* v1.71.18-web: kun siirto tunnistettiin vapaapäivätyö ylityönä -säännöllä, ylityö = vapaapäivätyö (80 h täyttyi siirrolla) */
   if (moveVRule) excess = listTot[PAY_HOLIDAY_IDX];
   var ot50 = Math.min(excess, 12 * 60), ot100 = excess - ot50;
@@ -2788,6 +2814,12 @@ function buildPayslipReport(hours, slip, lang, appVersion) {
       'Standby time added to work time: ' + fmtMin(moveBase) + ' - ' + fmtMin(moveBase - moveMin) + ' = ' + fmtMin(moveMin) + ' h') + '</p>');
     html.push('<p class="note">** ' + T('Sidonnaisuusaika: ' + fmtMin(listTot[PAY_STANDBY_IDX]) + ' - ' + fmtMin(moveMin) + ' = ' + fmtMin(listTot[PAY_STANDBY_IDX] - moveMin) + ' h',
       'Standby time: ' + fmtMin(listTot[PAY_STANDBY_IDX]) + ' - ' + fmtMin(moveMin) + ' = ' + fmtMin(listTot[PAY_STANDBY_IDX] - moveMin) + ' h') + '</p>');
+  }
+
+  if (redDays > 0) {
+    var tgt = 80 * 60 - redDays * 8 * 60;
+    html.push('<p class="note">' + T('Tavoitetuntimäärä: 80 h - ' + redDays + ' × 8 h = ' + fmtMin(tgt) + ' h (pekkaspäiviä ' + fillPekka + ', lomapäiviä ' + fillRed + '; viikossa enintään 5 päivää; ylityö alkaa tämän jälkeen, täyttötunnit täyttävät tähän asti)',
+      'Target hours: 80 h - ' + redDays + ' × 8 h = ' + fmtMin(tgt) + ' h (PEKKAS days ' + fillPekka + ', holiday days ' + fillRed + '; at most 5 days per week; overtime starts after this, top-up hours fill up to it)') + '</p>');
   }
 
   /* yhteenveto */
@@ -3120,7 +3152,7 @@ var I18N = {
     optFlow: 'Paperia säästävä (päivät peräkkäin, päivä jatkuu seuraavalle sivulle)',
     optTiming: 'Ajantasauspysäkit (kellonkuva + pysäkin nimi + aika reitillä)',
     optSummary: 'Lisää koko jakson yhteenveto listan loppuun',
-    lblFont: 'Taulukon fonttikoko:', lblSpacing: 'Rivinväli:', fsEnter: 'Koko näyttö', fsExit: 'Poistu koko näytöstä', lblOutLang: 'Tulosteen kieli:', optRetro: 'Retro look',
+    lblFont: 'Taulukon fonttikoko:', lblSpacing: 'Rivinväli:', updNew: 'Uusi versio {v} on saatavilla (käytössä {c}).', updReload: 'Lataa uudelleen', fsEnter: 'Koko näyttö', fsExit: 'Poistu koko näytöstä', lblOutLang: 'Tulosteen kieli:', optRetro: 'Retro look',
     h3: '3. Luo työvuorolista / Tarkista palkkalaskelma', btnConvert: 'Tee työvuorolista', btnOpen: 'Avaa tulostusnäkymä', btnSummary: 'Jakson yhteenveto',
     printHint: 'Tulostusnäkymässä paina <b>Tulosta / Tallenna PDF</b> ja valitse tulostimeksi <b>Tallenna PDF:nä</b> (A4, ei marginaaleja, ei otsikoita/alatunnisteita).',
     logTitle: 'Loki',
@@ -3202,7 +3234,7 @@ var I18N = {
     optFlow: 'Paper-saving (days run on, a day continues on the next page)',
     optTiming: 'Timing stops (clock icon + stop name + time on the route)',
     optSummary: 'Add the summary of the whole period at the end of the list',
-    lblFont: 'Table font size:', lblSpacing: 'Line spacing:', fsEnter: 'Full screen', fsExit: 'Exit full screen', lblOutLang: 'Output language:', optRetro: 'Retro look',
+    lblFont: 'Table font size:', lblSpacing: 'Line spacing:', updNew: 'A new version {v} is available (you have {c}).', updReload: 'Reload', fsEnter: 'Full screen', fsExit: 'Exit full screen', lblOutLang: 'Output language:', optRetro: 'Retro look',
     h3: '3. Create the work schedule / Check the payslip', btnConvert: 'Convert to PDF', btnOpen: 'Open print view', btnSummary: 'Show period summary',
     printHint: 'In the print view press <b>Print / Save PDF</b> and choose <b>Save as PDF</b> as the printer (A4, no margins, no headers/footers).',
     logTitle: 'Log',
@@ -3314,6 +3346,35 @@ $('btnFsNext').addEventListener('click', toggleFs);
 document.addEventListener('fullscreenchange', updateFs);
 document.addEventListener('webkitfullscreenchange', updateFs);
 updateFs();
+
+/* v1.71.78-web -> 1.71.79-web: versiotarkistus. Haetaan sivun viereltä versio_web.txt (sama alkuperä -> ei CORS:ia) aina uniikilla osoitteella,
+   jotta selaimen tai GitHub Pagesin välimuisti ei anna vanhaa tietoa; jos tiedostossa on uudempi versio, näytetään ilmoitus ja painike. */
+var updLast = 0, updRemote = '';
+function verParts(v) { var m = /^(\d+)\.(\d+)\.(\d+)/.exec(v || ''); return m ? [+m[1], +m[2], +m[3]] : null; }
+function verNewer(a, b) { var x = verParts(a), y = verParts(b); if (!x || !y) return false; for (var i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] > y[i]; return false; }
+function showUpdNote() {
+  if (!updRemote) return;
+  $('updTxt').textContent = T('updNew', { v: updRemote.replace(/-web$/, ''), c: TyoCore.APP_VERSION.replace(/-web$/, '') });
+  $('updNote').hidden = false;
+}
+function checkUpdate() {
+  var now = Date.now();
+  if (now - updLast < 600000) return; /* enintään kerran 10 min välein */
+  updLast = now;
+  try {
+    fetch('versio_web.txt?t=' + now, { credentials: 'omit' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) {
+      t = (t || '').trim();
+      if (!/^\d+\.\d+\.\d+(-web)?$/.test(t)) return; /* esim. 404-sivu tai tyhjä */
+      if (verNewer(t, TyoCore.APP_VERSION)) { updRemote = t; showUpdNote(); }
+    }).catch(function () { /* ei verkkoa tai file:// -> ei ilmoitusta */ });
+  } catch (e) { /* ei väliä */ }
+}
+$('btnUpdReload').addEventListener('click', function () {
+  /* uusi osoite pakottaa selaimen hakemaan sivun uudelleen välimuistin ohi */
+  location.href = location.pathname + '?v=' + encodeURIComponent(updRemote || Date.now());
+});
+document.addEventListener('visibilitychange', function () { if (!document.hidden) checkUpdate(); });
+checkUpdate();
 
 function showLogError() {
   var l = $('log'), d = l.parentNode;
@@ -3778,6 +3839,7 @@ function setUiLang(lang, fromUser) {
   $('flagFi').title = I18N[uiLang].flagFi; $('flagEn').title = I18N[uiLang].flagEn;
   applyStaticTexts();
   updateFs();
+  if (updRemote) showUpdNote();
   if (fromUser) {
     $('selOutLang').value = uiLang; /* liput asettavat myös tulosteen kielen (kuten työpöytäohjelmassa) */
     try { localStorage.setItem('tyovuoropdf.lang', uiLang); } catch (e) { /* ei väliä */ }
