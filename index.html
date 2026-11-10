@@ -357,7 +357,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.87-web';
+var APP_VERSION = '1.71.88-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -955,7 +955,7 @@ function isStandbyShiftName(s) {
   if (t.substr(0, 9) === 'varavuoro') return true;
   return t.substr(0, 4) === 'vara' && (t.length === 4 || !/[a-zäöå]/.test(t.charAt(4)));
 }
-/* v1.71.87-web: varapäivän nimestä näytetään vain pilkkua edeltävä osa ("Vara aamu, Varavuoro Aamu" -> "Vara aamu") */
+/* v1.71.86-web: varapäivän nimestä näytetään vain pilkkua edeltävä osa ("Vara aamu, Varavuoro Aamu" -> "Vara aamu") */
 function standbyDisplayName(s) {
   if (!isStandbyShiftName(s)) return s;
   var p = s.indexOf(',');
@@ -3944,7 +3944,7 @@ function setIvuStatus(msg, cls) { var s = $('ivuStatus'); s.textContent = msg; s
 function periodStarts() {
   var n = new Date(), today = Date.UTC(n.getFullYear(), n.getMonth(), n.getDate());
   var cur = TyoCore.periodStartOf(today), out = [];
-  for (var k = -400; k <= 1; k++) { var ms = cur + k * 14 * TyoCore.DAY_MS; var pn = TyoCore.periodNumberText(TyoCore.formatDdMmYyyy(ms)); if (pn && parseInt(pn.substr(0, 3), 10) >= 9) out.push(ms); } /* v1.71.87-web: kaikki jaksot 009:stä nykyiseen + yksi seuraava (ei ennen jaksoa 009); lista vierittyy */
+  for (var k = -400; k <= 1; k++) { var ms = cur + k * 14 * TyoCore.DAY_MS; var pn = TyoCore.periodNumberText(TyoCore.formatDdMmYyyy(ms)); if (pn && parseInt(pn.substr(0, 3), 10) >= 9) out.push(ms); } /* v1.71.88-web: kaikki jaksot 009:stä nykyiseen + yksi seuraava (ei ennen jaksoa 009); lista vierittyy */
   return { list: out, cur: cur };
 }
 function periodLabel(startMs) {
@@ -4316,7 +4316,7 @@ $('linkInfo').addEventListener('click', function (e) {
 $('btnInfoClose').addEventListener('click', function () { $('infoOverlay').hidden = true; });
 $('infoOverlay').addEventListener('click', function (e) { if (e.target === this) this.hidden = true; });
 $('btnNextOk').addEventListener('click', function () { $('nextOverlay').hidden = true; });
-$('nextOverlay').addEventListener('click', function (e) { if (e.target === this) this.hidden = true; });
+/* v1.71.88-web: taustan napautus ei enää sulje Seuraavat vuorot -ikkunaa (vahinkosulkemisen esto); sulkeminen Sulje-painikkeella tai Esc-näppäimellä */
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (!$('infoOverlay').hidden) $('infoOverlay').hidden = true; else if (!$('nextOverlay').hidden) $('nextOverlay').hidden = true; } });
 $('btnIvuOpen').addEventListener('click', function () {
   ivuMode = 'period';
