@@ -357,7 +357,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.85-web';
+var APP_VERSION = '1.71.87-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -954,6 +954,12 @@ function isStandbyShiftName(s) {
   var t = trim(s).toLowerCase();
   if (t.substr(0, 9) === 'varavuoro') return true;
   return t.substr(0, 4) === 'vara' && (t.length === 4 || !/[a-zäöå]/.test(t.charAt(4)));
+}
+/* v1.71.87-web: varapäivän nimestä näytetään vain pilkkua edeltävä osa ("Vara aamu, Varavuoro Aamu" -> "Vara aamu") */
+function standbyDisplayName(s) {
+  if (!isStandbyShiftName(s)) return s;
+  var p = s.indexOf(',');
+  return p > 0 ? trim(s.substr(0, p)) : s;
 }
 function applyStandbyDayBreak(info) {
   if (!info.has('Työaika')) return;
@@ -1608,7 +1614,7 @@ function buildDisplay(days, showTimingStops, lang) {
     out.push({
       weekdayFull: weekdayFull(days[i].weekday, lang),
       dateStr: days[i].dateStr,
-      shiftCode: days[i].shiftCode,
+      shiftCode: standbyDisplayName(days[i].shiftCode),
       workStart: formatOutTime(days[i].info.get('Alkaminen') || '', lang),
       workEnd: formatOutTime(days[i].info.get('Päättyminen') || '', lang),
       rows: buildRowsForDay(raw, ins, showTimingStops, lang),
@@ -3012,6 +3018,13 @@ function ivuStandbyDay(a, name, dateStr, stamp) {
   applyStandbyDayBreak(d.info);
   return { kind: 'work', dateStr: dateStr, day: d };
 }
+/* v1.71.87-web: lomapäivä ("VL, Vuosiloma/Vacation", ABSENCE, ei tapahtumia): sama kuin PDF:n lomapäivä (leave, ei työaikaa) */
+function ivuLeaveDay(name, label, dateStr, stamp) {
+  if (!/(^|[^A-Za-zÄÖÅäöå])VL([^A-Za-zÄÖÅäöå]|$)|vuosiloma|vacation/i.test(label)) return null;
+  var d = { weekday: weekdayShort(dateStr), dateStr: dateStr, shiftCode: name, info: new Map(), events: [], stamp: stamp || 0, leave: true };
+  d.info.set('Päivämäärä', dateStr);
+  return { kind: 'work', dateStr: dateStr, day: d };
+}
 function ivuDayFromJson(js, stamp) {
   if (!js || typeof js !== 'object' || !js.date) return { kind: 'unsupported', note: 'ei päivämäärää' };
   var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(js.date));
@@ -3029,6 +3042,8 @@ function ivuDayFromJson(js, stamp) {
     var r1 = ivuSegmentsDay(js, ads, dateStr, stamp);
     if (r1.kind === 'work') return r1;
     r1 = ivuStandbyDay(a, name, dateStr, stamp);
+    if (r1) return r1;
+    r1 = ivuLeaveDay(name, label, dateStr, stamp);
     if (r1) return r1;
     return { kind: 'unsupported', dateStr: dateStr, note: 'vuoro "' + name + '" (' + ivuStr(al.type) + ') ilman tapahtumia' };
   }
@@ -3929,7 +3944,7 @@ function setIvuStatus(msg, cls) { var s = $('ivuStatus'); s.textContent = msg; s
 function periodStarts() {
   var n = new Date(), today = Date.UTC(n.getFullYear(), n.getMonth(), n.getDate());
   var cur = TyoCore.periodStartOf(today), out = [];
-  for (var k = -400; k <= 1; k++) { var ms = cur + k * 14 * TyoCore.DAY_MS; var pn = TyoCore.periodNumberText(TyoCore.formatDdMmYyyy(ms)); if (pn && parseInt(pn.substr(0, 3), 10) >= 9) out.push(ms); } /* v1.71.85-web: kaikki jaksot 009:stä nykyiseen + yksi seuraava (ei ennen jaksoa 009); lista vierittyy */
+  for (var k = -400; k <= 1; k++) { var ms = cur + k * 14 * TyoCore.DAY_MS; var pn = TyoCore.periodNumberText(TyoCore.formatDdMmYyyy(ms)); if (pn && parseInt(pn.substr(0, 3), 10) >= 9) out.push(ms); } /* v1.71.87-web: kaikki jaksot 009:stä nykyiseen + yksi seuraava (ei ennen jaksoa 009); lista vierittyy */
   return { list: out, cur: cur };
 }
 function periodLabel(startMs) {
