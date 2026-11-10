@@ -192,6 +192,9 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 #nextBox dl { margin: 0 0 14px; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; }
 #nextBox .nblk { position: relative; }
 #nextBox .nblk + .nblk { border-top: 1px solid var(--line); padding-top: 12px; }
+#nextBox .nsep { grid-column: 1 / -1; border-top: 1px solid var(--line); margin: 2px 0; } /* v1.71.78-web */
+#nextBox dd .l { color: var(--muted); font-weight: 400; }
+#nextBox .nblk.pause { padding-bottom: 12px; }
 #nextBox .nblk + .nblk.brk { border-top: 5px double var(--ink); padding-top: 12px; } /* v1.71.76-web: tauko = tumma kaksoisviiva */
 #nextBox dt { color: var(--muted); }
 #nextBox dd { margin: 0; font-weight: 700; word-break: break-word; }
@@ -348,7 +351,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.76-web';
+var APP_VERSION = '1.71.78-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3166,7 +3169,7 @@ var I18N = {
     tbPrint: 'Tulosta / Tallenna PDF',
     tbHint: 'Valitse tulostimeksi &quot;Tallenna PDF:nä&quot;, paperikoko A4, marginaalit: ei mitään, poista otsikot ja alatunnisteet, mittakaava 100&nbsp;%.',
     flagFi: 'Suomi', flagEn: 'English',
-    btnNext: 'Seuraavat vuorot', nextTitle: 'Seuraavat vuorot', nextOk: 'Sulje', nextCar: 'Auton numero', nextCirc: 'Kiertonumero', nextTime: 'Lähtöaika',
+    btnNext: 'Seuraavat vuorot', nextTitle: 'Seuraavat vuorot', nextOk: 'Sulje', nextCar: 'Auton numero', nextCirc: 'Kiertonumero', nextBreak: 'Tauko', nextTime: 'Lähtöaika',
     nextLine: 'Linjan numero', nextRoute: 'Reitti', nextUnknown: 'ei tiedossa', nextType: 'Tapahtuma',
     infoTitle: 'Lue minut', infoLoading: 'Ladataan…', infoFail: 'Tiedoston lataus epäonnistui. Avaa se suoraan osoitteesta: ',
     nextAllDone: 'Kaikki listan tapahtumat on ajettu. Hae tiedot uudelleen IVU:sta.',
@@ -3248,7 +3251,7 @@ var I18N = {
     tbPrint: 'Print / Save PDF',
     tbHint: 'Choose &quot;Save as PDF&quot; as the printer, paper size A4, margins: none, turn off headers and footers, scale 100&nbsp;%.',
     flagFi: 'Suomi', flagEn: 'English',
-    btnNext: 'Next shifts', nextTitle: 'Next shifts', nextOk: 'Close', nextCar: 'Vehicle number', nextCirc: 'Circulation number', nextTime: 'Departure time',
+    btnNext: 'Next shifts', nextTitle: 'Next shifts', nextOk: 'Close', nextCar: 'Vehicle number', nextCirc: 'Circulation number', nextBreak: 'Break', nextTime: 'Departure time',
     nextLine: 'Line number', nextRoute: 'Route', nextUnknown: 'not known', nextType: 'Event',
     infoTitle: 'Read me', infoLoading: 'Loading…', infoFail: 'Could not load the file. Open it directly at: ',
     nextAllDone: 'All events in the list are done. Fetch the data from IVU again.',
@@ -3952,6 +3955,8 @@ function stripLine6(l) { var m = /^\d+/.exec(l); return (m && m[0].length === 4)
    Palauttaa {list:[{ev, abs, end}], kierto, car, running, authFail}; running = löydetyn työpäivän lista on nyt käynnissä. */
 var NEXT_TYPES = /^(Linja-ajo|Halliajo|Siirtoajo|Vaihtoautosiirtymä)/;
 var NEXT_BREAK = /^(Tauko|Sidonnaisuusaika|Odotusaika)/i;
+/* v1.71.77-web: "Tauko"-rivin aika: palkaton tauko, sidonnaisuustauko ja sidonnaisuus */
+function NEXT_PAUSE(t) { return /^Sidonnaisuus/i.test(t) || (/^Tauko/i.test(t) && /(palkaton|sidonnaisuus)/i.test(t)); }
 function nextShiftFind(m) {
   var now = Date.now(), days = [], authFail = false;
   var keys = Object.keys(m.days || {}).filter(function (k) { return /^\d{4}-\d{2}-\d{2}$/.test(k); }).sort();
@@ -3986,15 +3991,19 @@ function nextShiftFind(m) {
     if (ei >= evs.length) continue;
     running = evs[0].abs <= now && now <= evs[evs.length - 1].end;
     /* v1.71.76-web: kaikki päivän (työvuorolistan) jäljellä olevat ajot, myös eri kierrot; tauon / sidonnaisuuden / odotuksen kohdalle merkitään katko (brk), itse tapahtumaa ei näytetä */
-    var gap = false;
+    var gap = false, tkS = 0, tkE = 0;
     for (var q = ei; q < evs.length; q++) {
       var et = evs[q].ev.evType || '';
-      if (!NEXT_TYPES.test(et)) { if (NEXT_BREAK.test(et)) gap = true; continue; }
+      if (!NEXT_TYPES.test(et)) {
+        if (NEXT_BREAK.test(et)) gap = true;
+        if (NEXT_PAUSE(et)) { if (!tkS || evs[q].abs < tkS) tkS = evs[q].abs; if (evs[q].end > tkE) tkE = evs[q].end; }
+        continue;
+      }
       var kk = evs[q].ev.kierto || '';
       if (kk !== '' && kierto === '') kierto = kk;
       if (car === '' && evs[q].ev.kulkuneuvo) car = evs[q].ev.kulkuneuvo;
-      list.push({ ev: evs[q].ev, abs: evs[q].abs, end: evs[q].end, brk: gap && list.length > 0 });
-      gap = false;
+      list.push({ ev: evs[q].ev, abs: evs[q].abs, end: evs[q].end, brk: gap && list.length > 0, tk: tkS && list.length > 0 ? { s: tkS, e: tkE } : null });
+      gap = false; tkS = 0; tkE = 0;
     }
   }
   return { list: list, kierto: kierto, car: car, running: running, authFail: authFail };
@@ -4004,12 +4013,15 @@ function nextClockTick() {
   /* v1.71.69-web: lähtöajan jälkeen -> vielä himmeämpi, lähtöajasta 2 min -> pois listalta */
   var body = $('nextBody'), bl = body.querySelectorAll('.nblk');
   for (var i = 0; i < bl.length; i++) {
+    var en = bl[i].getAttribute('data-end');
+    if (en) { if (+en <= t) bl[i].parentNode.removeChild(bl[i]); continue; } /* tauko-rivi: poistuu tauon päätyttyä */
     var st = +bl[i].getAttribute('data-start');
     if (st + 120000 <= t) bl[i].parentNode.removeChild(bl[i]);
     else bl[i].classList.toggle('done', st <= t);
   }
-  var first = body.querySelector('.nblk');
+  var first = body.querySelector('.nblk[data-start]');
   if (first === null && body.getAttribute('data-had') === '1' && !body.querySelector('.nmsg')) {
+    var pz = body.querySelectorAll('.nblk.pause'); for (var zi = 0; zi < pz.length; zi++) pz[zi].parentNode.removeChild(pz[zi]);
     var pm = document.createElement('p'); pm.className = 'nmsg'; pm.textContent = T('nextAllDone'); body.appendChild(pm);
   }
   /* v1.71.61-web: ajastin: +hh:mm:ss = aikaa seuraavan (listan ensimmäisen) tapahtuman lähtöön; lähtöajan jälkeen -hh:mm:ss = lähdöstä kulunut aika (himmeä lähtöajan jälkeen, tapahtuma poistuu 2 min kuluttua) */
@@ -4037,11 +4049,16 @@ function nextShowDialog(blocks, msg, head) {
   body.setAttribute('data-had', blocks && blocks.length ? '1' : '0');
   (blocks || []).forEach(function (rows, bi) {
     var wrap = document.createElement('div');
-    wrap.className = 'nblk' + (rows.brk ? ' brk' : ''); if (rows.start) wrap.setAttribute('data-start', rows.start);
+    wrap.className = 'nblk' + (rows.brk ? ' brk' : '') + (rows.pause ? ' pause' : ''); if (rows.start) wrap.setAttribute('data-start', rows.start);
+    if (rows.end) wrap.setAttribute('data-end', rows.end);
     var dl = document.createElement('dl');
     rows.forEach(function (r) {
       var dt = document.createElement('dt'), dd = document.createElement('dd');
-      dt.textContent = r[0]; dd.textContent = r[1]; dl.appendChild(dt); dl.appendChild(dd);
+      dt.textContent = r[0];
+      if (Array.isArray(r[1])) r[1].forEach(function (pt) { var sp = document.createElement('span'); if (pt[1]) sp.className = 'l'; sp.textContent = pt[0]; dd.appendChild(sp); });
+      else dd.textContent = r[1];
+      dl.appendChild(dt); dl.appendChild(dd);
+      if (rows.head && r === rows[0]) { var sep = document.createElement('div'); sep.className = 'nsep'; dl.appendChild(sep); }
     });
     wrap.appendChild(dl); body.appendChild(wrap);
   });
@@ -4057,7 +4074,8 @@ function nextProcess(m) {
   var wdn = uiLang === 'en' ? ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'] : ['Su', 'Ma', 'Ti', 'Ke', 'To', 'Pe', 'La'];
   var hm = function (x) { return pad2n(x.getHours()) + ':' + pad2n(x.getMinutes()); };
   var lastKierto = res.kierto, lastCar = res.car;
-  var blocks = res.list.map(function (it, k) {
+  var blocks = [];
+  res.list.forEach(function (it, k) {
     var ev = it.ev, d = new Date(it.abs);
     var timeTxt = hm(d) + ' ' + String(ev.evType || '').replace(/\s*\([^)]*\)\s*$/, ''); /* v1.71.66-web: tapahtuman nimi lähtöajan perässä */
     if (k === 0 && !res.running) timeTxt += ' (' + wdn[d.getDay()] + ' ' + d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear() + ')';
@@ -4074,14 +4092,23 @@ function nextProcess(m) {
     ];
     /* v1.71.76-web: kierto / auto vaihtuu päivän aikana -> näytetään uusi arvo ensimmäisessä sen jälkeisessä tapahtumassa */
     var nk = ev.kierto || '', nc = ev.kulkuneuvo || '';
-    if (k > 0 && ((nk !== '' && nk !== lastKierto) || (nc !== '' && nc !== lastCar))) {
-      rows.unshift([T('nextCirc'), (nk || lastKierto || unk) + ' · ' + T('nextCar') + ' ' + (nc || lastCar || unk)]);
+    var kChanged = k > 0 && nk !== '' && nk !== lastKierto;
+    if (k > 0 && (kChanged || (nc !== '' && nc !== lastCar))) {
+      /* uusi kierto/auto: tekstit kuten otsikkorivillä (nimike himmeä, numero kirkas) */
+      rows.unshift([T('nextCirc'), [[nk || lastKierto || unk, 0], [' · ' + T('nextCar') + ' ', 1], [nc || lastCar || unk, 0]]]);
+      rows.head = true; /* v1.71.78-web: ohut vaakaviiva kierto/auto-rivin alle */
+    }
+    /* v1.71.77-web: kierto vaihtuu ja välissä tauko -> "Tauko hh:mm - hh:mm" kirkkaiden kaksoisviivojen välissä */
+    if (kChanged && it.tk) {
+      var tb = [[T('nextBreak'), hm(new Date(it.tk.s)) + ' - ' + hm(new Date(it.tk.e))]];
+      tb.brk = true; tb.pause = true; tb.end = it.tk.e;
+      blocks.push(tb);
     }
     if (nk !== '') lastKierto = nk;
     if (nc !== '') lastCar = nc;
     rows.start = it.abs;
     if (it.brk) rows.brk = true;
-    return rows;
+    blocks.push(rows);
   });
   nextShowDialog(blocks, '', [[T('nextCirc'), res.kierto || unk], [T('nextCar'), res.car || unk]]);
 }
