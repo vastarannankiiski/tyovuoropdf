@@ -357,7 +357,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.84-web';
+var APP_VERSION = '1.71.85-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3929,7 +3929,7 @@ function setIvuStatus(msg, cls) { var s = $('ivuStatus'); s.textContent = msg; s
 function periodStarts() {
   var n = new Date(), today = Date.UTC(n.getFullYear(), n.getMonth(), n.getDate());
   var cur = TyoCore.periodStartOf(today), out = [];
-  for (var k = -8; k <= 1; k++) { var ms = cur + k * 14 * TyoCore.DAY_MS; var pn = TyoCore.periodNumberText(TyoCore.formatDdMmYyyy(ms)); if (pn && parseInt(pn.substr(0, 3), 10) >= 9) out.push(ms); } /* 8 edellistä, nykyinen ja seuraava (ei ennen jaksoa 001) */
+  for (var k = -400; k <= 1; k++) { var ms = cur + k * 14 * TyoCore.DAY_MS; var pn = TyoCore.periodNumberText(TyoCore.formatDdMmYyyy(ms)); if (pn && parseInt(pn.substr(0, 3), 10) >= 9) out.push(ms); } /* v1.71.85-web: kaikki jaksot 009:stä nykyiseen + yksi seuraava (ei ennen jaksoa 009); lista vierittyy */
   return { list: out, cur: cur };
 }
 function periodLabel(startMs) {
