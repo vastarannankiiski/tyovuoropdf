@@ -360,7 +360,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.89-web';
+var APP_VERSION = '1.71.90-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -4171,7 +4171,8 @@ function nextProcess(m) {
   res.list.forEach(function (it, k) {
     var ev = it.ev, d = new Date(it.abs);
     var timeTxt = hm(d) + ' ' + String(ev.evType || '').replace(/\s*\([^)]*\)\s*$/, ''); /* v1.71.66-web: tapahtuman nimi lähtöajan perässä */
-    if (k === 0 && !res.running) timeTxt += ' (' + wdn[d.getDay()] + ' ' + d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear() + ')';
+    /* v1.71.90-web: päivämäärä näytetään vain, jos ensimmäinen tapahtuma on eri kalenteripäivänä kuin tämä hetki (seuraavan vuorokauden puolella) */
+    if (k === 0 && !res.running && d.toDateString() !== new Date().toDateString()) timeTxt += ' (' + wdn[d.getDay()] + ' ' + d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear() + ')';
     var ln = /^Linja-ajo/.test(ev.evType || '') ? stripLine6(ev.linja || '') : ''; /* v1.71.65-web: linjanumero vain Linja-ajoissa */
     var route = (ln ? ln + ' ' : '') + (ev.fromLoc || '?') + ' → ' + (ev.toLoc || '?');
     if (/^\d{1,2}\.\d{2}/.test(ev.endTime || '')) {
