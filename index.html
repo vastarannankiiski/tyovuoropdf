@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1f5fbf">
+<link rel="icon" type="image/png" href="icon-192.png">
 <title>TyövuoroPdf</title>
 <style>
 :root {
@@ -366,7 +369,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.92-web';
+var APP_VERSION = '1.71.93-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -4419,6 +4422,12 @@ fillPeriods();
   log(T('started', { v: TyoCore.APP_VERSION }));
 })();
 })();
+</script>
+<script>
+/* v1.71.93-web: service worker (sw.js, ei välimuistia) - vain, jotta selain tarjoaa "Asenna sovellus"; ei vaikutusta tavalliseen käyttöön */
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener('load', function () { try { navigator.serviceWorker.register('sw.js').catch(function () { /* ei väliä */ }); } catch (e) { /* ei väliä */ } });
+}
 </script>
 </body>
 </html>
