@@ -2,7 +2,7 @@ Nyt TyövuoroPdf käynnistyy osoitteesta: https://vastarannankiiski.github.io/ty
 Sovelluksessa lisää ominaisuuksia:
 - Työvuorojen nopea lataus suoraan IVU:sta.
 - Kiertonumeron (lähtöketjun) seuraavien ajantasaisten lähtöjen ja autonumeron lataaminen suoraan IVU:sta.
-Uudet ominaisuuden edellyttävät ensimmäisellä käyttökerralla kirjautumista IVU:uun omilla käyttäjätunnuksilla, jonka jälkeen valitsemasi selain muistaa kirjautumistunnukset kunnes vaihdat salasanan tai poistat käyttämäsi selaimen evästeet. Lisäksi selaimeen pitää asentaa Violentmonkey laajennus ja antaa sille lupa omien scriptien suorittamiseksi.
+Uudet ominaisuuden edellyttävät ensimmäisellä käyttökerralla kirjautumista IVU:uun omilla käyttäjätunnuksilla, jonka jälkeen valitsemasi selain muistaa kirjautumistunnukset kunnes vaihdat salasanan tai poistat käyttämäsi selaimen evästeet. Lisäksi selaimeen pitää asentaa puhelimessa Violentmonkey laajennus ja antaa sille lupa omien scriptien suorittamiseksi.
 Sovellus toimii Windowsissa selaimilla: Firefox, Google Chrome, Vivaldi, Titanium, Quetta…
-Android puhelimessa sovellus toimii Firefoxilla, mutta parhaan käyttäjäkokemuksen saamiseksi käytä androidissa chromium pohjaista selainta, joka sallii lisäosien asentamisen selaimeen, esim. Vivaldi, Titanium, Quetta…, ei kuitenkaan Google Chrome, joka ei salli lisäosien asentamista selaimeen androidissa.
+Android puhelimessa sovellus toimii Firefoxilla, mutta parhaan käyttäjäkokemuksen saamiseksi käytä androidissa chromium pohjaista selainta, joka sallii laajennusten asentamisen selaimeen, esim. Vivaldi, Titanium, Quetta…, ei kuitenkaan Google Chrome, joka ei salli laajennusten asentamista selaimeen androidissa.
 Selainkohtaiset ohjeen saat avaamalla sovelluksen valitsemassasi selaimessa ja painamalla "Avaa IVU..." kohdalla oikealla puolella olevaa "i" näppäintä.
