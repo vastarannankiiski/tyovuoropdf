@@ -374,7 +374,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.98-web';
+var APP_VERSION = '1.71.99-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -2341,7 +2341,10 @@ function generateHtml(days, totals, startDate, endDate, appVersion, pageLayout, 
   var css = cssTemplate(tableFontSize, lang, rowSpacing);
   var js = pageLayout === 'flow' ? jsContinuous() : pageLayout === 'paper' ? jsPaperSaving() : pageLayout === 'one' ? jsOnePerPage() : jsReaderFriendly();
   if (pageLayout === 'flow') css += '\n.daycard.cont .day-header::after, .daycard.cont .r-day::after { content:" (' + (lang === 'en' ? 'cont.' : 'jatkuu') + ')"; font-weight:400; }';
-  if (retro) { css += '\n' + retroCss(tableFontSize, rowSpacing); js += '\n' + jsRetroPageNumbers(); } /* retro: sama sivutus kuin normaalisti + sivunumerot */
+  if (retro) css += '\n' + retroCss(tableFontSize, rowSpacing); /* retro: sama sivutus kuin normaalisti */
+  /* v1.71.99-web: sivunumero "n / N" oikeaan yläkulmaan (ylämarginaaliin, absoluuttisesti sijoitettu, joten ei vie tilaa) sekä normaalissa että Retro look -tulosteessa */
+  if (!retro) css += '\n.page > .r-pg { position:absolute; right:12mm; top:1.5mm; font-size:9pt; font-weight:700; }';
+  js += '\n' + jsRetroPageNumbers();
   var range = startDate === endDate ? niceDate(startDate, lang) : niceDate(startDate, lang) + ' - ' + niceDate(endDate, lang);
   var num = periodNumberText(startDate).substr(0, 3); /* v1.39.1-web: vain jaksonumero */
   var titleText = L(lang).title + (num ? num + ' ' : '') + range;
