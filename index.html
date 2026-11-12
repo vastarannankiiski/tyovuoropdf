@@ -195,14 +195,14 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 #nextBox h2 { margin: 0; font-size: 1.15rem; }
 #nextBox #nextClock { justify-self: end; font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
 #nextBox #nextClock.dim { color: var(--muted); }
-#nextBox dl { margin: 0 0 14px; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; }
+#nextBox dl { margin: 0 0 14px; display: grid; grid-template-columns: var(--dtw, auto) 1fr; gap: 6px 14px; } /* v1.71.97-web: nimikesarake yhtä leveä kaikissa tapahtumissa (Lähtöaika / Reitti / Työ alkaa / Työ loppuu) */
 #nextBox .nblk { position: relative; }
 #nextBox .nblk + .nblk { border-top: 1px solid var(--line); padding-top: 12px; }
 #nextBox .nsep { grid-column: 1 / -1; border-top: 1px solid var(--line); margin: 2px 0; } /* v1.71.78-web */
 #nextBox .nkh { grid-column: 1 / -1; font-weight: 700; }
 #nextBox .nkh .l, #nextBox dd .l { color: var(--muted); font-weight: 400; }
 #nextBox .nblk.pause { padding-bottom: 12px; }
-#nextBox .nblk.pause dt { min-width: var(--dtw, 0px); }
+
 #nextBox .nblk + .nblk.brk { border-top: 5px double var(--ink); padding-top: 12px; } /* v1.71.76-web: tauko = tumma kaksoisviiva */
 #nextBox dt { color: var(--muted); }
 #nextBox dd { margin: 0; font-weight: 700; word-break: break-word; }
@@ -215,7 +215,12 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 /* v1.71.91-web: väliaikapysäkit-painike auton numeron oikealla puolella; pysäkit näkyvät reitin alla, kun painike on painettu */
 #nextBox #btnNextStops { margin-left: auto; padding: 2px 8px; min-height: 0; line-height: 1.3; font-size: 1rem; }
 #nextBox #btnNextStops[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-#nextBox .nstops { color: var(--muted); font-weight: 400; font-size: .92em; line-height: 1.45; padding-left: .9em; }
+#nextBox .nstops { color: var(--muted); font-weight: 400; font-size: .92em; line-height: 1.45; }
+/* v1.71.95-web: pysäkit näkyvissä -> reitin alku, väliaikapisteet ja loppu kukin omalla rivillään */
+/* v1.71.98-web: alku ja loppu aina omilla riveillään (myös ilman väliaikapisteitä), nuoli alkupisteen / pysäkin perässä */
+#nextBox .nrs, #nextBox .nre { display: block; }
+#nextBox .narr { display: none; }
+#nextBox .ar { display: inline; }
 #nextBox:not(.showstops) .nstops { display: none; }
 @media (max-width: 480px) { #nextBox #nextHead2 { flex-wrap: nowrap; gap: 4px 10px; font-size: .9rem; align-items: center; } #nextBox #btnNextStops { padding: 2px 6px; flex: none; } }
 #nextBox #nextBody { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
@@ -369,7 +374,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.93-web';
+var APP_VERSION = '1.71.98-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3230,7 +3235,7 @@ var I18N = {
     tbPrint: 'Tulosta / Tallenna PDF',
     tbHint: 'Valitse tulostimeksi &quot;Tallenna PDF:nä&quot;, paperikoko A4, marginaalit: ei mitään, poista otsikot ja alatunnisteet, mittakaava 100&nbsp;%.',
     flagFi: 'Suomi', flagEn: 'English',
-    btnNext: 'Seuraavat vuorot', nextTitle: 'Seuraavat vuorot', nextOk: 'Sulje', nextCar: 'Auton numero', nextCirc: 'Kiertonumero', nextBreak: 'Tauko', nextTime: 'Lähtöaika', nextStops: 'Väliaikapysäkit',
+    btnNext: 'Seuraavat vuorot', nextTitle: 'Seuraavat vuorot', nextOk: 'Sulje', nextCar: 'Auton numero', nextCirc: 'Kiertonumero', nextBreak: 'Tauko', nextTime: 'Lähtöaika', nextWorkStart: 'Työ alkaa', nextWorkEnd: 'Työ loppuu', nextStops: 'Väliaikapysäkit',
     nextLine: 'Linjan numero', nextRoute: 'Reitti', nextUnknown: 'ei tiedossa', nextType: 'Tapahtuma',
     infoTitle: 'Lue minut', infoLoading: 'Ladataan…', infoFail: 'Tiedoston lataus epäonnistui. Avaa se suoraan osoitteesta: ',
     nextAllDone: 'Kaikki listan tapahtumat on ajettu. Hae tiedot uudelleen IVU:sta.',
@@ -3312,7 +3317,7 @@ var I18N = {
     tbPrint: 'Print / Save PDF',
     tbHint: 'Choose &quot;Save as PDF&quot; as the printer, paper size A4, margins: none, turn off headers and footers, scale 100&nbsp;%.',
     flagFi: 'Suomi', flagEn: 'English',
-    btnNext: 'Next shifts', nextTitle: 'Next shifts', nextOk: 'Close', nextCar: 'Vehicle number', nextCirc: 'Circulation number', nextBreak: 'Break', nextTime: 'Departure time', nextStops: 'Timing stops',
+    btnNext: 'Next shifts', nextTitle: 'Next shifts', nextOk: 'Close', nextCar: 'Vehicle number', nextCirc: 'Circulation number', nextBreak: 'Break', nextTime: 'Departure time', nextWorkStart: 'Work starts', nextWorkEnd: 'Work ends', nextStops: 'Timing stops',
     nextLine: 'Line number', nextRoute: 'Route', nextUnknown: 'not known', nextType: 'Event',
     infoTitle: 'Read me', infoLoading: 'Loading…', infoFail: 'Could not load the file. Open it directly at: ',
     nextAllDone: 'All events in the list are done. Fetch the data from IVU again.',
@@ -4040,7 +4045,8 @@ function nextDatesIso() {
   for (var i = 0; i < 3; i++) { var x = new Date(d.getFullYear(), d.getMonth(), d.getDate() + i); out.push(ivuIsoLocal(x)); }
   return out;
 }
-function stripLine6(l) { var m = /^\d+/.exec(l); return (m && m[0].length === 4) ? l.substr(1) : l; }
+/* v1.71.95-web: linjanumero = IVU:n linjatunnuksen kolme viimeistä numeroa ja niiden perässä mahdollisesti olevat kirjaimet */
+function stripLine6(l) { var m = /^(\d+)(.*)$/.exec(l); return (m && m[1].length > 3) ? m[1].slice(-3) + m[2] : l; }
 /* v1.71.49-web: Seuraavat vuorot -lista. Etsii ensimmäisen tapahtuman (Linja-ajo, Halliajo, Siirtoajo, Vaihtoautosiirtymä), joka on meneillään tai
    alkamatta, ja palauttaa kaikki saman työpäivän listan saman kiertonumeron tapahtumat siitä eteenpäin.
    Palauttaa {list:[{ev, abs, end}], kierto, car, running, authFail}; running = löydetyn työpäivän lista on nyt käynnissä. */
@@ -4071,15 +4077,25 @@ function nextShiftFind(m) {
       if (em >= 0) { var ea = em + add; if (ea < min + add) ea += 1440; end = base + ea * 60000; }
       evs.push({ ev: ev, abs: abs, end: end });
     });
+    /* v1.71.94-web: työpäivän alku ja loppu (Työ alkaa / Työ loppuu, kuten työvuorolistassa) */
+    var wsI = r.day.info.get('Alkaminen'), weI = r.day.info.get('Päättyminen');
+    var wsMin = wsI ? mins(wsI) : -1, weMin = weI ? mins(weI) : -1;
+    if (weMin >= 0 && /\+\s*$/.test(String(weI))) weMin += 1440;
+    evs.ws = wsMin >= 0 ? base + wsMin * 60000 : 0;
+    evs.we = weMin >= 0 ? base + weMin * 60000 : 0;
     if (evs.length) days.push(evs);
   });
-  var list = [], running = false, kierto = '', car = '', di, ei, evs;
-  for (di = 0; di < days.length && !list.length; di++) {
+  var list = [], running = false, kierto = '', car = '', di, ei, evs, found = false, wsOut = 0, weOut = 0;
+  for (di = 0; di < days.length && !found; di++) {
     evs = days[di];
     for (ei = 0; ei < evs.length; ei++) {
       if (NEXT_TYPES.test(evs[ei].ev.evType || '') && evs[ei].end > now && evs[ei].abs + 120000 > now) break; /* meneillään oleva tai tuleva, ei jo listalta poistuva (alkamisesta alle 2 min) */
     }
-    if (ei >= evs.length) continue;
+    /* v1.71.94-web: päivä pysyy näkyvissä, kunnes Työ loppuu -ajasta on 15 min, vaikka ajoja ei enää olisi */
+    if (ei >= evs.length && !(evs.we && evs.we + 900000 > now)) continue;
+    found = true;
+    wsOut = evs.ws && evs.ws + 120000 > now ? evs.ws : 0;
+    weOut = evs.we && evs.we + 900000 > now ? evs.we : 0;
     running = evs[0].abs <= now && now <= evs[evs.length - 1].end;
     /* v1.71.76-web: kaikki päivän (työvuorolistan) jäljellä olevat ajot, myös eri kierrot; tauon / sidonnaisuuden / odotuksen kohdalle merkitään katko (brk), itse tapahtumaa ei näytetä */
     var gap = false, tkS = 0, tkE = 0;
@@ -4097,7 +4113,15 @@ function nextShiftFind(m) {
       gap = false; tkS = 0; tkE = 0;
     }
   }
-  return { list: list, kierto: kierto, car: car, running: running, authFail: authFail };
+  if (found && (kierto === '' || car === '')) {
+    /* ei jäljellä olevia ajoja (vain Työ loppuu): kierto ja auto päivän viimeisestä ajosta */
+    for (var bq = evs.length - 1; bq >= 0 && (kierto === '' || car === ''); bq--) {
+      if (!NEXT_TYPES.test(evs[bq].ev.evType || '')) continue;
+      if (kierto === '' && evs[bq].ev.kierto) kierto = evs[bq].ev.kierto;
+      if (car === '' && evs[bq].ev.kulkuneuvo) car = evs[bq].ev.kulkuneuvo;
+    }
+  }
+  return { list: list, kierto: kierto, car: car, running: running, authFail: authFail, ws: wsOut, we: weOut };
 }
 function nextClockTick() {
   var d = new Date(), t = d.getTime();
@@ -4107,10 +4131,33 @@ function nextClockTick() {
     var en = bl[i].getAttribute('data-end');
     if (en) { if (+en <= t) bl[i].parentNode.removeChild(bl[i]); continue; } /* tauko-rivi: poistuu tauon päätyttyä */
     var st = +bl[i].getAttribute('data-start');
-    if (st + 120000 <= t) bl[i].parentNode.removeChild(bl[i]);
+    var hold = +bl[i].getAttribute('data-hold') || 120000; /* v1.71.94-web: Työ loppuu 15 min, muut 2 min */
+    if (st + hold <= t) bl[i].parentNode.removeChild(bl[i]);
     else bl[i].classList.toggle('done', st <= t);
   }
-  var first = body.querySelector('.nblk[data-start]');
+  /* v1.71.94-web: otsikon kierto/auto = ensimmäinen tapahtuma, jonka loppu ei ole vielä ohi; kun otsikko siirtyy uuteen kiertoon/autoon, tapahtuman oma kierto/auto-rivi poistetaan listalta */
+  if (nextModel.length) {
+    var ci = -1;
+    for (var mj = 0; mj < nextModel.length; mj++) if (nextModel[mj].e > t) { ci = mj; break; }
+    var cur = ci < 0 ? nextModel[nextModel.length - 1] : nextModel[ci];
+    var hb = $('nextHead2').querySelectorAll('b');
+    if (hb.length >= 2) {
+      if (cur.k && hb[0].textContent !== cur.k) hb[0].textContent = cur.k;
+      if (cur.c && hb[1].textContent !== cur.c) hb[1].textContent = cur.c;
+    }
+    var hr = body.querySelectorAll('.nblk[data-hk]');
+    for (var hi = 0; hi < hr.length; hi++) {
+      if (hr[hi].getAttribute('data-hk') !== cur.k || hr[hi].getAttribute('data-hc') !== cur.c) continue;
+      var nkh = hr[hi].querySelector('.nkh');
+      if (nkh) { var nsp = nkh.nextSibling; if (nsp && nsp.classList && nsp.classList.contains('nsep')) nsp.parentNode.removeChild(nsp); nkh.parentNode.removeChild(nkh); }
+    }
+  }
+  /* ajastin juoksee kaikkiin tapahtumiin; Työ alkaa -ajan mentyä ajastin siirtyy heti seuraavaan tapahtumaan (Työ alkaa näkyy himmeänä 2 min) */
+  var first = null, cands = body.querySelectorAll('.nblk[data-start]');
+  for (var fi = 0; fi < cands.length; fi++) {
+    if (cands[fi].getAttribute('data-kind') === 'ws' && +cands[fi].getAttribute('data-start') <= t) continue;
+    first = cands[fi]; break;
+  }
   if (first === null && body.getAttribute('data-had') === '1' && !body.querySelector('.nmsg')) {
     var pz = body.querySelectorAll('.nblk.pause'); for (var zi = 0; zi < pz.length; zi++) pz[zi].parentNode.removeChild(pz[zi]);
     var pm = document.createElement('p'); pm.className = 'nmsg'; pm.textContent = T('nextAllDone'); body.appendChild(pm);
@@ -4123,9 +4170,11 @@ function nextClockTick() {
   clk.classList.toggle('dim', first.classList.contains('done'));
 }
 setInterval(function () { if (!$('nextOverlay').hidden) nextClockTick(); }, 1000);
+var nextModel = []; /* v1.71.94-web: tapahtumat {s, e, k, c} otsikon kierto/auto-päivitystä varten */
 var nextStopsOn = false;
 try { nextStopsOn = localStorage.getItem('tyovuoropdf.nextStops') === '1'; } catch (e) { /* ei väliä */ }
-function nextShowDialog(blocks, msg, head) {
+function nextShowDialog(blocks, msg, head, model) {
+  nextModel = model || [];
   $('nextTitle').textContent = T('nextTitle');
   nextClockTick();
   var hd = $('nextHead2');
@@ -4160,6 +4209,8 @@ function nextShowDialog(blocks, msg, head) {
     var wrap = document.createElement('div');
     wrap.className = 'nblk' + (rows.brk ? ' brk' : '') + (rows.pause ? ' pause' : ''); if (rows.start) wrap.setAttribute('data-start', rows.start);
     if (rows.end) wrap.setAttribute('data-end', rows.end);
+    if (rows.kind) { wrap.setAttribute('data-kind', rows.kind); if (rows.kind === 'we') wrap.setAttribute('data-hold', '900000'); } /* Työ loppuu näkyy himmeänä 15 min */
+    if (rows.head) { wrap.setAttribute('data-hk', rows.hk || ''); wrap.setAttribute('data-hc', rows.hc || ''); }
     var dl = document.createElement('dl');
     rows.forEach(function (r) {
       if (rows.head && r === rows[0]) {
@@ -4175,15 +4226,18 @@ function nextShowDialog(blocks, msg, head) {
       dt.textContent = r[0];
       if (rows.routeSplit && r === rows[rows.length - 1]) {
         /* v1.71.92-web: Reitti-rivi: alku, väliaikapysäkit (vain painikkeella) ja loppu; pysäkit alku- ja loppupisteen välissä */
-        var sa = document.createElement('span'); sa.textContent = rows.routeSplit[0]; dd.appendChild(sa);
+        var sa = document.createElement('span'); sa.className = 'nrs'; sa.textContent = rows.routeSplit[0]; dd.appendChild(sa);
+        var sa2 = document.createElement('span'); sa2.className = 'ar'; sa2.textContent = ' →'; sa.appendChild(sa2); /* nuoli pisteiden välille (pysäkit näkyvissä) */
+        var sar = document.createElement('span'); sar.className = 'narr'; sar.textContent = ' → '; dd.appendChild(sar);
         var stp = document.createElement('div'); stp.className = 'nstops';
-        rows.stops.forEach(function (sw) {
-          var ln2 = document.createElement('div');
-          ln2.textContent = '\uD83D\uDD53 ' + sw[0] + (sw[1] ? ' (' + sw[1] + ')' : '') + ' →';
+        (rows.stops || []).forEach(function (sw) {
+          var ln2 = document.createElement('div'), ar2 = document.createElement('span');
+          ln2.textContent = '\uD83D\uDD53 ' + sw[0] + (sw[1] ? ' (' + sw[1] + ')' : '');
+          ar2.className = 'ar'; ar2.textContent = ' →'; ln2.appendChild(ar2);
           stp.appendChild(ln2);
         });
         dd.appendChild(stp);
-        var sz = document.createElement('span'); sz.textContent = rows.routeSplit[1]; dd.appendChild(sz);
+        var sz = document.createElement('span'); sz.className = 'nre'; sz.textContent = rows.routeSplit[1]; dd.appendChild(sz);
       }
       else if (Array.isArray(r[1])) r[1].forEach(function (pt) { var sp = document.createElement('span'); if (pt[1]) sp.className = 'l'; sp.textContent = pt[0]; dd.appendChild(sp); });
       else dd.textContent = r[1];
@@ -4194,39 +4248,68 @@ function nextShowDialog(blocks, msg, head) {
   nextClockTick();
   $('nextOverlay').hidden = false;
   /* v1.71.84-web: Tauko-rivin aika samaan sisennykseen kuin ajotapahtumien: nimikesarakkeen leveys mitataan Lähtöaika-nimikkeestä */
-  var d0 = body.querySelector('.nblk:not(.pause) dt');
-  if (d0) body.style.setProperty('--dtw', d0.getBoundingClientRect().width + 'px');
+  /* v1.71.97-web: nimikesarakkeen leveys = leveimmän nimikkeen leveys kaikissa tapahtumissa */
+  body.style.removeProperty('--dtw');
+  var dts = body.querySelectorAll('.nblk:not(.pause) dt'), dmax = 0;
+  for (var di2 = 0; di2 < dts.length; di2++) dmax = Math.max(dmax, dts[di2].getBoundingClientRect().width);
+  if (dmax > 0) body.style.setProperty('--dtw', dmax + 'px');
   $('btnNextOk').focus();
 }
 function nextProcess(m) {
   if (!m || typeof m !== 'object' || m.tvl !== 'result' || !m.days || typeof m.days !== 'object') { nextShowDialog(null, T('ivuBad')); return; }
   var res = nextShiftFind(m);
-  if (!res.list.length) { nextShowDialog(null, res.authFail ? T('ivuAuth') : T('nextNone')); return; }
+  if (!res.list.length && !res.we && !res.ws) { nextShowDialog(null, res.authFail ? T('ivuAuth') : T('nextNone')); return; }
   var unk = T('nextUnknown');
   var wdn = uiLang === 'en' ? ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'] : ['Su', 'Ma', 'Ti', 'Ke', 'To', 'Pe', 'La'];
   var hm = function (x) { return pad2n(x.getHours()) + ':' + pad2n(x.getMinutes()); };
   var lastKierto = res.kierto, lastCar = res.car;
-  var blocks = [];
+  var blocks = [], model = [], dateDone = false;
+  /* v1.71.94-web: päivämäärä vain ensimmäisessä näytettävässä tapahtumassa, jos se on eri kalenteripäivänä kuin nyt */
+  function dateSfx(dt) {
+    if (dateDone) return '';
+    dateDone = true;
+    if (res.running || dt.toDateString() === new Date().toDateString()) return '';
+    return ' (' + wdn[dt.getDay()] + ' ' + dt.getDate() + '.' + (dt.getMonth() + 1) + '.' + dt.getFullYear() + ')';
+  }
+  /* v1.71.94-web: otsikon kierto/auto per ajo: ajo ilman omaa kiertoa (esim. Vaihtoautosiirtymä) kuuluu seuraavaan kiertoon/autoon, joten otsikko vaihtuu heti edellisen kierron viimeisen ajon jälkeen */
+  var effK = [], effC = [], nxK = '', nxC = '', ei2, pk2 = res.kierto, pc2 = res.car;
+  for (ei2 = res.list.length - 1; ei2 >= 0; ei2--) {
+    var ek = res.list[ei2].ev.kierto || '', ec = res.list[ei2].ev.kulkuneuvo || '';
+    if (ek) nxK = ek;
+    if (ec) nxC = ec;
+    effK[ei2] = ek || nxK; effC[ei2] = ec || nxC;
+  }
+  for (ei2 = 0; ei2 < res.list.length; ei2++) {
+    if (effK[ei2]) pk2 = effK[ei2]; else effK[ei2] = pk2;
+    if (effC[ei2]) pc2 = effC[ei2]; else effC[ei2] = pc2;
+  }
+  /* v1.71.94-web: Työ alkaa / Työ loppuu -tapahtumat; model = kaikki tapahtumat otsikon kierto/auto-päivitystä varten */
+  if (res.ws) {
+    var wsRows = [[T('nextWorkStart'), hm(new Date(res.ws)) + dateSfx(new Date(res.ws))]];
+    wsRows.start = res.ws; wsRows.kind = 'ws';
+    blocks.push(wsRows);
+    model.push({ s: res.ws, e: res.ws, k: lastKierto, c: lastCar });
+  }
   res.list.forEach(function (it, k) {
     var ev = it.ev, d = new Date(it.abs);
     var timeTxt = hm(d) + ' ' + String(ev.evType || '').replace(/\s*\([^)]*\)\s*$/, ''); /* v1.71.66-web: tapahtuman nimi lähtöajan perässä */
     /* v1.71.90-web: päivämäärä näytetään vain, jos ensimmäinen tapahtuma on eri kalenteripäivänä kuin tämä hetki (seuraavan vuorokauden puolella) */
-    if (k === 0 && !res.running && d.toDateString() !== new Date().toDateString()) timeTxt += ' (' + wdn[d.getDay()] + ' ' + d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear() + ')';
+    timeTxt += dateSfx(d);
     var ln = /^Linja-ajo/.test(ev.evType || '') ? stripLine6(ev.linja || '') : ''; /* v1.71.65-web: linjanumero vain Linja-ajoissa */
-    var routeStart = (ln ? ln + ' ' : '') + (ev.fromLoc || '?') + ' → ', routeEnd = (ev.toLoc || '?'); /* v1.71.92-web: alku ja loppu erikseen, väliaikapysäkit tulevat niiden väliin */
+    var routeStart = (ln ? ln + ' ' : '') + (ev.fromLoc || '?'), routeEnd = (ev.toLoc || '?'); /* v1.71.92-web: alku ja loppu erikseen, väliaikapysäkit tulevat niiden väliin */
     if (/^\d{1,2}\.\d{2}/.test(ev.endTime || '')) {
       var nd = new Date(it.end);
       var sameDay = nd.getFullYear() === d.getFullYear() && nd.getMonth() === d.getMonth() && nd.getDate() === d.getDate();
       routeEnd += ' (' + (sameDay ? '' : nd.getDate() + '.' + (nd.getMonth() + 1) + '. ') + hm(nd) + ')';
     }
-    var route = routeStart + routeEnd;
+    var route = routeStart + ' → ' + routeEnd;
     var rows = [
       [T('nextTime'), timeTxt],
       [T('nextRoute'), route]
     ];
     /* v1.71.91-web: reitin väliaikapysäkit (kellonkuva + paikka + (hh:mm)); näkyvät vain painikkeella */
     var wps = (ev.waypoints || []).filter(function (w) { return w && w.wLoc; });
-    if (wps.length) rows.routeSplit = [routeStart, routeEnd];
+    rows.routeSplit = [routeStart, routeEnd]; /* v1.71.96-web: alku ja loppu omille riveilleen myös ilman väliaikapisteitä */
     if (wps.length) rows.stops = wps.map(function (w) { return [w.wLoc, String(w.wTime || '').replace(/^(\d{1,2})[.:](\d{2})/, '$1:$2')]; });
     /* v1.71.76-web: kierto / auto vaihtuu päivän aikana -> näytetään uusi arvo ensimmäisessä sen jälkeisessä tapahtumassa */
     var nk = ev.kierto || '', nc = ev.kulkuneuvo || '';
@@ -4235,6 +4318,7 @@ function nextProcess(m) {
       /* uusi kierto/auto: tekstit kuten otsikkorivillä (nimike himmeä, numero kirkas) */
       rows.unshift([T('nextCirc'), [[nk || lastKierto || unk, 0], [' · ' + T('nextCar') + ' ', 1], [nc || lastCar || unk, 0]]]);
       rows.head = true; /* v1.71.78-web: ohut vaakaviiva kierto/auto-rivin alle */
+      rows.hk = nk || lastKierto || ''; rows.hc = nc || lastCar || ''; /* v1.71.94-web: rivi poistuu, kun otsikko näyttää samat kierto/auto */
     }
     /* v1.71.77-web: kierto vaihtuu ja välissä tauko -> "Tauko hh:mm - hh:mm" kirkkaiden kaksoisviivojen välissä */
     /* v1.71.83-web: tauko näytetään, kun taukoa seuraava kierto (ensimmäinen kierrollinen ajo tauon jälkeen, esim. Vaihtoautosiirtymän jälkeinen) eroaa edellisestä */
@@ -4247,11 +4331,18 @@ function nextProcess(m) {
     }
     if (nk !== '') lastKierto = nk;
     if (nc !== '') lastCar = nc;
+    model.push({ s: it.abs, e: it.end, k: effK[k] || lastKierto, c: effC[k] || lastCar });
     rows.start = it.abs;
     if (it.brk) rows.brk = true;
     blocks.push(rows);
   });
-  nextShowDialog(blocks, '', [[T('nextCirc'), res.kierto || unk], [T('nextCar'), res.car || unk]]);
+  if (res.we) {
+    var weRows = [[T('nextWorkEnd'), hm(new Date(res.we)) + dateSfx(new Date(res.we))]];
+    weRows.start = res.we; weRows.kind = 'we';
+    blocks.push(weRows);
+    model.push({ s: res.we, e: res.we, k: lastKierto, c: lastCar });
+  }
+  nextShowDialog(blocks, '', [[T('nextCirc'), res.kierto || unk], [T('nextCar'), res.car || unk]], model);
 }
 function ivuProcess(m) {
   if (!m || typeof m !== 'object' || m.tvl !== 'result' || !m.days || typeof m.days !== 'object') {
