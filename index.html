@@ -130,7 +130,6 @@ a.bm { cursor: grab; }
 .fsbtn svg { width: 16px; height: 16px; }
 html.isfs .fsbtn .i-enter, html:not(.isfs) .fsbtn .i-exit { display: none; }
 #nextBox #nextR { justify-self: end; display: flex; align-items: center; gap: 8px; }
-#nextBox #nextR #nextClock { justify-self: auto; }
 #nextBox #nextR .fsbtn { min-height: 30px; min-width: 32px; } /* yhtä korkea kuin Sulje-painike */
 #ver { font-weight: 400; color: var(--muted); font-size: .9rem; }
 /* v1.71.63-web: kapea näyttö (puhelin tai tabletti pystyssä, alle 620 px): otsikkorivi yhdelle riville; koko kasvaa näytön leveyden mukaan */
@@ -190,12 +189,13 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 #nextBox { background: var(--bg, #fff); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; max-width: 440px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; padding: 16px 18px; box-shadow: 0 8px 30px rgba(0,0,0,.3); }
 #nextBox #nextTop { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin: 0 0 10px; }
 #nextBox h2 { white-space: nowrap; }
-@media (max-width: 480px) { #nextBox #nextTop { display: flex; flex-wrap: nowrap; justify-content: space-between; gap: 6px; } #nextBox h2 { font-size: .9rem; } #nextBox #btnNextOk { font-size: .8rem; padding: 4px 9px; } #nextBox #nextR { gap: 4px; } #nextBox #nextR .fsbtn { padding: 3px 5px; } #nextBox #nextR .fsbtn svg { width: 14px; height: 14px; } #nextBox #nextClock { font-size: .82rem; } }
+@media (max-width: 480px) { #nextBox #nextTop { display: flex; flex-wrap: nowrap; justify-content: space-between; gap: 6px; } #nextBox h2 { font-size: .9rem; } #nextBox #btnNextOk { font-size: .8rem; padding: 4px 9px; } #nextBox #nextR { gap: 4px; } #nextBox #nextR .fsbtn { padding: 3px 5px; } #nextBox #nextR .fsbtn svg { width: 14px; height: 14px; } }
 @media (max-width: 379px) { #nextBox #nextTop { flex-wrap: wrap; } #nextBox #nextR { margin-left: auto; } }
 #nextBox h2 { margin: 0; font-size: 1.15rem; }
-#nextBox #nextClock { justify-self: end; font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
-#nextBox #nextClock.dim { color: var(--muted); }
-#nextBox dl { margin: 0 0 14px; display: grid; grid-template-columns: var(--dtw, auto) 1fr; gap: 6px 14px; } /* v1.71.97-web: nimikesarake yhtä leveä kaikissa tapahtumissa (Lähtöaika / Reitti / Työ alkaa / Työ loppuu) */
+/* v1.71.101-web: ajastin on sen tapahtuman ylimmällä rivillä oikeassa reunassa, johon se laskee aikaa; ei himmene koskaan */
+#nextBox #nextClock { position: absolute; top: 0; right: 1ch; font: inherit; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink); opacity: 1; } /* v1.71.102-web: sama fontti ja koko kuin tapahtuman tekstissä */
+#nextBox .nblk.hasclk dl > dd:nth-child(2), #nextBox .nblk.hasclk dl > .nkh:first-child { padding-right: calc(6.4rem + 1ch); }
+#nextBox dl { position: relative; margin: 0 0 14px; display: grid; grid-template-columns: var(--dtw, auto) 1fr; gap: 6px 14px; } /* v1.71.97-web: nimikesarake yhtä leveä kaikissa tapahtumissa (Lähtöaika / Reitti / Työ alkaa / Työ loppuu) */
 #nextBox .nblk { position: relative; }
 #nextBox .nblk + .nblk { border-top: 1px solid var(--line); padding-top: 12px; }
 #nextBox .nsep { grid-column: 1 / -1; border-top: 1px solid var(--line); margin: 2px 0; } /* v1.71.78-web */
@@ -207,7 +207,9 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 #nextBox dt { color: var(--muted); }
 #nextBox dd { margin: 0; font-weight: 700; word-break: break-word; }
 #nextBox .nblk.done dd { color: var(--muted); }
-#nextBox .nblk.done { opacity: .5; } /* v1.71.69-web: lähtöajan jälkeen vielä himmeämpi */
+#nextBox .nblk.done dl > :not(#nextClock) { opacity: .5; } /* v1.71.101-web: himmennys lapsielementteihin, ettei ajastin himmene */
+#nextBox .nblk.done dt, #nextBox .nblk.done dd { color: var(--muted); } /* v1.71.100-web: Työ alkaa / Työ loppuu: ajan ohitettua sekä nimi että kellonaika himmeiksi */
+#nextBox .nblk.done[data-kind="ws"] dl > :not(#nextClock), #nextBox .nblk.done[data-kind="we"] dl > :not(#nextClock) { opacity: .4; } /* v1.71.69-web: lähtöajan jälkeen vielä himmeämpi */
 #nextBox .nmsg { margin: 0 0 14px; }
 #nextBox #nextHead2 { display: flex; flex-wrap: wrap; gap: 4px 18px; padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
 #nextBox #nextHead2[hidden] { display: none; }
@@ -236,7 +238,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 </head>
 <body>
 <div id="infoOverlay" hidden><div id="infoBox" role="dialog" aria-modal="true" aria-labelledby="infoTitle"><div id="infoTop"><h2 id="infoTitle"></h2><button type="button" class="primary small" id="btnInfoClose" data-i="nextOk"></button></div><pre id="infoText"></pre></div></div>
-<div id="nextOverlay" hidden><div id="nextBox" role="dialog" aria-modal="true" aria-labelledby="nextTitle"><div id="nextTop"><h2 id="nextTitle"></h2><button type="button" class="primary small" id="btnNextOk" data-i="nextOk"></button><span id="nextR"><button type="button" class="fsbtn" id="btnFsNext" aria-label="Koko näyttö"><svg class="i-enter" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M1 6V1h5M10 1h5v5M15 10v5h-5M6 15H1v-5" fill="none" stroke="currentColor" stroke-width="2"/></svg><svg class="i-exit" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M6 1v5H1M15 6h-5V1M10 15v-5h5M1 10h5v5" fill="none" stroke="currentColor" stroke-width="2"/></svg></button><span id="nextClock" aria-label="ajastin"></span></span></div><div id="nextHead2" hidden></div><div id="nextBody"></div></div></div>
+<div id="nextOverlay" hidden><div id="nextBox" role="dialog" aria-modal="true" aria-labelledby="nextTitle"><div id="nextTop"><h2 id="nextTitle"></h2><button type="button" class="primary small" id="btnNextOk" data-i="nextOk"></button><span id="nextR"><button type="button" class="fsbtn" id="btnFsNext" aria-label="Koko näyttö"><svg class="i-enter" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M1 6V1h5M10 1h5v5M15 10v5h-5M6 15H1v-5" fill="none" stroke="currentColor" stroke-width="2"/></svg><svg class="i-exit" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M6 1v5H1M15 6h-5V1M10 15v-5h5M1 10h5v5" fill="none" stroke="currentColor" stroke-width="2"/></svg></button></span></div><div id="nextHead2" hidden></div><div id="nextBody"></div></div></div>
 <div class="wrap">
   <div class="hdr">
     <h1><span id="appTitle">TyövuoroPdf</span> <span id="ver"></span></h1>
@@ -374,7 +376,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.99-web';
+var APP_VERSION = '1.71.104-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -4165,13 +4167,18 @@ function nextClockTick() {
     var pz = body.querySelectorAll('.nblk.pause'); for (var zi = 0; zi < pz.length; zi++) pz[zi].parentNode.removeChild(pz[zi]);
     var pm = document.createElement('p'); pm.className = 'nmsg'; pm.textContent = T('nextAllDone'); body.appendChild(pm);
   }
-  /* v1.71.61-web: ajastin: +hh:mm:ss = aikaa seuraavan (listan ensimmäisen) tapahtuman lähtöön; lähtöajan jälkeen -hh:mm:ss = lähdöstä kulunut aika (himmeä lähtöajan jälkeen, tapahtuma poistuu 2 min kuluttua) */
-  var clk = $('nextClock');
-  if (first === null) { clk.textContent = ''; clk.classList.remove('dim'); return; }
+  /* v1.71.101-web: ajastin siirtyy sen tapahtuman ylimmälle riville oikeaan reunaan, johon se laskee aikaa (+hh:mm:ss ennen alkua, -hh:mm:ss alun jälkeen); ei himmene */
+  if (!nextClk) { nextClk = document.createElement('span'); nextClk.id = 'nextClock'; nextClk.setAttribute('aria-label', 'ajastin'); }
+  if (first === null) { if (nextClk.parentNode) nextClk.parentNode.removeChild(nextClk); var oc = body.querySelectorAll('.hasclk'); for (var oi = 0; oi < oc.length; oi++) oc[oi].classList.remove('hasclk'); return; }
+  var fdl = first.querySelector('dl');
+  if (nextClk.parentNode !== fdl) {
+    var oc2 = body.querySelectorAll('.hasclk'); for (var oj = 0; oj < oc2.length; oj++) oc2[oj].classList.remove('hasclk');
+    first.classList.add('hasclk'); fdl.appendChild(nextClk);
+  }
   var diff = +first.getAttribute('data-start') - t, sec = diff > 0 ? Math.ceil(diff / 1000) : Math.floor(-diff / 1000);
-  clk.textContent = (diff > 0 ? '+' : '-') + pad2n(Math.floor(sec / 3600)) + ':' + pad2n(Math.floor(sec / 60) % 60) + ':' + pad2n(sec % 60);
-  clk.classList.toggle('dim', first.classList.contains('done'));
+  nextClk.textContent = (diff > 0 ? '+' : '-') + pad2n(Math.floor(sec / 3600)) + ':' + pad2n(Math.floor(sec / 60) % 60) + ':' + pad2n(sec % 60);
 }
+var nextClk = null;
 setInterval(function () { if (!$('nextOverlay').hidden) nextClockTick(); }, 1000);
 var nextModel = []; /* v1.71.94-web: tapahtumat {s, e, k, c} otsikon kierto/auto-päivitystä varten */
 var nextStopsOn = false;
@@ -4266,7 +4273,7 @@ function nextProcess(m) {
   var wdn = uiLang === 'en' ? ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'] : ['Su', 'Ma', 'Ti', 'Ke', 'To', 'Pe', 'La'];
   var hm = function (x) { return pad2n(x.getHours()) + ':' + pad2n(x.getMinutes()); };
   var lastKierto = res.kierto, lastCar = res.car;
-  var blocks = [], model = [], dateDone = false;
+  var blocks = [], model = [], dateDone = false, itemRows = [];
   /* v1.71.94-web: päivämäärä vain ensimmäisessä näytettävässä tapahtumassa, jos se on eri kalenteripäivänä kuin nyt */
   function dateSfx(dt) {
     if (dateDone) return '';
@@ -4319,9 +4326,12 @@ function nextProcess(m) {
     var kChanged = k > 0 && nk !== '' && nk !== lastKierto;
     if (k > 0 && (kChanged || (nc !== '' && nc !== lastCar))) {
       /* uusi kierto/auto: tekstit kuten otsikkorivillä (nimike himmeä, numero kirkas) */
-      rows.unshift([T('nextCirc'), [[nk || lastKierto || unk, 0], [' · ' + T('nextCar') + ' ', 1], [nc || lastCar || unk, 0]]]);
-      rows.head = true; /* v1.71.78-web: ohut vaakaviiva kierto/auto-rivin alle */
-      rows.hk = nk || lastKierto || ''; rows.hc = nc || lastCar || ''; /* v1.71.94-web: rivi poistuu, kun otsikko näyttää samat kierto/auto */
+      /* v1.71.104-web: kierto/auto-rivi siirretään ajoa (halli-, siirto- tai linja-ajo) juuri edeltävien vaihtoautosiirtymien (ei omaa kiertoa) edelle */
+      var tgt = rows, tj = k - 1;
+      while (tj >= 0 && itemRows[tj] && /^Vaihtoautosiirtym/i.test(res.list[tj].ev.evType || '') && !(res.list[tj].ev.kierto || '')) { tgt = itemRows[tj]; tj--; }
+      tgt.unshift([T('nextCirc'), [[nk || lastKierto || unk, 0], [' · ' + T('nextCar') + ' ', 1], [nc || lastCar || unk, 0]]]);
+      tgt.head = true; /* v1.71.78-web: ohut vaakaviiva kierto/auto-rivin alle */
+      tgt.hk = nk || lastKierto || ''; tgt.hc = nc || lastCar || ''; /* v1.71.94-web: rivi poistuu, kun otsikko näyttää samat kierto/auto */
     }
     /* v1.71.77-web: kierto vaihtuu ja välissä tauko -> "Tauko hh:mm - hh:mm" kirkkaiden kaksoisviivojen välissä */
     /* v1.71.83-web: tauko näytetään, kun taukoa seuraava kierto (ensimmäinen kierrollinen ajo tauon jälkeen, esim. Vaihtoautosiirtymän jälkeinen) eroaa edellisestä */
@@ -4337,6 +4347,7 @@ function nextProcess(m) {
     model.push({ s: it.abs, e: it.end, k: effK[k] || lastKierto, c: effC[k] || lastCar });
     rows.start = it.abs;
     if (it.brk) rows.brk = true;
+    itemRows[k] = rows;
     blocks.push(rows);
   });
   if (res.we) {
