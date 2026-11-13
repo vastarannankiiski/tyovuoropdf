@@ -206,6 +206,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 #nextBox .nblk + .nblk.brk { border-top: 5px double var(--ink); padding-top: 12px; } /* v1.71.76-web: tauko = tumma kaksoisviiva */
 #nextBox dt { color: var(--muted); }
 #nextBox dd { margin: 0; font-weight: 700; word-break: break-word; }
+#nextBox dd .tm { font-size: 1.15em; } /* v1.72.3-web: alkamisaika hiukan isompi */
 /* v1.71.106-web: linjanumero (isompi) tai kulkuneuvokuvake nimikesarakkeessa */
 #nextBox dt.ln { font-size: 1.8rem; font-weight: 700; color: var(--ink); line-height: 1.15; align-self: center; }
 #nextBox dt.ico { font-size: 2.6rem; line-height: 1.1; align-self: center; }
@@ -384,7 +385,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.72.2-web';
+var APP_VERSION = '1.72.3-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -4257,7 +4258,10 @@ function nextShowDialog(blocks, msg, head, model) {
       if (rows.dtCls && r === rows[rows.length - 1]) dt.className = rows.dtCls; /* v1.71.106-web */
       if (rows.routeSplit && r === rows[rows.length - 1]) {
         /* v1.71.92-web: Reitti-rivi: alku, väliaikapysäkit (vain painikkeella) ja loppu; pysäkit alku- ja loppupisteen välissä */
-        var sa = document.createElement('span'); sa.className = 'nrs'; sa.textContent = rows.routeSplit[0]; dd.appendChild(sa);
+        var sa = document.createElement('span'); sa.className = 'nrs';
+        var stm = document.createElement('span'); stm.className = 'tm'; stm.textContent = rows.tmTxt; sa.appendChild(stm);
+        sa.appendChild(document.createTextNode((rows.tmSfx || '') + ' ' + rows.routeSplit[0]));
+        dd.appendChild(sa);
         var sa2 = document.createElement('span'); sa2.className = 'ar'; sa2.textContent = ' →'; sa.appendChild(sa2); /* nuoli pisteiden välille (pysäkit näkyvissä) */
         var sar = document.createElement('span'); sar.className = 'narr'; sar.textContent = ' → '; dd.appendChild(sar);
         var stp = document.createElement('div'); stp.className = 'nstops';
@@ -4271,6 +4275,11 @@ function nextShowDialog(blocks, msg, head, model) {
         var sz = document.createElement('span'); sz.className = 'nre'; sz.textContent = rows.routeSplit[1]; dd.appendChild(sz);
       }
       else if (Array.isArray(r[1])) r[1].forEach(function (pt) { var sp = document.createElement('span'); if (pt[1]) sp.className = 'l'; sp.textContent = pt[0]; dd.appendChild(sp); });
+      else if ((rows.kind || rows.pause) && /^\d{1,2}:\d{2}/.test(r[1])) {
+        /* v1.72.3-web: Työ alkaa / Työ loppuu / tauko: alkamisaika isommalla fontilla */
+        var tmM = /^(\d{1,2}:\d{2})([\s\S]*)$/.exec(r[1]), tms = document.createElement('span');
+        tms.className = 'tm'; tms.textContent = tmM[1]; dd.appendChild(tms); dd.appendChild(document.createTextNode(tmM[2]));
+      }
       else dd.textContent = r[1];
       dl.appendChild(dt); dl.appendChild(dd);
     });
@@ -4324,10 +4333,10 @@ function nextProcess(m) {
   res.list.forEach(function (it, k) {
     var ev = it.ev, d = new Date(it.abs);
     /* v1.71.90-web: päivämäärä näytetään vain, jos ensimmäinen tapahtuma on eri kalenteripäivänä kuin tämä hetki (seuraavan vuorokauden puolella) */
-    var timeTxt = hm(d) + dateSfx(d);
+    var dateSfx0 = dateSfx(d), timeTxt = hm(d) + dateSfx0;
     var ln = /^Linja-ajo/.test(ev.evType || '') ? stripLine6(ev.linja || '') : ''; /* v1.71.65-web: linjanumero vain Linja-ajoissa */
     /* v1.71.106-web: lähtöaika (hh:mm) lähtöpisteen eteen; nimikkeen ("Lähtöaika"/"Reitti") tilalla kuvake (halli-/siirtoajo: linja-auto, vaihtoautosiirtymä: henkilöauto) tai linjanumero (linja-ajo, isommalla) */
-    var routeStart = timeTxt + ' ' + (ev.fromLoc || '?'), routeEnd = (ev.toLoc || '?'); /* v1.71.92-web: alku ja loppu erikseen, väliaikapysäkit tulevat niiden väliin */
+    var routeStart = ev.fromLoc || '?', routeEnd = (ev.toLoc || '?'); /* v1.71.92-web: alku ja loppu erikseen, väliaikapysäkit tulevat niiden väliin */
     var dtLab = '', dtCls = '';
     if (ln) { dtLab = ln; dtCls = 'ln'; }
     else if (/^Vaihtoautosiirtym/.test(ev.evType || '')) { dtLab = '\uD83D\uDE99'; dtCls = 'ico'; }
@@ -4344,7 +4353,7 @@ function nextProcess(m) {
     rows.dtCls = dtCls;
     /* v1.71.91-web: reitin väliaikapysäkit (kellonkuva + paikka + (hh:mm)); näkyvät vain painikkeella */
     var wps = (ev.waypoints || []).filter(function (w) { return w && w.wLoc; });
-    rows.routeSplit = [routeStart, routeEnd]; /* v1.71.96-web: alku ja loppu omille riveilleen myös ilman väliaikapisteitä */
+    rows.routeSplit = [routeStart, routeEnd]; rows.tmTxt = hm(d); rows.tmSfx = dateSfx0; /* v1.72.3-web: alkamisaika omana elementtinä (isompi fontti) */ /* v1.71.96-web: alku ja loppu omille riveilleen myös ilman väliaikapisteitä */
     if (wps.length) rows.stops = wps.map(function (w) { return [w.wLoc, String(w.wTime || '').replace(/^(\d{1,2})[.:](\d{2})/, '$1:$2')]; });
     /* v1.71.76-web: kierto / auto vaihtuu päivän aikana -> näytetään uusi arvo ensimmäisessä sen jälkeisessä tapahtumassa */
     var nk = ev.kierto || '', nc = ev.kulkuneuvo || '';
