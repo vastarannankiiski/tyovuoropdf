@@ -385,7 +385,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.72.3-web';
+var APP_VERSION = '1.72.4-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -4325,8 +4325,8 @@ function nextProcess(m) {
   }
   /* v1.71.94-web: Työ alkaa / Työ loppuu -tapahtumat; model = kaikki tapahtumat otsikon kierto/auto-päivitystä varten */
   if (res.ws) {
-    var wsRows = [[T('nextWorkStart'), hm(new Date(res.ws)) + dateSfx(new Date(res.ws))]];
-    wsRows.start = res.ws; wsRows.kind = 'ws';
+    var wsRows = [['\uD83D\uDE12', /* v1.72.4-web: Työ alkaa -> 😒 */ hm(new Date(res.ws)) + dateSfx(new Date(res.ws))]];
+    wsRows.start = res.ws; wsRows.kind = 'ws'; wsRows.dtCls = 'ico';
     blocks.push(wsRows);
     model.push({ s: res.ws, e: res.ws, k: lastKierto, c: lastCar });
   }
@@ -4385,8 +4385,8 @@ function nextProcess(m) {
     blocks.push(rows);
   });
   if (res.we) {
-    var weRows = [[T('nextWorkEnd'), hm(new Date(res.we)) + dateSfx(new Date(res.we))]];
-    weRows.start = res.we; weRows.kind = 'we';
+    var weRows = [['\uD83D\uDE35', /* v1.72.4-web: Työ loppuu -> 😵 */ hm(new Date(res.we)) + dateSfx(new Date(res.we))]];
+    weRows.start = res.we; weRows.kind = 'we'; weRows.dtCls = 'ico';
     blocks.push(weRows);
     model.push({ s: res.we, e: res.we, k: lastKierto, c: lastCar });
   }
