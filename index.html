@@ -206,6 +206,11 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 #nextBox .nblk + .nblk.brk { border-top: 5px double var(--ink); padding-top: 12px; } /* v1.71.76-web: tauko = tumma kaksoisviiva */
 #nextBox dt { color: var(--muted); }
 #nextBox dd { margin: 0; font-weight: 700; word-break: break-word; }
+/* v1.71.106-web: linjanumero (isompi) tai kulkuneuvokuvake nimikesarakkeessa */
+#nextBox dt.ln { font-size: 1.8rem; font-weight: 700; color: var(--ink); line-height: 1.15; align-self: center; }
+#nextBox dt.ico { font-size: 2.6rem; line-height: 1.1; align-self: center; }
+#nextBox .nblk.done dt.ln { color: var(--muted); }
+#nextBox dt.ln + dd, #nextBox dt.ico + dd { align-self: center; } /* v1.72.0-web: kuvake/linjanumero pystysuunnassa vastaavan tekstin keskikohdalla */
 #nextBox .nblk.done dd { color: var(--muted); }
 #nextBox .nblk.done dl > :not(#nextClock) { opacity: .5; } /* v1.71.101-web: himmennys lapsielementteihin, ettei ajastin himmene */
 #nextBox .nblk.done dt, #nextBox .nblk.done dd { color: var(--muted); } /* v1.71.100-web: Työ alkaa / Työ loppuu: ajan ohitettua sekä nimi että kellonaika himmeiksi */
@@ -214,6 +219,9 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 #nextBox #nextHead2 { display: flex; flex-wrap: wrap; gap: 4px 18px; padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
 #nextBox #nextHead2[hidden] { display: none; }
 #nextBox #nextHead2 .l { color: var(--muted); }
+#nextBox #nextHead2 a.carlk { display: inline-block; color: var(--ink); text-decoration: none; cursor: pointer; padding: 2px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card, var(--bg, #fff)); } /* v1.72.2-web: auton numero pyöreäkulmaisessa suorakaidenapissa */
+#nextBox #nextHead2 a.carlk:hover, #nextBox #nextHead2 a.carlk:focus-visible { border-color: var(--accent); }
+#nextBox #nextHead2 a.carlk:not([href]) { cursor: default; border-color: transparent; background: none; padding: 0; }
 /* v1.71.91-web: väliaikapysäkit-painike auton numeron oikealla puolella; pysäkit näkyvät reitin alla, kun painike on painettu */
 #nextBox #btnNextStops { margin-left: auto; padding: 2px 8px; min-height: 0; line-height: 1.3; font-size: 1rem; }
 #nextBox #btnNextStops[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
@@ -376,7 +384,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.71.104-web';
+var APP_VERSION = '1.72.2-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -4103,19 +4111,19 @@ function nextShiftFind(m) {
     weOut = evs.we && evs.we + 900000 > now ? evs.we : 0;
     running = evs[0].abs <= now && now <= evs[evs.length - 1].end;
     /* v1.71.76-web: kaikki päivän (työvuorolistan) jäljellä olevat ajot, myös eri kierrot; tauon / sidonnaisuuden / odotuksen kohdalle merkitään katko (brk), itse tapahtumaa ei näytetä */
-    var gap = false, tkS = 0, tkE = 0;
+    var gap = false, tkS = 0, tkE = 0, tkL = '';
     for (var q = ei; q < evs.length; q++) {
       var et = evs[q].ev.evType || '';
       if (!NEXT_TYPES.test(et)) {
         if (NEXT_BREAK.test(et)) gap = true;
-        if (NEXT_PAUSE(et)) { if (!tkS || evs[q].abs < tkS) tkS = evs[q].abs; if (evs[q].end > tkE) tkE = evs[q].end; }
+        if (NEXT_PAUSE(et)) { if (!tkS || evs[q].abs < tkS) { tkS = evs[q].abs; tkL = evs[q].ev.fromLoc || evs[q].ev.toLoc || ''; } else if (!tkL) tkL = evs[q].ev.fromLoc || evs[q].ev.toLoc || ''; if (evs[q].end > tkE) tkE = evs[q].end; } /* v1.71.105-web: taukopaikka = ensimmäisen tauon paikka */
         continue;
       }
       var kk = evs[q].ev.kierto || '';
       if (kk !== '' && kierto === '') kierto = kk;
       if (car === '' && evs[q].ev.kulkuneuvo) car = evs[q].ev.kulkuneuvo;
-      list.push({ ev: evs[q].ev, abs: evs[q].abs, end: evs[q].end, brk: gap && list.length > 0, tk: tkS && list.length > 0 ? { s: tkS, e: tkE } : null });
-      gap = false; tkS = 0; tkE = 0;
+      list.push({ ev: evs[q].ev, abs: evs[q].abs, end: evs[q].end, brk: gap && list.length > 0, tk: tkS && list.length > 0 ? { s: tkS, e: tkE, l: tkL } : null });
+      gap = false; tkS = 0; tkE = 0; tkL = '';
     }
   }
   if (found && (kierto === '' || car === '')) {
@@ -4127,6 +4135,12 @@ function nextShiftFind(m) {
     }
   }
   return { list: list, kierto: kierto, car: car, running: running, authFail: authFail, ws: wsOut, we: weOut };
+}
+/* v1.72.1-web: auton numeron (3-4 numeroa) linkki bussitutkaan; ei numeroa -> ei linkkiä */
+function nextCarHref(b) {
+  var a = b.parentNode; if (!a || a.tagName !== 'A') return;
+  var mm = /\d{3,4}/.exec(b.textContent || '');
+  if (mm) a.href = 'https://bussitutka.fi/map?mode=vehicle&vehicle=' + mm[0] + '&operator=18&type=bus'; else a.removeAttribute('href');
 }
 function nextClockTick() {
   var d = new Date(), t = d.getTime();
@@ -4148,7 +4162,7 @@ function nextClockTick() {
     var hb = $('nextHead2').querySelectorAll('b');
     if (hb.length >= 2) {
       if (cur.k && hb[0].textContent !== cur.k) hb[0].textContent = cur.k;
-      if (cur.c && hb[1].textContent !== cur.c) hb[1].textContent = cur.c;
+      if (cur.c && hb[1].textContent !== cur.c) { hb[1].textContent = cur.c; nextCarHref(hb[1]); }
     }
     var hr = body.querySelectorAll('.nblk[data-hk]');
     for (var hi = 0; hi < hr.length; hi++) {
@@ -4189,9 +4203,15 @@ function nextShowDialog(blocks, msg, head, model) {
   nextClockTick();
   var hd = $('nextHead2');
   hd.textContent = '';
-  (head || []).forEach(function (h) {
+  (head || []).forEach(function (h, hi) {
     var sp = document.createElement('span'), lb = document.createElement('span'), b = document.createElement('b');
-    lb.className = 'l'; lb.textContent = h[0] + ' '; b.textContent = h[1]; sp.appendChild(lb); sp.appendChild(b); hd.appendChild(sp);
+    lb.className = 'l'; lb.textContent = h[0] + ' '; b.textContent = h[1]; sp.appendChild(lb);
+    if (hi === 1) {
+      /* v1.72.1-web: auton numero on linkki bussitutkaan (uusi ikkuna) */
+      var ca = document.createElement('a'); ca.className = 'carlk'; ca.target = '_blank'; ca.rel = 'noopener';
+      ca.appendChild(b); nextCarHref(b); sp.appendChild(ca);
+    } else sp.appendChild(b);
+    hd.appendChild(sp);
   });
   /* v1.71.91-web: kellopainike auton numeron oikealle puolelle (vain jos jollain ajolla on väliaikapysäkkejä) */
   var anyStops = (blocks || []).some(function (b) { return b.stops && b.stops.length; });
@@ -4234,6 +4254,7 @@ function nextShowDialog(blocks, msg, head, model) {
       }
       var dt = document.createElement('dt'), dd = document.createElement('dd');
       dt.textContent = r[0];
+      if (rows.dtCls && r === rows[rows.length - 1]) dt.className = rows.dtCls; /* v1.71.106-web */
       if (rows.routeSplit && r === rows[rows.length - 1]) {
         /* v1.71.92-web: Reitti-rivi: alku, väliaikapysäkit (vain painikkeella) ja loppu; pysäkit alku- ja loppupisteen välissä */
         var sa = document.createElement('span'); sa.className = 'nrs'; sa.textContent = rows.routeSplit[0]; dd.appendChild(sa);
@@ -4302,11 +4323,15 @@ function nextProcess(m) {
   }
   res.list.forEach(function (it, k) {
     var ev = it.ev, d = new Date(it.abs);
-    var timeTxt = hm(d) + ' ' + String(ev.evType || '').replace(/\s*\([^)]*\)\s*$/, ''); /* v1.71.66-web: tapahtuman nimi lähtöajan perässä */
     /* v1.71.90-web: päivämäärä näytetään vain, jos ensimmäinen tapahtuma on eri kalenteripäivänä kuin tämä hetki (seuraavan vuorokauden puolella) */
-    timeTxt += dateSfx(d);
+    var timeTxt = hm(d) + dateSfx(d);
     var ln = /^Linja-ajo/.test(ev.evType || '') ? stripLine6(ev.linja || '') : ''; /* v1.71.65-web: linjanumero vain Linja-ajoissa */
-    var routeStart = (ln ? ln + ' ' : '') + (ev.fromLoc || '?'), routeEnd = (ev.toLoc || '?'); /* v1.71.92-web: alku ja loppu erikseen, väliaikapysäkit tulevat niiden väliin */
+    /* v1.71.106-web: lähtöaika (hh:mm) lähtöpisteen eteen; nimikkeen ("Lähtöaika"/"Reitti") tilalla kuvake (halli-/siirtoajo: linja-auto, vaihtoautosiirtymä: henkilöauto) tai linjanumero (linja-ajo, isommalla) */
+    var routeStart = timeTxt + ' ' + (ev.fromLoc || '?'), routeEnd = (ev.toLoc || '?'); /* v1.71.92-web: alku ja loppu erikseen, väliaikapysäkit tulevat niiden väliin */
+    var dtLab = '', dtCls = '';
+    if (ln) { dtLab = ln; dtCls = 'ln'; }
+    else if (/^Vaihtoautosiirtym/.test(ev.evType || '')) { dtLab = '\uD83D\uDE99'; dtCls = 'ico'; }
+    else { dtLab = '\uD83D\uDE8C'; dtCls = 'ico'; }
     if (/^\d{1,2}\.\d{2}/.test(ev.endTime || '')) {
       var nd = new Date(it.end);
       var sameDay = nd.getFullYear() === d.getFullYear() && nd.getMonth() === d.getMonth() && nd.getDate() === d.getDate();
@@ -4314,9 +4339,9 @@ function nextProcess(m) {
     }
     var route = routeStart + ' → ' + routeEnd;
     var rows = [
-      [T('nextTime'), timeTxt],
-      [T('nextRoute'), route]
+      [dtLab, route]
     ];
+    rows.dtCls = dtCls;
     /* v1.71.91-web: reitin väliaikapysäkit (kellonkuva + paikka + (hh:mm)); näkyvät vain painikkeella */
     var wps = (ev.waypoints || []).filter(function (w) { return w && w.wLoc; });
     rows.routeSplit = [routeStart, routeEnd]; /* v1.71.96-web: alku ja loppu omille riveilleen myös ilman väliaikapisteitä */
@@ -4338,8 +4363,8 @@ function nextProcess(m) {
     var nextK = '';
     for (var jj = k; jj < res.list.length && nextK === ''; jj++) nextK = res.list[jj].ev.kierto || '';
     if (it.tk && nextK !== '' && nextK !== lastKierto) {
-      var tb = [[T('nextBreak'), hm(new Date(it.tk.s)) + ' - ' + hm(new Date(it.tk.e))]];
-      tb.brk = true; tb.pause = true; tb.end = it.tk.e;
+      var tb = [['\uD83C\uDF75', /* v1.71.107-web: sana "Tauko" -> kahvikuppi/teekuppi 🍵 */ hm(new Date(it.tk.s)) + ' - ' + hm(new Date(it.tk.e)) + (it.tk.l ? ' ' + it.tk.l : '')]];
+      tb.dtCls = 'ico'; tb.brk = true; tb.pause = true; tb.end = it.tk.e;
       blocks.push(tb);
     }
     if (nk !== '') lastKierto = nk;
