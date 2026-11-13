@@ -385,7 +385,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.72.7-web';
+var APP_VERSION = '1.72.8-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3268,7 +3268,7 @@ var I18N = {
     payErrLog: 'VIRHE palkkalaskelman tarkistuksessa: {msg}', payErrStatus: 'Virhe palkkalaskelman tarkistuksessa: {msg}',
     payInfoHint: 'Tietoa palkkalaskelman tarkistamisesta',
     payInfoHtml: '<p><b>Palkkalaskelman tarkistaminen</b></p><p>Tarkistus vertaa palkkalaskelman tunteja työvuorolistoihin.</p><ol>' +
-      '<li>Lataa ensin kohdassa 1 (&quot;Valitse PDF(:t)…&quot; tai vetämällä sivulle) kaikki sen jakson IVU-työvuorolistat, jota tarkistettava palkkalaskelma koskee (kahden viikon jakso maanantaista sunnuntaihin) tai lataa ne suoraan IVU:sta. Käytä uusimpia työvuorolistoja, koska tietoja on voitu päivittää jälkeenpäin.</li>' +
+      '<li>Lataa kohdassa 1 (&quot;Valitse PDF(:t)…&quot; tai vetämällä sivulle) palkkalaskelman jakson (kahden viikon jakso maanantaista sunnuntaihin) kaikki IVU-työvuorolistat tai hae ne suoraan IVU:sta. Voit ladata myös tällä ohjelmalla tehdyn valmiin työvuorolistan. Käytä uusimpia listoja, koska tietoja voidaan päivittää jälkeenpäin.</li>' +
       '<li>Paina &quot;Palkkalaskelman tarkistaminen&quot; ja valitse palkkalaskelma (PDF).</li>' +
       '<li>Ohjelma varmistaa, että palkkalaskelman palkkakausi on sama kuin ladattujen työvuorojen jakso, ja avaa tarkistusraportin uuteen välilehteen, josta sen voi tulostaa yhdelle A4-sivulle.</li></ol>' +
       '<p>Vertailussa verrataan vain tunteja, ei euroja. Jos jakson työvuoroja puuttuu listalta, puuttuvat päivät näkyvät raportissa poikkeamina.</p>'
@@ -3353,7 +3353,7 @@ var I18N = {
     payErrLog: 'ERROR in payslip check: {msg}', payErrStatus: 'Error in payslip check: {msg}',
     payInfoHint: 'About the payslip check',
     payInfoHtml: '<p><b>Payslip check</b></p><p>The check compares the hours on the payslip with the shift lists.</p><ol>' +
-      '<li>First load in step 1 (&quot;Select PDF(s)…&quot; or by dragging onto the page) all the IVU shift lists of the period the payslip covers (a two-week period from Monday to Sunday) or download them directly from IVU. Use the latest shift lists, because the data may have been updated afterwards.</li>' +
+      '<li>In step 1 (&quot;Select PDF(s)…&quot; or by dragging onto the page), load all the IVU shift lists of the payslip period (a two-week period from Monday to Sunday) or fetch them directly from IVU. You can also load a finished shift list made with this program. Use the latest lists, because the data may be updated afterwards.</li>' +
       '<li>Press &quot;Check the payslip&quot; and select the payslip (PDF).</li>' +
       '<li>The program verifies that the pay period of the payslip is the same as the period of the loaded shifts, and opens the check report in a new tab, from where it can be printed on one A4 page.</li></ol>' +
       '<p>Only hours are compared, not euros. If shift days of the period are missing from the list, the missing days appear as deviations in the report.</p>'
