@@ -1,8 +1,10 @@
-Nyt TyövuoroPdf käynnistyy osoitteesta: https://vastarannankiiski.github.io/tyovuoropdf/ , joten sitä ei tarvitse enää päivittää, vaan siitä käynnistyy automaattisesti aina viimeisin versio.
+TyövuoroPdf käynnistyy osoitteesta: https://vastarannankiiski.github.io/tyovuoropdf/ , joten sitä ei tarvitse päivittää, vaan siitä käynnistyy aina automaattisesti viimeisin versio.
 Sovelluksessa lisää ominaisuuksia:
-- Työvuorojen nopea lataus suoraan IVU:sta.
+- Työvuorojakson nopea lataus yhdellä kertaa suoraan IVU:sta.
 - Kiertonumeron (lähtöketjun) seuraavien ajantasaisten lähtöjen ja autonumeron lataaminen suoraan IVU:sta.
-Uudet ominaisuuden edellyttävät ensimmäisellä käyttökerralla kirjautumista IVU:uun omilla käyttäjätunnuksilla, jonka jälkeen valitsemasi selain muistaa kirjautumistunnukset kunnes vaihdat salasanan tai poistat käyttämäsi selaimen evästeet. Lisäksi selaimeen pitää asentaa puhelimessa Violentmonkey laajennus ja antaa sille lupa omien scriptien suorittamiseksi.
-Sovellus toimii Windowsissa selaimilla: Firefox, Google Chrome, Vivaldi, Titanium, Quetta…
-Android puhelimessa sovellus toimii Firefoxilla, mutta parhaan käyttäjäkokemuksen saamiseksi käytä androidissa chromium pohjaista selainta, joka sallii laajennusten asentamisen selaimeen, esim. Vivaldi, Titanium, Quetta…, ei kuitenkaan Google Chrome, joka ei salli laajennusten asentamista selaimeen androidissa.
+Kirjaudu IVU:uun omilla käyttäjätunnuksilla, jonka jälkeen valitsemasi selain muistaa kirjautumistunnukset kunnes vaihdat salasanan tai poistat käyttämäsi selaimen evästeet.
+Lisäksi selaimeen pitää Windows/Linuxissa asentaa uusi kirjanmerkki/suosikki kirjaimerkki/suosikit-palkkiin (tehdään vain kerran): Vedä  linkki (löytyy sovelluksesta) kirjanmerkki/suosikit-palkkiin. 
+Puhelimessa pitää asentaa Violentmonkey laajennus ja antaa sille lupa omien scriptien suorittamiseksi (ohjeet sovelluksessa).
+Sovellus toimii Windows/Linuxissa chromium pohjaisilla selaimilla: Google Chrome, Vivaldi, Titanium, Quetta, Edge…
+Android puhelimessa sovellus toimii Firefoxilla, mutta parhaan käyttäjäkokemuksen saamiseksi käytä androidissa chromium pohjaista selainta, joka sallii laajennusten asentamisen selaimeen, esim. Vivaldi, Titanium, Quetta, Edge…, ei kuitenkaan Google Chrome, joka ei salli laajennusten asentamista selaimeen androidissa.
 Selainkohtaiset ohjeen saat avaamalla sovelluksen valitsemassasi selaimessa ja painamalla "Avaa IVU..." kohdalla oikealla puolella olevaa "i" näppäintä.
