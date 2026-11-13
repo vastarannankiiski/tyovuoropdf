@@ -385,7 +385,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.72.5-web';
+var APP_VERSION = '1.72.7-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3212,6 +3212,9 @@ var I18N = {
     ivuBmLabel: 'Hae IVU-vuorot',
     ivuStep1: 'Vedä tämä linkki kirjanmerkkipalkkiin:',
     ivuBmTitle: 'Kirjanmerkin asennus (tehdään vain kerran):',
+    ivuStep1Edge: 'Vedä tämä linkki Suosikit-palkkiin (Ctrl+Shift+B näyttää palkin):', ivuBmTitleEdge: 'Suosikin asennus (tehdään vain kerran):',
+    ivuStep3Edge: 'Kun IVU on auki, paina Suosikit-palkissa <b>Hae IVU-vuorot</b>.',
+    ivuBmClickEdge: 'Vedä tämä linkki Edgen Suosikit-palkkiin (älä klikkaa sitä tässä). Aja se sitten IVU-sivulla.',
     ivuInfoHint: 'Asennusohje',
     ivuFxStep1: '<b>Skriptin asennus (tehdään vain kerran):</b> asenna selaimeen lisäosa <b>Violentmonkey</b>.<span class="chromonly"> Salli sille käyttäjän skriptit: avaa selaimen laajennukset-sivu, valitse Violentmonkeyn <b>Tiedot</b> ja kytke päälle <b>Allow User Scripts</b> (Salli käyttäjän skriptit). Ilman tätä skripti ei toimi eikä anna siitä mitään ilmoitusta.</span> Paina alla <b>Kopioi skripti</b>, avaa Violentmonkey-lisäosan valikosta uusi skripti (+), poista valmis teksti, liitä skripti ja tallenna.',
     ivuChromeNote: 'Huom: tavallinen Android-Chrome ei tue skriptejä. Tarvitset selaimen, johon voi asentaa Violentmonkeyn (esim. Firefox, Quetta, Titanium tai Vivaldi).',
@@ -3294,6 +3297,9 @@ var I18N = {
     ivuBmLabel: 'Fetch IVU shifts',
     ivuStep1: 'Drag this link to the bookmarks bar:',
     ivuBmTitle: 'Bookmark installation (done only once):',
+    ivuStep1Edge: 'Drag this link to the Favorites bar (Ctrl+Shift+B shows the bar):', ivuBmTitleEdge: 'Favorite installation (done only once):',
+    ivuStep3Edge: 'When IVU is open, click <b>Fetch IVU shifts</b> in the Favorites bar.',
+    ivuBmClickEdge: 'Drag this link to the Edge Favorites bar (do not click it here). Then run it on the IVU page.',
     ivuInfoHint: 'Script installation instructions',
     ivuFxStep1: '<b>Script installation (done only once):</b> install the <b>Violentmonkey</b> add-on in your browser.<span class="chromonly"> Allow user scripts for it: open your browser\'s extensions page, choose Violentmonkey <b>Details</b> and turn on <b>Allow User Scripts</b>. Without this the script does not work and gives no notice.</span> Press <b>Copy script</b> below, open a new script (+) from the Violentmonkey add-on menu, delete the template text, paste the script and save.',
     ivuChromeNote: 'Note: regular Android Chrome does not support userscripts. You need a browser that can install Violentmonkey (e.g. Firefox, Quetta, Titanium or Vivaldi).',
@@ -3357,6 +3363,12 @@ var WD_EN = { ma: 'Mon', ti: 'Tue', ke: 'Wed', to: 'Thu', pe: 'Fri', la: 'Sat', 
 function T(key, vars) {
   var s = I18N[uiLang][key];
   if (vars) s = s.replace(/\{(\w+)\}/g, function (m, k) { return vars[k] === undefined ? m : vars[k]; });
+  /* v1.72.7-web: tietokoneen Edgessä kaikki kirjanmerkki-maininnat -> suosikki (Edgen sanasto) */
+  if (s && document.documentElement.classList.contains('isedge')) {
+    s = s.replace(/kirjanmerkkiä/g, 'suosikkia').replace(/Kirjanmerkkiä/g, 'Suosikkia').replace(/kirjanmerkin/g, 'suosikin').replace(/Kirjanmerkin/g, 'Suosikin')
+      .replace(/kirjanmerkki/g, 'suosikki').replace(/Kirjanmerkki/g, 'Suosikki')
+      .replace(/bookmarks bar/g, 'Favorites bar').replace(/Bookmark/g, 'Favorite').replace(/bookmark/g, 'favorite');
+  }
   return s;
 }
 
@@ -4511,7 +4523,7 @@ $('btnIvuOpen').addEventListener('click', function () {
   setIvuStatus(w ? T('ivuOpened') : T('ivuPopup'), w ? '' : 'err');
 });
 $('ivuBm').setAttribute('href', 'javascript:' + encodeURIComponent(IVU_SCRIPT.replace(/\n/g, '')));
-$('ivuBm').addEventListener('click', function (e) { e.preventDefault(); setIvuStatus(T('ivuBmClick')); });
+$('ivuBm').addEventListener('click', function (e) { e.preventDefault(); setIvuStatus(T(document.documentElement.classList.contains('isedge') ? 'ivuBmClickEdge' : 'ivuBmClick')); });
 $('btnIvuCopyUs').addEventListener('click', function () {
   copyText(IVU_USERSCRIPT).then(function (ok) { setIvuStatus(ok ? T('ivuCopiedUs') : T('ivuCopyFail'), ok ? 'ok' : 'err'); });
 });
@@ -4544,6 +4556,12 @@ fillPeriods();
   if (mobile && !extMobile) { $('ivuCard').style.display = 'none'; $('btnNext').hidden = true; }
   /* Firefox (tietokone ja Android): Violentmonkey-skripti ("i"-painikkeen ohje); muu tietokoneselain (Chrome ym.): kirjanmerkki */
   if ((/Firefox\//.test(ua) && (!mobile || fxAndroid)) || (mobile && quetta)) { $('ivuStepsDesk').hidden = true; $('ivuStepsFx').hidden = false; $('btnIvuInfo').hidden = false; infoBoxId = 'ivuFxInfo'; }
+  else if (!mobile && /Edg\//.test(ua)) {
+    /* v1.72.6-web: tietokoneen Edge: sama kirjanmerkki kuin Chromessa, mutta ohjeessa Edgen sanasto (Suosikit-palkki, Ctrl+Shift+B) */
+    document.documentElement.classList.add('isedge');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-i="ivuStep1"],[data-i="ivuBmTitle"],[data-i="ivuStep3"]'), function (el) { el.setAttribute('data-i', el.getAttribute('data-i') + 'Edge'); });
+    $('btnIvuInfo').hidden = false; infoBoxId = 'ivuDeskInfo'; $('btnIvuInfo').setAttribute('aria-controls', infoBoxId);
+  }
   else if (!mobile) { $('btnIvuInfo').hidden = false; infoBoxId = 'ivuDeskInfo'; $('btnIvuInfo').setAttribute('aria-controls', infoBoxId); }
   $('btnIvuInfo').addEventListener('click', function () {
     var box = $(infoBoxId), open = box.hasAttribute('hidden');
