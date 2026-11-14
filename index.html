@@ -210,6 +210,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 /* v1.71.106-web: linjanumero (isompi) tai kulkuneuvokuvake nimikesarakkeessa */
 #nextBox dt.ln { font-size: 1.8rem; font-weight: 700; color: var(--ink); line-height: 1.15; align-self: center; }
 #nextBox dt.ico { font-size: 2.6rem; line-height: 1.1; align-self: center; }
+#nextBox dt.ico.car { font-size: 1.73rem; } /* v1.72.9-web: henkilöauto 1/3 pienemmäksi */
 #nextBox .nblk.done dt.ln { color: var(--muted); }
 #nextBox dt.ln + dd, #nextBox dt.ico + dd { align-self: center; } /* v1.72.0-web: kuvake/linjanumero pystysuunnassa vastaavan tekstin keskikohdalla */
 #nextBox .nblk.done dd { color: var(--muted); }
@@ -385,7 +386,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.72.8-web';
+var APP_VERSION = '1.73.1-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -4337,7 +4338,7 @@ function nextProcess(m) {
   }
   /* v1.71.94-web: Työ alkaa / Työ loppuu -tapahtumat; model = kaikki tapahtumat otsikon kierto/auto-päivitystä varten */
   if (res.ws) {
-    var wsRows = [['\u23F0\uFE0F', /* v1.72.5-web: Työ alkaa -> ⏰ */ hm(new Date(res.ws)) + dateSfx(new Date(res.ws))]];
+    var wsRows = [['\u25B6\uFE0F', /* v1.73.0-web: Työ alkaa -> ▶️ */ hm(new Date(res.ws)) + dateSfx(new Date(res.ws))]];
     wsRows.start = res.ws; wsRows.kind = 'ws'; wsRows.dtCls = 'ico';
     blocks.push(wsRows);
     model.push({ s: res.ws, e: res.ws, k: lastKierto, c: lastCar });
@@ -4351,7 +4352,7 @@ function nextProcess(m) {
     var routeStart = ev.fromLoc || '?', routeEnd = (ev.toLoc || '?'); /* v1.71.92-web: alku ja loppu erikseen, väliaikapysäkit tulevat niiden väliin */
     var dtLab = '', dtCls = '';
     if (ln) { dtLab = ln; dtCls = 'ln'; }
-    else if (/^Vaihtoautosiirtym/.test(ev.evType || '')) { dtLab = '\uD83D\uDE99'; dtCls = 'ico'; }
+    else if (/^Vaihtoautosiirtym/.test(ev.evType || '')) { dtLab = '\uD83D\uDE97'; dtCls = 'ico car'; } /* v1.73.1-web: henkilöauto 🚗 */
     else { dtLab = '\uD83D\uDE8C'; dtCls = 'ico'; }
     if (/^\d{1,2}\.\d{2}/.test(ev.endTime || '')) {
       var nd = new Date(it.end);
@@ -4397,7 +4398,7 @@ function nextProcess(m) {
     blocks.push(rows);
   });
   if (res.we) {
-    var weRows = [['\uD83D\uDECF\uFE0F', /* v1.72.5-web: Työ loppuu -> 🛏️ */ hm(new Date(res.we)) + dateSfx(new Date(res.we))]];
+    var weRows = [['\u23F9\uFE0F', /* v1.73.0-web: Työ loppuu -> ⏹️ */ hm(new Date(res.we)) + dateSfx(new Date(res.we))]];
     weRows.start = res.we; weRows.kind = 'we'; weRows.dtCls = 'ico';
     blocks.push(weRows);
     model.push({ s: res.we, e: res.we, k: lastKierto, c: lastCar });
