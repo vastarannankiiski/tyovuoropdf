@@ -210,7 +210,6 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 /* v1.71.106-web: linjanumero (isompi) tai kulkuneuvokuvake nimikesarakkeessa */
 #nextBox dt.ln { font-size: 1.8rem; font-weight: 700; color: var(--ink); line-height: 1.15; align-self: center; }
 #nextBox dt.ico { font-size: 2.6rem; line-height: 1.1; align-self: center; }
-#nextBox dt.ico.car { font-size: 1.73rem; } /* v1.72.9-web: henkilöauto 1/3 pienemmäksi */
 #nextBox .nblk.done dt.ln { color: var(--muted); }
 #nextBox dt.ln + dd, #nextBox dt.ico + dd { align-self: center; } /* v1.72.0-web: kuvake/linjanumero pystysuunnassa vastaavan tekstin keskikohdalla */
 #nextBox .nblk.done dd { color: var(--muted); }
@@ -386,7 +385,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.73.1-web';
+var APP_VERSION = '1.73.2-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
