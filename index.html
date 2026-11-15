@@ -39,7 +39,7 @@ h1 { font-size: 1.35rem; margin: 4px 0 2px; }
 .infobtn { width: 2.1rem; padding: 6px 0; font-weight: 700; font-style: italic; border-radius: 50%; }
 .infobox { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--row-alt); font-size: .92rem; }
 .infobox[hidden] { display: none; }
-.infobox p { margin: 0 0 6px; } .infobox ol { margin: 4px 0 6px; padding-left: 1.3rem; } .infobox li { margin: 3px 0; }
+.infobox p { margin: 0 0 6px; } .infobox ol, .infobox ul { margin: 4px 0 6px; padding-left: 1.3rem; } .infobox li { margin: 3px 0; }
 .sub { color: var(--muted); font-size: .9rem; margin: 0 0 14px; }
 .card {
   background: var(--card); border: 1px solid var(--line); border-radius: 12px;
@@ -275,9 +275,11 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
       <div class="btns">
         <button class="primary" id="btnPick" type="button" data-i="btnPick"></button>
         <button id="btnRemoveAll" type="button" disabled data-i="btnRemoveAll"></button>
+        <button id="btnFileInfo" class="infobtn" type="button" aria-expanded="false" aria-controls="fileInfo" data-i="fileInfoHint" data-attr="title">i</button>
       </div>
       <input type="file" id="fileInput" accept=".pdf,application/pdf" multiple hidden>
     </div>
+    <div class="infobox" id="fileInfo" hidden></div>
     <div id="listBox"></div>
     <div class="status" id="status" role="status" aria-live="polite"></div>
     <div class="warn" id="warn"></div>
@@ -385,7 +387,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.73.2-web';
+var APP_VERSION = '1.73.6-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -410,6 +412,7 @@ var MSGS = {
     range: 'Valitut tiedostot sisältävät päivämääriä väliltä %s - %s, jotka eivät kuulu samaan kahden viikon jaksoon. Jaksot ovat kiinteät (maanantai - sunnuntai): ensimmäinen jakso on 25.5.-7.6.2026 ja siitä eteenpäin aina kahden viikon jaksoissa. Valitse tiedostot uudelleen niin, että kaikki niiden päivät kuuluvat samaan jaksoon.',
     noDaysInFile: 'Tiedostosta ei tunnistettu yhtään työpäivää: %s. Tarkista että kyseessä on IVU:n työvuorolista.',
     dayOffNotAllowed: 'Vapaapäiviä ei voi lisätä.',
+    onlyDayOffs: 'Valituissa tiedostoissa on vain vapaapäiviä (VP), joten työvuorolistaa ei voi tehdä.',
     logDay: '  %s %s %s tapahtumia=%d',
     logDayNoEvents: '  %s %s %s (päivä ilman ajotapahtumia)',
     logOrphan: '  (liitettiin %d orpotapahtumaa päivälle %s)',
@@ -437,6 +440,7 @@ var MSGS = {
     range: 'The selected files contain dates from %s to %s, which do not belong to the same two-week period. The periods are fixed (Monday - Sunday): the first period is 25.5.-7.6.2026, followed by consecutive two-week periods. Select the files again so that all their days belong to the same period.',
     noDaysInFile: 'No work days were recognised in the file: %s. Check that it is an IVU shift list.',
     dayOffNotAllowed: 'Days off cannot be added.',
+    onlyDayOffs: 'The selected files contain only days off (VP), so a shift list cannot be made.',
     logDay: '  %s %s %s events=%d',
     logDayNoEvents: '  %s %s %s (day without driving events)',
     logOrphan: '  (attached %d orphan events to day %s)',
@@ -1181,8 +1185,14 @@ function parseDays(rows, log) {
         dn.rawRows += (dn.rawRows ? ' | ' : '') + rows[rr].text;
       i = parseDayBox(rows, i, ds, dn);
       delete dn.rawRows;
-      /* v1.35.0-web: viikottainen vapaapäivä ("VP, Day off") jätetään täysin huomiotta */
-      if (dn.leave && isDayOffCode(dn.shiftCode)) { dayOffs++; continue; }
+      /* v1.35.0-web: viikottainen vapaapäivä ("VP, Day off") ei näy tulosteessa; v1.73.6-web: se kuitenkin lisätään listalle ja tallennetaan
+         valmiiseen työvuorolistaan (dayOff = true) myöhempää käyttöä varten */
+      if (dn.leave && isDayOffCode(dn.shiftCode)) {
+        dayOffs++; delete dn.leave; dn.dayOff = true;
+        days.push(dn);
+        if (log) log.push(Msg('logDayNoEvents', ds.weekday, ds.dateStr, dn.shiftCode));
+        continue;
+      }
       days.push(dn);
       if (log) log.push(Msg('logDayNoEvents', ds.weekday, ds.dateStr, dn.shiftCode));
       continue;
@@ -1308,7 +1318,7 @@ function parsePdfDate(s) {
   return t;
 }
 function packDay(d) {
-  var L = ['D\t' + [d.weekday, d.dateStr, d.shiftCode, d.leave ? 1 : 0, stampToStr(d.stamp)].map(tvlEsc).join('\t')];
+  var L = ['D\t' + [d.weekday, d.dateStr, d.shiftCode, d.leave ? 1 : 0, stampToStr(d.stamp), d.dayOff ? 1 : 0].map(tvlEsc).join('\t')];
   d.info.forEach(function (v, k) { L.push('I\t' + tvlEsc(k) + '\t' + tvlEsc(v)); });
   d.events.forEach(function (e) {
     L.push('E\t' + [e.evType, e.isLinjaAjo ? 1 : 0, e.startTime, e.endTime, e.fromLoc, e.toLoc, e.linja,
@@ -1324,6 +1334,7 @@ function unpackDay(text) {
     if (t === 'D') {
       d = { weekday: f[1], dateStr: f[2], shiftCode: f[3], info: new Map(), events: [], stamp: strToStamp(f[5]) };
       if (f[4] === '1') d.leave = true;
+      if (f[6] === '1') d.dayOff = true; /* v1.73.6-web: vapaapäivä (VP), ei tulosteessa */
     } else if (!d) { continue; }
     else if (t === 'I') d.info.set(f[1], f[2]);
     else if (t === 'E') {
@@ -1628,6 +1639,7 @@ function buildRetroInfo(info, raw, sb, lang) {
 
 function buildDisplay(days, showTimingStops, lang) {
   var T = L(lang);
+  days = days.filter(function (d) { return d.dayOff !== true; }); /* v1.73.6-web: vapaapäiviä (VP) ei tulosteta */
   var out = [];
   var totalMin = FIELD_KEY.map(function () { return 0; });
   var seen = FIELD_KEY.map(function () { return false; });
@@ -1771,9 +1783,7 @@ function getPeriodDates(days) {
 /* rivit -> päivät yhdestä tiedostosta (virheilmoituksella tiedostonimen kanssa) */
 function daysFromRows(rows, fileName, log) {
   var days = parseDays(rows, log);
-  /* v1.35.0-web: pelkkiä vapaapäiviä sisältävää tiedostoa ei lisätä listalle (ei työpäiviä) */
-  if (days.length === 0 && days.dayOffs > 0)
-    throw ConversionError(Msg('dayOffNotAllowed'), 12); /* v1.45.0-web: vapaapäiviä ei voi lisätä */
+  /* v1.73.6-web: pelkkiä vapaapäiviä sisältävä tiedosto lisätään listalle (vapaapäivät ohitetaan tulostettaessa) */
   if (days.length === 0)
     throw ConversionError(Msg('noDaysInFile', fileName), 3);
   return days;
@@ -1784,6 +1794,8 @@ function convertDays(allDays, opts) {
   var lang = opts.lang === 'en' ? 'en' : 'fi';
   var days = sortDaysByDate(mergeDaysNewest(allDays)); /* v1.40.0-web: päällekkäisistä päivistä uusin */
   validateMergedDays(days);
+  var workDays = days.filter(function (d) { return d.dayOff !== true; });
+  if (workDays.length === 0) throw ConversionError(Msg('onlyDayOffs'), 12); /* v1.73.6-web */
   var disp = buildDisplay(days, opts.showTimingStops !== false, lang);
   var p = getPeriodDates(days);
   var html = generateHtml(disp.days, disp.totals, p.start, p.end, opts.appVersion || APP_VERSION,
@@ -1792,7 +1804,7 @@ function convertDays(allDays, opts) {
   var range = p.start === p.end ? niceDate(p.start, lang) : niceDate(p.start, lang) + ' - ' + niceDate(p.end, lang);
   var num = periodNumberText(p.start).substr(0, 3); /* v1.39.1-web: vain jaksonumero */
   var summaryHtml = generateSummaryHtml(disp.days, disp.totals, range, num, opts.appVersion || APP_VERSION, lang, opts.extraHead || '', opts.extraBody || ''); /* v1.71.67-web */
-  return { html: html, summaryHtml: summaryHtml, days: days.length, start: p.start, end: p.end,
+  return { html: html, summaryHtml: summaryHtml, days: workDays.length, start: p.start, end: p.end,
     title: L(lang).title + (num ? num + ' ' : '') + range };
 }
 
@@ -2982,6 +2994,8 @@ function checkPayslip(allDays, slipRows, opts) {
   if (slip.periodStart !== ps || slip.periodEnd !== pe)
     throw ConversionError(Msg('periodMismatch', formatDdMmYyyy(slip.periodStart), formatDdMmYyyy(slip.periodEnd),
       formatDdMmYyyy(ps), formatDdMmYyyy(pe)), 12);
+  days = days.filter(function (d) { return d.dayOff !== true; }); /* v1.73.6-web: vapaapäivät (VP) eivät kuulu tarkistukseen */
+  if (days.length === 0) throw ConversionError(Msg('onlyDayOffs'), 12);
   var rep = buildPayslipReport(computeDayHours(days), slip, lang, opts.appVersion || APP_VERSION);
   return { html: rep.html, diffCount: rep.diffCount, periodNo: slip.periodNo, entries: slip.entries.length };
 }
@@ -3068,7 +3082,8 @@ function ivuDayFromJson(js, stamp) {
   var name = ivuStr(a.displayName) || ivuStr(al.displayName) || ivuStr(al.abbreviation);
   var comps = (a.components || []).filter(function (c) { return c && ivuStr(c.displayType) !== ''; });
   var label = [name, ivuStr(al.abbreviation), ivuStr(al.longName), ivuStr(a.dutyClassLongname)].join(' ');
-  if (isDayOffCode(label)) return { kind: 'dayoff', dateStr: dateStr, note: name };
+  if (isDayOffCode(label)) return { kind: 'dayoff', dateStr: dateStr, note: name,
+    day: { weekday: weekdayShort(dateStr), dateStr: dateStr, shiftCode: name, info: new Map(), events: [], stamp: stamp || 0, dayOff: true } }; /* v1.73.6-web */
   if (comps.length === 0) {
     var r1 = ivuSegmentsDay(js, ads, dateStr, stamp);
     if (r1.kind === 'work') return r1;
@@ -3266,9 +3281,16 @@ var I18N = {
     payDoneOk: 'Palkkalaskelman tarkistus valmis: kaikki vertailtavat tunnit täsmäävät. Raportti avautuu uuteen välilehteen (siitä voi tulostaa).',
     payBlocked: ' Jos välilehti ei avautunut, paina "Avaa tarkistusraportti".',
     payErrLog: 'VIRHE palkkalaskelman tarkistuksessa: {msg}', payErrStatus: 'Virhe palkkalaskelman tarkistuksessa: {msg}',
+    fileInfoHint: 'Tietoa kelpaavista tiedostoista',
+    fileInfoHtml: '<p><b>Kelpaavat tiedostot</b></p><ul>' +
+      '<li>PDF-tiedostot, enintään {n} kpl kerralla.</li>' +
+      '<li>IVU:n työvuorolista PDF-tiedostona: yhden tai usean päivän lista.</li>' +
+      '<li>Tällä ohjelmalla tehty ja tallennettu valmis työvuorolista (TYÖVUOROLISTA-PDF).</li>' +
+      '<li>Kaikkien päivien on kuuluttava samaan kahden viikon jaksoon (maanantaista sunnuntaihin). Jos sama päivä on useassa tiedostossa, käytetään uusinta (PDF:n luontiajan mukaan).</li>' +
+      '<li>Vapaapäivät (VP) lisätään listalle, mutta niitä ei tulosteta. Ne tallentuvat kuitenkin valmiiseen työvuorolistaan myöhempää käyttöä varten.</li></ul>',
     payInfoHint: 'Tietoa palkkalaskelman tarkistamisesta',
     payInfoHtml: '<p><b>Palkkalaskelman tarkistaminen</b></p><p>Tarkistus vertaa palkkalaskelman tunteja työvuorolistoihin.</p><ol>' +
-      '<li>Lataa kohdassa 1 (&quot;Valitse PDF(:t)…&quot; tai vetämällä sivulle) palkkalaskelman jakson (kahden viikon jakso maanantaista sunnuntaihin) kaikki IVU-työvuorolistat tai hae ne suoraan IVU:sta. Voit ladata myös tällä ohjelmalla tehdyn valmiin työvuorolistan. Käytä uusimpia listoja, koska tietoja voidaan päivittää jälkeenpäin.</li>' +
+      '<li>Lataa kohdassa 1 (&quot;Valitse PDF(:t)…&quot; tai vetämällä sivulle) palkkalaskelman jakson (kahden viikon jakso maanantaista sunnuntaihin) kaikki IVU-työvuorolistat tai hae ne suoraan IVU:sta. Voit ladata myös tällä ohjelmalla tehdyn ja tallennetun valmiin työvuorolistan. Käytä uusimpia listoja, koska tietoja voidaan päivittää jälkeenpäin.</li>' +
       '<li>Paina &quot;Palkkalaskelman tarkistaminen&quot; ja valitse palkkalaskelma (PDF).</li>' +
       '<li>Ohjelma varmistaa, että palkkalaskelman palkkakausi on sama kuin ladattujen työvuorojen jakso, ja avaa tarkistusraportin uuteen välilehteen, josta sen voi tulostaa yhdelle A4-sivulle.</li></ol>' +
       '<p>Vertailussa verrataan vain tunteja, ei euroja. Jos jakson työvuoroja puuttuu listalta, puuttuvat päivät näkyvät raportissa poikkeamina.</p>'
@@ -3351,9 +3373,16 @@ var I18N = {
     payDoneOk: 'Payslip check done: all compared hours match. The report opens in a new tab (you can print it from there).',
     payBlocked: ' If the tab did not open, press "Open the check report".',
     payErrLog: 'ERROR in payslip check: {msg}', payErrStatus: 'Error in payslip check: {msg}',
+    fileInfoHint: 'About the accepted files',
+    fileInfoHtml: '<p><b>Accepted files</b></p><ul>' +
+      '<li>PDF files, up to {n} at a time.</li>' +
+      '<li>An IVU shift list as a PDF file: a list of one or several days.</li>' +
+      '<li>A finished shift list made and saved with this program (TYÖVUOROLISTA PDF).</li>' +
+      '<li>All the days must belong to the same two-week period (Monday to Sunday). If the same day is in more than one file, the newest one is used (by the PDF creation time).</li>' +
+      '<li>Days off (VP) are added to the list but not printed. They are, however, saved in the finished shift list for later use.</li></ul>',
     payInfoHint: 'About the payslip check',
     payInfoHtml: '<p><b>Payslip check</b></p><p>The check compares the hours on the payslip with the shift lists.</p><ol>' +
-      '<li>In step 1 (&quot;Select PDF(s)…&quot; or by dragging onto the page), load all the IVU shift lists of the payslip period (a two-week period from Monday to Sunday) or fetch them directly from IVU. You can also load a finished shift list made with this program. Use the latest lists, because the data may be updated afterwards.</li>' +
+      '<li>In step 1 (&quot;Select PDF(s)…&quot; or by dragging onto the page), load all the IVU shift lists of the payslip period (a two-week period from Monday to Sunday) or fetch them directly from IVU. You can also load a finished shift list made and saved with this program. Use the latest lists, because the data may be updated afterwards.</li>' +
       '<li>Press &quot;Check the payslip&quot; and select the payslip (PDF).</li>' +
       '<li>The program verifies that the pay period of the payslip is the same as the period of the loaded shifts, and opens the check report in a new tab, from where it can be printed on one A4 page.</li></ol>' +
       '<p>Only hours are compared, not euros. If shift days of the period are missing from the list, the missing days appear as deviations in the report.</p>'
@@ -3889,6 +3918,7 @@ function applyStaticTexts() {
     else if (el.getAttribute('data-html')) el.innerHTML = txt; else el.textContent = txt;
   });
   $('payInfo').innerHTML = T('payInfoHtml');
+  $('fileInfo').innerHTML = T('fileInfoHtml', { n: MAX_FILES });
 }
 function setUiLang(lang, fromUser) {
   uiLang = lang === 'en' ? 'en' : 'fi';
@@ -3922,6 +3952,11 @@ $('fileInput').addEventListener('change', function (e) {
 });
 $('btnRemoveAll').addEventListener('click', function () { files = []; renderList(); });
 $('btnConvert').addEventListener('click', convert);
+$('btnFileInfo').addEventListener('click', function () {
+  var box = $('fileInfo'), open = box.hasAttribute('hidden');
+  if (open) box.removeAttribute('hidden'); else box.setAttribute('hidden', '');
+  this.setAttribute('aria-expanded', open ? 'true' : 'false');
+});
 $('btnPayInfo').addEventListener('click', function () {
   var box = $('payInfo'), open = box.hasAttribute('hidden');
   if (open) box.removeAttribute('hidden'); else box.setAttribute('hidden', '');
@@ -4412,7 +4447,7 @@ function ivuProcess(m) {
   if (keys.length === 0) { setIvuStatus(T('ivuBad'), 'err'); return; }
   var stamp = (typeof m.fetched === 'number' && m.fetched > 0) ? m.fetched : Date.now();
   log(T('logIvu', { n: keys.length }));
-  var days = [], off = 0, authFail = false, notes = [];
+  var days = [], offDays = [], off = 0, authFail = false, notes = [];
   ivuRaw = {};
   keys.forEach(function (k) {
     var e = m.days[k] || {};
@@ -4423,7 +4458,7 @@ function ivuProcess(m) {
     try { r = TyoCore.ivuDayFromJson(e.json, stamp); }
     catch (x) { r = { kind: 'unsupported', dateStr: k, note: x && x.message ? x.message : String(x) }; }
     if (r.kind === 'work') days.push(r.day);
-    else if (r.kind === 'dayoff' || r.kind === 'none') off++;
+    else if (r.kind === 'dayoff' || r.kind === 'none') { off++; if (r.day) offDays.push(r.day); } /* v1.73.6-web: vapaapäivät talteen (ei tulosteeseen) */
     else { notes.push('- ' + (r.dateStr || k) + ': ' + r.note); ivuRaw[k] = e.json; }
   });
   $('btnIvuRaw').hidden = Object.keys(ivuRaw).length === 0;
@@ -4438,7 +4473,8 @@ function ivuProcess(m) {
     showWarn(warn.join('\n'));
     return;
   }
-  days = TyoCore.sortDaysByDate(days);
+  var workN = days.length;
+  days = TyoCore.sortDaysByDate(days.concat(offDays));
   var firstMs = TyoCore.parseDdMmYyyy(days[0].dateStr);
   var ps = TyoCore.periodStartOf(firstMs);
   var pno = TyoCore.periodNumberText(TyoCore.formatDdMmYyyy(ps)).substr(0, 3);
@@ -4454,7 +4490,7 @@ function ivuProcess(m) {
   });
   renderList();
   convert();
-  setIvuStatus(T('ivuGot', { n: days.length, p: pno || periodLabel(ps), off: off ? T('ivuOff', { off: off }) : '' }), 'ok');
+  setIvuStatus(T('ivuGot', { n: workN, p: pno || periodLabel(ps), off: off ? T('ivuOff', { off: off }) : '' }), 'ok');
   showWarn(warn.join('\n'));
 }
 
