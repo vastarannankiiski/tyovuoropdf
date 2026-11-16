@@ -179,6 +179,41 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 .nextbtn[hidden] { display: none; }
 #nextOverlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
 #nextOverlay[hidden] { display: none; }
+/* v1.73.9-web: piilotetut lisätoiminnot (Suomen lippu 5 x napautus): hintataulukko, Kirkkonummen matkakeskus */
+.pchoice { display: block; width: 100%; text-align: left; margin: 0 0 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--row-alt); color: var(--ink); font-size: .95rem; cursor: pointer; }
+.pchoice:hover { border-color: var(--accent); }
+#plusOverlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
+#plusOverlay[hidden] { display: none; }
+#plusBox { background: var(--bg, #fff); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; max-width: 560px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; padding: 14px; box-sizing: border-box; }
+#plusTop { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 10px; }
+#plusTop h2 { margin: 0; font-size: 1.1rem; }
+#plusBody { overflow: auto; overflow-x: auto; }
+#plusBody select { font: inherit; padding: 4px 6px; margin: 0 0 8px; max-width: 100%; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink); }
+#plusBody table.fare { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+#plusBody table.fare th, #plusBody table.fare td { border-bottom: 1px solid var(--line); padding: 5px 6px; text-align: right; font-size: .88rem; }
+#plusBody table.fare td { white-space: nowrap; }
+#plusBody table.fare th { white-space: pre-line; }
+@media (max-width: 480px) { #plusBox { padding: 10px; } #plusBox #plusBody table.fare th, #plusBox #plusBody table.fare td { padding: 5px 2px; font-size: .76rem; } #plusBox #plusBody table.fare th { font-size: .62rem; } }
+@media (max-width: 380px) { #plusBox { padding: 8px; } #plusBox #plusBody table.fare th, #plusBox #plusBody table.fare td { font-size: .7rem; padding: 5px 1px; } #plusBox #plusBody table.fare th { font-size: .54rem; } }
+#plusBody table.fare th:first-child, #plusBody table.fare td:first-child { text-align: left; font-weight: 700; }
+#plusBody table.fare th { font-size: .78rem; color: var(--muted); font-weight: 600; vertical-align: bottom; }
+#plusBody .pnote { color: var(--muted); font-size: .78rem; margin: 8px 0 0; }
+#plusBody .ptabs { display: flex; gap: 6px; margin: 0 0 10px; flex-wrap: wrap; }
+#plusBody .ptabs button { min-height: 0; padding: 4px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--row-alt); color: var(--ink); cursor: pointer; font-size: .85rem; }
+#plusBody .ptabs button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+#plusBody .plbl { font-size: .8rem; color: var(--muted); margin: 0 0 4px; }
+#plusBody .plist { max-height: 46vh; overflow-y: auto; position: relative; border-top: 1px solid var(--line); padding-top: 6px; }
+#plusBody .dep.bl { grid-template-columns: 3.2rem 6.5rem 1fr; }
+#plusBody .dep .dn0 { color: var(--muted); font-size: .85em; }
+#plusBody .ptabs[hidden], #plusBody .plbl[hidden] { display: none; }
+#plusBody .dep .dn { color: var(--muted); font-size: .8em; font-weight: 400; }
+#plusBody .plat { border-top: 1px solid var(--line); padding: 8px 0; }
+#plusBody .plat:first-of-type { border-top: 0; }
+#plusBody .plat h3 { margin: 0 0 4px; font-size: 1rem; }
+#plusBody .dep { display: grid; grid-template-columns: 3.2rem 3.4rem 1fr; gap: 0 8px; padding: 1px 0; font-variant-numeric: tabular-nums; }
+#plusBody .dep.past { opacity: .45; }
+#plusBody .dep.nxt { font-weight: 700; }
+#plusBody .dep .rt { font-weight: 700; }
 #infoOverlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
 #infoOverlay[hidden] { display: none; }
 #infoBox { background: var(--bg, #fff); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; max-width: 720px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; padding: 16px 18px; box-shadow: 0 8px 30px rgba(0,0,0,.3); }
@@ -248,6 +283,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 <body>
 <div id="infoOverlay" hidden><div id="infoBox" role="dialog" aria-modal="true" aria-labelledby="infoTitle"><div id="infoTop"><h2 id="infoTitle"></h2><button type="button" class="primary small" id="btnInfoClose" data-i="nextOk"></button></div><pre id="infoText"></pre></div></div>
 <div id="nextOverlay" hidden><div id="nextBox" role="dialog" aria-modal="true" aria-labelledby="nextTitle"><div id="nextTop"><h2 id="nextTitle"></h2><button type="button" class="primary small" id="btnNextOk" data-i="nextOk"></button><span id="nextR"><button type="button" class="fsbtn" id="btnFsNext" aria-label="Koko näyttö"><svg class="i-enter" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M1 6V1h5M10 1h5v5M15 10v5h-5M6 15H1v-5" fill="none" stroke="currentColor" stroke-width="2"/></svg><svg class="i-exit" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M6 1v5H1M15 6h-5V1M10 15v-5h5M1 10h5v5" fill="none" stroke="currentColor" stroke-width="2"/></svg></button></span></div><div id="nextHead2" hidden></div><div id="nextBody"></div></div></div>
+<div id="plusOverlay" hidden><div id="plusBox" role="dialog" aria-modal="true" aria-labelledby="plusTitle"><div id="plusTop"><h2 id="plusTitle"></h2><button type="button" class="primary small" id="btnPlusOk" data-i="nextOk"></button></div><div id="plusBody"></div></div></div>
 <div class="wrap">
   <div class="hdr">
     <h1><span id="appTitle">TyövuoroPdf</span> <span id="ver"></span></h1>
@@ -387,7 +423,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.73.7-web';
+var APP_VERSION = '1.74.5-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3267,7 +3303,7 @@ var I18N = {
     tbPrint: 'Tulosta / Tallenna PDF',
     tbHint: 'Valitse tulostimeksi &quot;Tallenna PDF:nä&quot;, paperikoko A4, marginaalit: ei mitään, poista otsikot ja alatunnisteet, mittakaava 100&nbsp;%.',
     flagFi: 'Suomi', flagEn: 'English',
-    btnNext: 'Seuraavat vuorot', nextTitle: 'Seuraavat vuorot', nextOk: 'Sulje', nextCar: 'Auton numero', nextCirc: 'Kiertonumero', nextBreak: 'Tauko', nextTime: 'Lähtöaika', nextWorkStart: 'Työ alkaa', nextWorkEnd: 'Työ loppuu', nextStops: 'Väliaikapysäkit',
+    btnNext: 'Seuraavat vuorot', plusMore: 'Lisätoiminnot', plusFares: 'HSL-kertalippujen hinnat', plusKkn: 'Kirkkonummen matkakeskus: lähdöt', fareTitle: 'HSL-kertalippujen hinnat', fareAdult: 'Aikuinen', fareChild: 'Lapsi 7–17', fareAdultChild: 'Aikuinen ja lapsi (alle 18 v)', fareContactlessAll: 'Lähimaksu', farePens: 'Eläkeläinen / liikkumisrajoite', fareZones: 'Vyöhykkeet', fareValid: 'Voimassa (min)', fareValidMach: 'Automaatilta ostohetkestä (min)', fareApp: 'Sovellus, kortti\nQR-lippu, automaatti', fareContactless: 'Lähimaksu', fareKela: 'HSL-kortti (Kela)', fareMin: ' min', fareNoValid: 'ei vahvistettu', fareNote1: 'Hinnat voimassa 1.1.2026 alkaen. Lähde: HSL.', fareNote3: 'Lähimaksun hintakatto 2.11.2026 alkaen: vain aikuisten lähimaksulla ostetut kertaliput, enintään vastaavan vyöhykkeen päivälipun hinta (2 vyöhykettä 10,60 €, 3 vyöhykettä 12,80 €, 4 vyöhykettä 13,80 €, 5 vyöhykettä 17,20 €) 24 tunnissa.', fareNote4: 'Eläkeläisen (Kela) ja liikkumisrajoitteisen alennus koskee HSL-korttia, kun kotikunta on HSL-alueella tai sen naapurikunnassa.', kknTitle: 'Kirkkonummen matkakeskus', kknNoData: 'Lähtöaikoja ei ole vielä lisätty sovellukseen.', kknWd: 'Arki', kknSa: 'La', kknSu: 'Su', kknPlat: 'Laituri', kknByPlat: 'Laiturin mukaan', kknByLine: 'Linjan mukaan', kknLine: 'Linja', kknDir: 'Suunta (päätepysäkki)', kknNone: 'Ei lähtöjä tälle päivälle.', kknNote: 'Lähde: HSL:n avoin aikatauladata (', kknNote2: '). Arki = ma–pe (ma–to / pe -merkityt lähdöt ajavat vain kyseisinä päivinä). Pyhäpäivinä ja joulun aikaan aikataulu poikkeaa; häiriöt tarkista HSL:n reittioppaasta.', nextTitle: 'Seuraavat vuorot', nextOk: 'Sulje', nextCar: 'Auton numero', nextCirc: 'Kiertonumero', nextBreak: 'Tauko', nextTime: 'Lähtöaika', nextWorkStart: 'Työ alkaa', nextWorkEnd: 'Työ loppuu', nextStops: 'Väliaikapysäkit',
     nextLine: 'Linjan numero', nextRoute: 'Reitti', nextUnknown: 'ei tiedossa', nextType: 'Tapahtuma',
     infoTitle: 'Lue minut', infoLoading: 'Ladataan…', infoFail: 'Tiedoston lataus epäonnistui. Avaa se suoraan osoitteesta: ',
     nextAllDone: 'Kaikki listan tapahtumat on ajettu. Hae tiedot uudelleen IVU:sta.',
@@ -3359,7 +3395,7 @@ var I18N = {
     tbPrint: 'Print / Save PDF',
     tbHint: 'Choose &quot;Save as PDF&quot; as the printer, paper size A4, margins: none, turn off headers and footers, scale 100&nbsp;%.',
     flagFi: 'Suomi', flagEn: 'English',
-    btnNext: 'Next shifts', nextTitle: 'Next shifts', nextOk: 'Close', nextCar: 'Vehicle number', nextCirc: 'Circulation number', nextBreak: 'Break', nextTime: 'Departure time', nextWorkStart: 'Work starts', nextWorkEnd: 'Work ends', nextStops: 'Timing stops',
+    btnNext: 'Next shifts', plusMore: 'More', plusFares: 'HSL single ticket prices', plusKkn: 'Kirkkonummi travel centre: departures', fareTitle: 'HSL single ticket prices', fareAdult: 'Adult', fareChild: 'Child 7–17', fareAdultChild: 'Adult and child (under 18)', fareContactlessAll: 'Contactless', farePens: 'Pensioner / mobility-impaired', fareZones: 'Zones', fareValid: 'Valid (min)', fareValidMach: 'From machine, from purchase (min)', fareApp: 'App, card\nQR ticket, machine', fareContactless: 'Contactless', fareKela: 'HSL card (Kela)', fareMin: ' min', fareNoValid: 'not confirmed', fareNote1: 'Prices valid from 1 January 2026. Source: HSL.', fareNote3: 'Contactless price cap from 2 November 2026: adult single tickets bought by contactless payment only, at most the price of the matching day ticket (2 zones EUR 10.60, 3 zones EUR 12.80, 4 zones EUR 13.80, 5 zones EUR 17.20) within 24 hours.', fareNote4: 'The pensioner (Kela) and mobility-impaired discount applies to the HSL card when the home municipality is in the HSL area or a neighbouring municipality.', kknTitle: 'Kirkkonummi travel centre', kknNoData: 'Departure times have not been added to the app yet.', kknWd: 'Weekdays', kknSa: 'Sat', kknSu: 'Sun', kknPlat: 'Platform', kknByPlat: 'By platform', kknByLine: 'By line', kknLine: 'Line', kknDir: 'Direction (terminus)', kknNone: 'No departures.', kknNote: 'Source: HSL open timetable data (', kknNote2: '). Weekdays = Mon–Fri (departures marked ma–to / pe run only on those days). Timetables differ on public holidays and around Christmas; check disruptions in the HSL journey planner.', nextTitle: 'Next shifts', nextOk: 'Close', nextCar: 'Vehicle number', nextCirc: 'Circulation number', nextBreak: 'Break', nextTime: 'Departure time', nextWorkStart: 'Work starts', nextWorkEnd: 'Work ends', nextStops: 'Timing stops',
     nextLine: 'Line number', nextRoute: 'Route', nextUnknown: 'not known', nextType: 'Event',
     infoTitle: 'Read me', infoLoading: 'Loading…', infoFail: 'Could not load the file. Open it directly at: ',
     nextAllDone: 'All events in the list are done. Fetch the data from IVU again.',
@@ -4551,8 +4587,178 @@ $('linkInfo').addEventListener('click', function (e) {
 $('btnInfoClose').addEventListener('click', function () { $('infoOverlay').hidden = true; });
 $('infoOverlay').addEventListener('click', function (e) { if (e.target === this) this.hidden = true; });
 $('btnNextOk').addEventListener('click', function () { $('nextOverlay').hidden = true; });
+
+/* v1.73.9-web: piilotetut lisätoiminnot: Suomen lippua napautetaan nopeasti 5 kertaa -> valinta: HSL-kertalippujen hinnat / Kirkkonummen matkakeskuksen lähtöajat */
+/* Hinnat (€) voimassa 1.1.2026 alkaen: [vyöhykkeet, voimassaolo min, aikuinen sovellus/kortti/QR/automaatti, lähimaksu, lapsi sovellus..., eläkeläinen HSL-kortti] */
+var FARES = [
+  ['AB', 80, 3.30, 3.50, 1.65, 1.65], ['BC', 80, 3.30, 3.50, 1.65, 1.65], ['CD', 90, 3.30, 3.50, 1.65, 1.65], ['DE', 80, 3.30, 3.50, 1.65, 1.65],
+  ['ABC', 90, 4.50, 4.80, 2.25, 2.25], ['BCD', 100, 4.50, 4.80, 2.25, 2.25], ['CDE', 90, 4.50, 4.80, 2.25, 2.25],
+  ['ABCD', 110, 5.00, 5.30, 2.50, 2.50], ['BCDE', 100, 5.00, 5.30, 2.50, 2.50],
+  ['ABCDE', 110, 6.10, 6.50, 3.05, 3.05]
+];
+var FARE_MACHINE_EXTRA = 10; /* automaatilta ostetun kertalipun voimassaolo = voimassaolo + 10 min */
+/* Kirkkonummen matkakeskus: laiturit ja lähtöajat. Rakenne: { updated: 'pp.kk.vvvv', platforms: [ { n: 'laiturin nimi', lines: [ { r: 'linja', d: 'määränpää', wd: ['HH:MM', ...] arki, sa: [...] lauantai, su: [...] sunnuntai } ] } ] }; null = ei dataa */
+var KKN_DATA = {"updated":"GTFS 13.11.2026–11.1.2027","platforms":[{"n":"11","lines":[{"r":"171","d":"Matinkylä (M)","wd":["04:50","05:30","06:10","07:10","08:33","09:33","10:03","11:03","12:03","12:33","13:03","13:31","14:01","14:32","15:01","15:31","16:01","16:33","17:03","17:33","18:03","18:33","19:03","19:33","20:03","21:03"],"sa":["05:46","07:03","08:03","08:33","09:03","09:33","10:03","10:33","11:03","11:33","12:03","12:33","13:03","13:33","14:03","14:33","15:03","15:33","16:03","16:33","17:03","17:33","18:03","19:03","20:03","21:02"],"su":["05:46","08:03","09:03","09:33","10:03","10:33","11:03","11:33","12:03","12:33","13:03","13:33","14:03","14:33","15:03","15:33","16:03","16:33","17:03","17:33","18:03","19:03","20:03","21:02"]},{"r":"171Z","d":"Matinkylä (M)","wd":["06:04","06:34","07:04","08:04","09:03"],"sa":[],"su":[]},{"r":"172","d":"Matinkylä (M)","wd":["06:43","07:39","08:16"],"sa":[],"su":[]},{"r":"173","d":"Matinkylä (M)","wd":["10:32","11:32","20:32","21:32","22:32"],"sa":["06:18","18:32","19:32","20:32","21:32","22:32"],"su":["06:18","07:18","18:32","19:32","20:32","21:32","22:32"]},{"r":"173N","d":"Kamppi","wd":["23:30","24:28","25:58|pe"],"sa":["23:30","24:30","26:00"],"su":["23:30"]}]},{"n":"12","lines":[{"r":"911","d":"Kauklahti","wd":["07:13","08:16","09:22","12:26","13:26","14:18","15:22","16:21"],"sa":[],"su":[]}]},{"n":"13","lines":[{"r":"172","d":"Kantvik","wd":["17:15","17:45"],"sa":[],"su":[]},{"r":"173","d":"Upinniemi","wd":["10:30","11:30","21:30","22:30","23:30","24:28"],"sa":["07:30","19:30","20:30","21:30","22:30","23:30","24:30"],"su":["07:25","19:30","20:30","21:30","22:30","23:30","24:30"]},{"r":"173N","d":"Upinniemi","wd":["25:30","26:30","28:00|pe"],"sa":["25:30","26:30","28:00"],"su":["25:30"]},{"r":"173X","d":"Upinniemi","wd":[],"sa":[],"su":["19:35"]},{"r":"173Z","d":"Upinniemi","wd":["05:28","06:24","07:23","08:00","08:30","09:00","09:30","10:00","11:00","12:00","12:30","13:00","13:29","13:59","14:29","14:59","15:29","15:59","16:30","17:00","17:30","18:00","18:30","19:00","19:30","20:00","20:30"],"sa":["08:30","09:30","10:30","11:30","12:30","13:30","14:30","15:30","16:30","17:30","18:30"],"su":["09:30","10:30","11:30","12:30","13:30","14:30","15:30","16:30","17:30","18:30","19:00"]},{"r":"904","d":"Kantvik","wd":[],"sa":["11:03","12:03","14:03","15:03"],"su":["11:03","12:03","14:03","15:03"]},{"r":"904K","d":"Kantvik","wd":["14:21|ma–to","15:06|ma–to"],"sa":[],"su":[]}]},{"n":"14","lines":[{"r":"173Z","d":"Matinkylä (M)","wd":["05:19","06:00","06:30","06:58","07:30","08:00","08:30","09:00","09:31","10:00","11:01","12:01","12:31","13:01","13:31","14:01","14:31","15:02","15:33","16:03","16:33","17:03","17:32","18:02","18:30","19:00","19:30"],"sa":["07:31","08:31","09:31","10:31","11:31","12:31","13:31","14:31","15:31","16:31","17:31"],"su":["08:31","09:31","10:31","11:31","12:31","13:31","14:31","15:31","16:31","17:31"]}]},{"n":"15","lines":[{"r":"181","d":"Siuntio","wd":["13:08","14:08","15:32"],"sa":[],"su":[]},{"r":"182","d":"Siuntio","wd":["07:30"],"sa":[],"su":[]},{"r":"182A","d":"Siuntion uimahalli","wd":["18:32"],"sa":["09:32","13:02","16:02","18:32"],"su":["10:02","13:02","16:02","18:32"]},{"r":"182K","d":"Siuntio","wd":["06:32","23:05"],"sa":["23:05"],"su":["23:05"]},{"r":"183","d":"Siuntio","wd":["12:05"],"sa":[],"su":[]},{"r":"905","d":"Pikkalan tehdas","wd":["07:51","08:33","12:33","13:33","14:31","15:35","16:15"],"sa":[],"su":[]}]},{"n":"17","lines":[{"r":"902","d":"Porkkala","wd":["07:32","08:30","16:10"],"sa":[],"su":[]},{"r":"902K","d":"Porkkala","wd":["12:17","13:17","14:17","15:17"],"sa":[],"su":[]}]},{"n":"18","lines":[{"r":"903","d":"Hila","wd":["07:49","08:58"],"sa":[],"su":[]},{"r":"903K","d":"Hila","wd":["12:25","12:31|pe","13:04","13:24","14:05","14:24","15:08","15:25","16:12"],"sa":[],"su":[]}]},{"n":"19","lines":[{"r":"907","d":"Veikkola","wd":["06:55","08:00","09:00","12:28","13:28","14:15","15:10","16:10","17:10","18:10"],"sa":[],"su":[]}]},{"n":"20","lines":[{"r":"184","d":"Siuntio","wd":["09:05","11:03"],"sa":[],"su":[]},{"r":"908","d":"Kaislampi","wd":["06:25","07:34","08:37","15:32","16:35"],"sa":[],"su":[]},{"r":"908K","d":"Kaislampi","wd":["12:28","13:26","14:30"],"sa":[],"su":[]}]}]};
+function plusMoney(v) { return uiLang === 'en' ? '€' + v.toFixed(2) : v.toFixed(2).replace('.', ',') + ' €'; }
+function plusOpen(title, build) {
+  $('plusTitle').textContent = title;
+  var body = $('plusBody'); body.innerHTML = '';
+  build(body);
+  $('plusOverlay').hidden = false;
+  $('btnPlusOk').focus();
+}
+function plusEl(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; }
+function plusFares() {
+  plusOpen(T('fareTitle'), function (body) {
+    var grp = 0;
+    var sel = plusEl('select'); sel.setAttribute('aria-label', T('fareTitle'));
+    [T('fareAdultChild'), T('farePens')].forEach(function (t, i) { var o = plusEl('option', '', t); o.value = String(i); sel.appendChild(o); });
+    body.appendChild(sel);
+    var host = plusEl('div'); body.appendChild(host);
+    function th(txt, rs, cs, nw) { var e = plusEl('th', '', txt); if (nw) e.style.whiteSpace = 'pre'; if (rs) e.rowSpan = rs; if (cs) e.colSpan = cs; return e; }
+    function draw() {
+      grp = +sel.value; host.innerHTML = '';
+      var tb = plusEl('table', 'fare'), hr = plusEl('tr'), hr2 = null;
+      if (grp === 0) { /* aikuinen ja lapsi: kaksirivinen otsikko */
+        hr2 = plusEl('tr');
+        hr.appendChild(th(T('fareZones'), 2)); hr.appendChild(th(T('fareValid'), 2)); hr.appendChild(th(T('fareValidMach'), 2));
+        hr.appendChild(th(T('fareApp'), 0, 2, 1)); hr.appendChild(th(T('fareContactlessAll'), 2));
+        hr2.appendChild(th(T('fareAdult'), 0, 0, 1)); hr2.appendChild(th(T('fareChild'), 0, 0, 1));
+      } else {
+        hr.appendChild(th(T('fareZones'))); hr.appendChild(th(T('fareValid'))); hr.appendChild(th(T('fareValidMach')));
+        hr.appendChild(th(T('fareKela'))); hr.appendChild(th(T('fareApp'))); hr.appendChild(th(T('fareContactless')));
+      }
+      tb.appendChild(hr); if (hr2) tb.appendChild(hr2);
+      FARES.forEach(function (f) {
+        var tr = plusEl('tr');
+        tr.appendChild(plusEl('td', '', f[0]));
+        tr.appendChild(plusEl('td', '', String(f[1])));
+        tr.appendChild(plusEl('td', '', String(f[1] + FARE_MACHINE_EXTRA)));
+        if (grp === 0) { tr.appendChild(plusEl('td', '', plusMoney(f[2]))); tr.appendChild(plusEl('td', '', plusMoney(f[4]))); }
+        else { tr.appendChild(plusEl('td', '', plusMoney(f[5]))); tr.appendChild(plusEl('td', '', plusMoney(f[2]))); }
+        tr.appendChild(plusEl('td', '', plusMoney(f[3])));
+        tb.appendChild(tr);
+      });
+      host.appendChild(tb);
+      host.appendChild(plusEl('p', 'pnote', T('fareNote1')));
+      host.appendChild(plusEl('p', 'pnote', T('fareNote3')));
+      if (grp === 1) host.appendChild(plusEl('p', 'pnote', T('fareNote4')));
+    }
+    sel.addEventListener('change', draw); draw();
+  });
+}
+function plusKkn() {
+  plusOpen(T('kknTitle'), function (body) {
+    var D = KKN_DATA;
+    if (!D || !D.platforms || !D.platforms.length) { body.appendChild(plusEl('p', '', T('kknNoData'))); return; }
+    var now = new Date(), dow = now.getDay(), cur = dow === 0 ? 'su' : dow === 6 ? 'sa' : 'wd';
+    /* linjaindeksi: linja -> päätepysäkki (suunta) -> [{ pl: laituri, ln: rivi }] (sama linjanumero voi ajaa eri päätepysäkeille) */
+    var LI = {};
+    D.platforms.forEach(function (pl) { pl.lines.forEach(function (ln) { var a = LI[ln.r] || (LI[ln.r] = {}); (a[ln.d] || (a[ln.d] = [])).push({ pl: pl.n, ln: ln }); }); });
+    function lkey(x) { var m = /^(\d+)(.*)$/.exec(x); return m ? [+m[1], m[2]] : [999999, x]; }
+    var lineNames = Object.keys(LI).sort(function (a, b) { var x = lkey(a), y = lkey(b); return x[0] - y[0] || x[1].localeCompare(y[1]); });
+    var st = { mode: 'pl', day: cur, pl: D.platforms[0].n, line: lineNames[0], dir: Object.keys(LI[lineNames[0]])[0] };
+    var modes = plusEl('div', 'ptabs'), chips = plusEl('div', 'ptabs'), lchips = plusEl('div', 'ptabs'), dchips = plusEl('div', 'ptabs'), tabs = plusEl('div', 'ptabs'), host = plusEl('div', 'plist');
+    var lblPl = plusEl('div', 'plbl', T('kknPlat')), lblLn = plusEl('div', 'plbl', T('kknLine')), lblDir = plusEl('div', 'plbl', T('kknDir'));
+    var names = { wd: T('kknWd'), sa: T('kknSa'), su: T('kknSu') }, dbtn = {}, pbtn = {}, lbtn = {}, mbtn = {}, dirbtn = [];
+    function hhmm(t) { var m = /^(\d{1,2}):(\d{2})/.exec(t); if (!m) return t; var h = +m[1]; if (h >= 24) h -= 24; return (h < 10 ? '0' + h : '' + h) + ':' + m[2]; }
+    function press(b, on) { b.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+    function drawDirs() {
+      dchips.innerHTML = ''; dirbtn = [];
+      Object.keys(LI[st.line]).forEach(function (d) {
+        var b = plusEl('button', '', '→ ' + d); b.type = 'button'; press(b, d === st.dir);
+        b.addEventListener('click', function () { st.dir = d; draw(); });
+        dchips.appendChild(b); dirbtn.push(b);
+      });
+    }
+    function collect() {
+      var rows = [];
+      function add(ln, plN) {
+        (ln[st.day] || []).forEach(function (t) {
+          var parts = String(t).split('|'), m = /^(\d{1,2}):(\d{2})$/.exec(parts[0]);
+          if (m) rows.push({ t: parts[0], min: +m[1] * 60 + +m[2], r: ln.r, d: ln.d, n: parts[1] || '', pl: plN });
+        });
+      }
+      if (st.mode === 'pl') {
+        var pl = D.platforms.filter(function (x) { return x.n === st.pl; })[0];
+        (pl ? pl.lines : []).forEach(function (ln) { add(ln, pl.n); });
+      } else {
+        ((LI[st.line] || {})[st.dir] || []).forEach(function (e) { add(e.ln, e.pl); });
+      }
+      rows.sort(function (a, b) { return a.min - b.min || String(a.r).localeCompare(String(b.r)); });
+      return rows;
+    }
+    function draw() {
+      var byPl = st.mode === 'pl';
+      press(mbtn.pl, byPl); press(mbtn.ln, !byPl);
+      ['wd', 'sa', 'su'].forEach(function (k) { press(dbtn[k], k === st.day); });
+      D.platforms.forEach(function (x) { press(pbtn[x.n], x.n === st.pl); });
+      lineNames.forEach(function (x) { press(lbtn[x], x === st.line); });
+      chips.hidden = lblPl.hidden = !byPl; lchips.hidden = lblLn.hidden = dchips.hidden = lblDir.hidden = byPl;
+      if (!byPl) drawDirs();
+      host.innerHTML = '';
+      var rows = collect(), nowMin = now.getHours() * 60 + now.getMinutes(), isToday = (st.day === cur), nxt = -1, nextEl = null;
+      if (isToday) for (var i = 0; i < rows.length; i++) if (rows[i].min >= nowMin) { nxt = i; break; }
+      if (!rows.length) host.appendChild(plusEl('div', '', T('kknNone')));
+      rows.forEach(function (x, i) {
+        var cls = 'dep' + (byPl ? '' : ' bl') + (isToday && x.min < nowMin ? ' past' : '') + (i === nxt ? ' nxt' : '');
+        var row = plusEl('div', cls); row.appendChild(plusEl('span', '', hhmm(x.t)));
+        if (byPl) { row.appendChild(plusEl('span', 'rt', x.r)); var ds = plusEl('span', '', x.d); if (x.n) ds.appendChild(plusEl('span', 'dn', ' (' + x.n + ')')); row.appendChild(ds); }
+        else { row.appendChild(plusEl('span', 'rt', T('kknPlat') + ' ' + x.pl)); row.appendChild(plusEl('span', 'dn0', x.n ? '(' + x.n + ')' : '')); }
+        host.appendChild(row); if (i === nxt) nextEl = row;
+      });
+      host.scrollTop = nextEl ? Math.max(0, nextEl.offsetTop - host.offsetTop - 40) : 0;
+    }
+    [['pl', T('kknByPlat')], ['ln', T('kknByLine')]].forEach(function (x) {
+      var b = plusEl('button', '', x[1]); b.type = 'button'; mbtn[x[0]] = b;
+      b.addEventListener('click', function () { st.mode = x[0]; draw(); });
+      modes.appendChild(b);
+    });
+    D.platforms.forEach(function (pl) {
+      var b = plusEl('button', '', pl.n); b.type = 'button'; b.setAttribute('aria-label', T('kknPlat') + ' ' + pl.n); pbtn[pl.n] = b;
+      b.addEventListener('click', function () { st.pl = pl.n; draw(); });
+      chips.appendChild(b);
+    });
+    lineNames.forEach(function (ln) {
+      var b = plusEl('button', '', ln); b.type = 'button'; lbtn[ln] = b;
+      b.addEventListener('click', function () { st.line = ln; st.dir = Object.keys(LI[ln])[0]; draw(); });
+      lchips.appendChild(b);
+    });
+    ['wd', 'sa', 'su'].forEach(function (k) {
+      var b = plusEl('button', '', names[k]); b.type = 'button'; dbtn[k] = b;
+      b.addEventListener('click', function () { st.day = k; draw(); });
+      tabs.appendChild(b);
+    });
+    body.appendChild(modes);
+    body.appendChild(lblPl); body.appendChild(chips);
+    body.appendChild(lblLn); body.appendChild(lchips); body.appendChild(lblDir); body.appendChild(dchips);
+    body.appendChild(tabs); body.appendChild(host);
+    if (D.updated) body.appendChild(plusEl('p', 'pnote', T('kknNote') + D.updated + T('kknNote2')));
+    draw();
+  });
+}
+function plusChooser() {
+  plusOpen(T('plusMore'), function (body) {
+    [['plusFares', plusFares], ['plusKkn', plusKkn]].forEach(function (x) {
+      var b = plusEl('button', 'pchoice', T(x[0])); b.type = 'button';
+      b.addEventListener('click', x[1]);
+      body.appendChild(b);
+    });
+  });
+}
+/* Suomen lippu: 5 napautusta peräkkäin (väli enintään 700 ms) avaa piilotetut lisätoiminnot; kielen vaihto toimii normaalisti */
+var flagTaps = [];
+$('flagFi').addEventListener('click', function () {
+  var t = Date.now();
+  if (flagTaps.length && t - flagTaps[flagTaps.length - 1] > 700) flagTaps = [];
+  flagTaps.push(t);
+  if (!$('plusOverlay').hidden) { flagTaps = []; return; } /* ikkuna jo auki: lisänapautukset eivät tee mitään */
+  if (flagTaps.length >= 5) { flagTaps = []; plusChooser(); }
+});
+$('btnPlusOk').addEventListener('click', function () { $('plusOverlay').hidden = true; });
+/* v1.74.0-web: ikkuna sulkeutuu vain Sulje-painikkeella (ei taustan napautuksella eikä Esc-näppäimellä) */
 /* v1.71.88-web: taustan napautus ei enää sulje Seuraavat vuorot -ikkunaa (vahinkosulkemisen esto); sulkeminen Sulje-painikkeella tai Esc-näppäimellä */
-document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (!$('infoOverlay').hidden) $('infoOverlay').hidden = true; else if (!$('nextOverlay').hidden) $('nextOverlay').hidden = true; } });
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (!$('plusOverlay').hidden) { /* ei sulje */ } else if (!$('infoOverlay').hidden) $('infoOverlay').hidden = true; else if (!$('nextOverlay').hidden) $('nextOverlay').hidden = true; } });
 $('btnIvuOpen').addEventListener('click', function () {
   ivuMode = 'period';
   var w = window.open(IVU_START, '_blank');
