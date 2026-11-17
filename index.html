@@ -424,7 +424,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.76.1-web';
+var APP_VERSION = '1.76.2-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3277,6 +3277,7 @@ var I18N = {
     ivuBmClick: 'Vedä tämä linkki selaimen kirjanmerkkipalkkiin (älä klikkaa sitä tässä). Aja se sitten IVU-sivulla.',
     ivuOpened: 'IVU avattu. Kirjaudu ja aja hakuskripti IVU-sivulla.',
     ivuPopup: 'Selain esti uuden välilehden – salli ponnahdusikkunat tälle sivulle ja yritä uudelleen.',
+    scriptOld: 'Käytössä oleva IVU-hakuskripti (kirjanmerkki/käyttäjäskripti) on vanhentunut. Kopioi uusi skripti tältä sivulta ja korvaa vanha.',
     ivuCopyFail: 'Kopiointi ei onnistunut. Käytä kirjanmerkkiä.',
     ivuFetching: 'Haetaan IVU:sta jaksoa {p}…',
     ivuGot: 'IVU: {n} työpäivää haettu jaksolta {p}{off}.', ivuOff: ' ({off} vapaapäivää/ei vuoroa ohitettu)',
@@ -3369,6 +3370,7 @@ var I18N = {
     ivuBmClick: 'Drag this link to your browser\'s bookmarks bar (do not click it here). Then run it on the IVU page.',
     ivuOpened: 'IVU opened. Sign in and run the fetch script on the IVU page.',
     ivuPopup: 'The browser blocked the new tab – allow pop-ups for this page and try again.',
+    scriptOld: 'The IVU fetch script you are using (bookmark/userscript) is out of date. Copy the new script from this page and replace the old one.',
     ivuCopyFail: 'Copying failed. Use the bookmark instead.',
     ivuFetching: 'Fetching period {p} from IVU…',
     ivuGot: 'IVU: {n} work days fetched for period {p}{off}.', ivuOff: ' ({off} days off / no shift skipped)',
@@ -4055,6 +4057,7 @@ window.addEventListener('drop', function (e) {
 var IVU_ORIGIN = 'https://pl-prod-ptp.pl.euc1p.ivucloud.com';
 var IVU_START = IVU_ORIGIN + '/mbweb/duties';
 /* v1.76.0-web: haku samassa välilehdessä (ei välilehden sulkemista): sivun osoite kirjanmerkkiin, tulokset paluuosoitteen #tvlres=-osaan */
+var IVU_SCRIPT_VER = 2; /* v1.76.2-web: hakuskriptin versio; kasvata, kun skriptiä muutetaan (vanha skripti kehottaa päivittämään) */
 var APP_URL = /^https?:$/.test(location.protocol) ? encodeURI(location.origin + location.pathname + location.search).replace(/'/g, '%27') : '';
 function setIvuStatus(msg, cls) { var s = $('ivuStatus'); s.textContent = msg; s.className = 'status' + (cls ? ' ' + cls : ''); }
 
@@ -4089,7 +4092,7 @@ function periodDatesIso() {
 /* Hakuskripti. Ei //-kommentteja eikä rivinvaihdosta riippuvia lauseita (kirjanmerkki = rivinvaihdot poistettuna). */
 var IVU_SCRIPT = [
 "(async function(){",
-"var O='" + IVU_ORIGIN + "',A='" + APP_URL + "';",
+"var O='" + IVU_ORIGIN + "',A='" + APP_URL + "',SV=" + IVU_SCRIPT_VER + ";",
 "function note(t,bad){var b=document.createElement('div');b.textContent=t;b.style.cssText='position:fixed;z-index:2147483647;left:10px;right:10px;top:12px;text-align:center;padding:10px 16px;border-radius:8px;font:15px sans-serif;color:white;background:'+(bad?'rgb(179,38,30)':'rgb(27,110,60)');document.body.appendChild(b);setTimeout(function(){b.remove();},bad?9000:6000);}",
 "if(location.origin!==O){alert('Aja tämä IVU-sivulla: '+O);return;}",
 "var tok=sessionStorage.getItem('access_token');",
@@ -4100,10 +4103,11 @@ var IVU_SCRIPT = [
 "if(op){dates=await new Promise(function(res){var to=setTimeout(function(){res(null);},2500);",
 "window.addEventListener('message',function h(e){if(e.source===op&&e.data&&e.data.tvl==='dates'){clearTimeout(to);window.removeEventListener('message',h);bo=e.origin==='null'?'*':e.origin;res(e.data.dates);}});",
 "try{op.postMessage({tvl:'hello'},'*');}catch(x){res(null);}});if(dates){via=true;}}",
+"if(req&&req.need>SV){note('Hakuskripti on vanhentunut. Kopioi uusi kirjanmerkki tai käyttäjäskripti TyövuoroPdf-sivulta.',1);return;}",
 "if(!dates&&req&&req.dates){dates=req.dates;}",
 "if(!dates){dates=[];var t0=new Date();for(var q=-13;q<=13;q++){var x=new Date(t0.getFullYear(),t0.getMonth(),t0.getDate()+q);dates.push(x.getFullYear()+'-'+('0'+(x.getMonth()+1)).slice(-2)+'-'+('0'+x.getDate()).slice(-2));}}",
 "note('Haetaan '+dates.length+' päivää IVU:sta...');",
-"var out={tvl:'result',v:1,fetched:Date.now(),days:{}};",
+"var out={tvl:'result',v:1,sv:SV,fetched:Date.now(),days:{}};",
 "for(var k=0;k<dates.length;k+=7){await Promise.all(dates.slice(k,k+7).map(async function(d){try{var r=await fetch(O+'/emp/rest/duty-schedule/details/'+d,{headers:{Authorization:'Bearer '+tok,Accept:'application/json'}});out.days[d]=r.ok?{status:r.status,json:await r.json()}:{status:r.status};}catch(e){out.days[d]={status:0,error:String(e)};}}));}",
 "if(via){if(op.closed){note('TyövuoroPdf-sivu on suljettu.',1);return;}",
 "op.postMessage(out,bo);note('Tiedot lähetetty TyövuoroPdf-sivulle. Tämä välilehti suljetaan.');setTimeout(function(){try{op.focus();}catch(x){}window.close();},300);return;}",
@@ -4122,7 +4126,7 @@ var IVU_USERSCRIPT = [
 '// ==UserScript==',
 '// @name         TyövuoroPdf: Hae IVU-vuorot',
 '// @namespace    tyovuoropdf',
-'// @version      1.0',
+'// @version      2.0',
 '// @description  Lisää IVU:n sivulle painikkeen, joka siirtää jakson työvuorot TyövuoroPdf-sivulle',
 '// @match        ' + IVU_ORIGIN + '/*',
 '// @grant        none',
@@ -4560,9 +4564,14 @@ function ivuGo(mode) {
     summary: $('chkSummary').checked, font: $('selFont').value, spacing: $('selSpacing').value, outLang: $('selOutLang').value, retro: $('chkRetro').checked };
   try {
     sessionStorage.setItem(TVL_KEY, JSON.stringify(st));
-    window.name = 'tvlreq:' + JSON.stringify({ dates: dates, app: decodeURI(APP_URL) });
+    window.name = 'tvlreq:' + JSON.stringify({ dates: dates, app: decodeURI(APP_URL), need: IVU_SCRIPT_VER });
   } catch (e) { try { sessionStorage.removeItem(TVL_KEY); } catch (e2) { /* ei väliä */ } ivuLegacyOpen(mode); return; }
   location.href = IVU_START;
+}
+function ivuScriptCheck(m) { /* v1.76.2-web: vanha hakuskripti -> kehotus päivittää */
+  if (!m || typeof m !== 'object' || (m.sv || 0) >= IVU_SCRIPT_VER) return;
+  var w = $('warn'), t = w.style.display === 'block' ? w.textContent + '\n' : '';
+  showWarn(t + T('scriptOld'));
 }
 function tvlDecode(enc) {
   var kind = enc.charAt(0), bin = atob(enc.slice(1).replace(/-/g, '+').replace(/_/g, '/')), u8 = new Uint8Array(bin.length);
@@ -4598,6 +4607,7 @@ function ivuReturn() {
     if (m && typeof m === 'object') m.days = o;
     if (st.mode === 'next') { ivuMode = 'period'; setStatus(''); nextProcess(m); }
     else { ivuMode = 'period'; ivuProcess(m); }
+    ivuScriptCheck(m);
   }, function () { setIvuStatus(T('ivuBad'), 'err'); });
 }
 
@@ -4616,6 +4626,7 @@ window.addEventListener('message', function (ev) {
     setTimeout(function () { try { window.focus(); } catch (e) { /* selain voi estää */ } try { if (src && !src.closed) src.close(); } catch (e) { /* ei väliä */ } try { window.focus(); } catch (e) { /* selain voi estää */ } }, 1200); /* v1.75.4-web: tarkennus tähän sivuun ennen ja jälkeen IVU-välilehden sulkemisen */
     if (ivuMode === 'next') { ivuMode = 'period'; setStatus(''); nextProcess(m); }
     else ivuProcess(m);
+    ivuScriptCheck(m);
   }
 });
 
