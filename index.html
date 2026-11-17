@@ -436,7 +436,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.78.3-web';
+var APP_VERSION = '1.78.4-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3322,7 +3322,7 @@ var I18N = {
     tbPrint: 'Tulosta / Tallenna PDF',
     tbHint: 'Valitse tulostimeksi &quot;Tallenna PDF:nä&quot;, paperikoko A4, marginaalit: ei mitään, poista otsikot ja alatunnisteet, mittakaava 100&nbsp;%.',
     flagFi: 'Suomi', flagEn: 'English',
-    btnNext: 'Seuraavat vuorot', plusMore: 'Lisätoiminnot', plusFares: 'HSL-kertalippujen hinnat', plusKkn: 'Kirkkonummen matkakeskus: lähdöt', fareTitle: 'HSL-kertalippujen hinnat', fareAdult: 'Aikuinen', fareChild: 'Lapsi 7–17', fareAdultChild: 'Aikuinen ja lapsi (alle 18 v)', fareContactlessAll: 'Lähimaksu', farePens: 'Eläkeläinen / liikkumisrajoite', fareZones: 'Vyöhykkeet', fareValid: 'Voimassa (min)', fareValidMach: 'Automaatilta ostohetkestä (min)', fareApp: 'Sovellus, kortti\nQR-lippu, automaatti', fareContactless: 'Lähimaksu', fareKela: 'HSL-kortti (Kela)', fareMin: ' min', fareNoValid: 'ei vahvistettu', fareNote1: 'Hinnat voimassa 1.1.2026 alkaen. Lähde: HSL.', fareNote3: 'Lähimaksun hintakatto 2.11.2026 alkaen: vain aikuisten lähimaksulla ostetut kertaliput, enintään vastaavan vyöhykkeen päivälipun hinta (2 vyöhykettä 10,60 €, 3 vyöhykettä 12,80 €, 4 vyöhykettä 13,80 €, 5 vyöhykettä 17,20 €) 24 tunnissa.', fareNote4: 'Eläkeläisen (Kela) ja liikkumisrajoitteisen alennus koskee HSL-korttia, kun kotikunta on HSL-alueella tai sen naapurikunnassa.', kknTitle: 'Kirkkonummen matkakeskus', kknTitleLine: 'Kirkkonummen matkakeskus / Päätepysäkki', kknNoData: 'Lähtöaikoja ei ole vielä lisätty sovellukseen.', kknWd: 'Arki', kknSa: 'La', kknSu: 'Su', kknPlat: 'Laituri', kknByPlat: 'Laiturin mukaan', kknByLine: 'Linjan mukaan', kknLine: 'Linja', kknXCap: 'Linja ei pysähdy Kirkkonummen matkakeskuksessa.', kknDest: 'Määränpää', kknNone: 'Ei lähtöjä tälle päivälle.', kknNote: 'Lähde: HSL:n avoin aikatauladata (', kknNote2: '). Arki = ma–pe (ma–to / pe -merkityt lähdöt ajavat vain kyseisinä päivinä). Pyhäpäivinä ja joulun aikaan aikataulu poikkeaa; häiriöt tarkista HSL:n reittioppaasta.', nextTitle: 'Seuraavat vuorot', nextOk: 'Sulje', nextCar: 'Auton numero', nextCirc: 'Kiertonumero', nextBreak: 'Tauko', nextTime: 'Lähtöaika', nextWorkStart: 'Työ alkaa', nextWorkEnd: 'Työ loppuu', nextStops: 'Väliaikapysäkit',
+    btnNext: 'Seuraavat vuorot', plusMore: 'Lisätoiminnot', plusFares: 'HSL-kertalippujen hinnat', plusKkn: 'Kirkkonummen matkakeskus: lähdöt', fareTitle: 'HSL-kertalippujen hinnat', fareAdult: 'Aikuinen', fareChild: 'Lapsi 7–17', fareAdultChild: 'Aikuinen ja lapsi (alle 18 v)', fareContactlessAll: 'Lähimaksu', farePens: 'Eläkeläinen / liikkumisrajoite', fareZones: 'Vyöhykkeet', fareValid: 'Voimassa (min)', fareValidMach: 'Automaatilta ostohetkestä (min)', fareApp: 'Sovellus, kortti\nQR-lippu, automaatti', fareContactless: 'Lähimaksu', fareKela: 'HSL-kortti (Kela)', fareMin: ' min', fareNoValid: 'ei vahvistettu', fareNote1: 'Hinnat voimassa 1.1.2026 alkaen. Lähde: HSL.', fareNote3: 'Lähimaksun hintakatto 2.11.2026 alkaen: vain aikuisten lähimaksulla ostetut kertaliput, enintään vastaavan vyöhykkeen päivälipun hinta (2 vyöhykettä 10,60 €, 3 vyöhykettä 12,80 €, 4 vyöhykettä 13,80 €, 5 vyöhykettä 17,20 €) 24 tunnissa.', fareNote4: 'Eläkeläisen (Kela) ja liikkumisrajoitteisen alennus koskee HSL-korttia, kun kotikunta on HSL-alueella tai sen naapurikunnassa.', kknTitle: 'Kirkkonummen matkakeskus', kknTitleLine: 'Kirkkonummen matkakeskus / Päätepysäkki', kknNoData: 'Lähtöaikoja ei ole vielä lisätty sovellukseen.', kknWd: 'Arki', kknSa: 'La', kknSu: 'Su', kknPlat: 'Laituri', kknByPlat: 'Laiturin mukaan', kknByLine: 'Linjan mukaan', kknLine: 'Linja', kknXCap: 'Linja ei pysähdy Kirkkonummen matkakeskuksessa.', kknDest: 'Määränpää', kknNextDay: '+1 pv', kknNone: 'Ei lähtöjä tälle päivälle.', kknNote: 'Lähde: HSL:n avoin aikatauladata (', kknNote2: '). Arki = ma–pe (ma–to / pe -merkityt lähdöt ajavat vain kyseisinä päivinä). Pyhäpäivinä ja joulun aikaan aikataulu poikkeaa; häiriöt tarkista HSL:n reittioppaasta.', nextTitle: 'Seuraavat vuorot', nextOk: 'Sulje', nextCar: 'Auton numero', nextCirc: 'Kiertonumero', nextBreak: 'Tauko', nextTime: 'Lähtöaika', nextWorkStart: 'Työ alkaa', nextWorkEnd: 'Työ loppuu', nextStops: 'Väliaikapysäkit',
     nextLine: 'Linjan numero', nextRoute: 'Reitti', nextUnknown: 'ei tiedossa', nextType: 'Tapahtuma',
     infoTitle: 'Lue minut', infoLoading: 'Ladataan…', infoFail: 'Tiedoston lataus epäonnistui. Avaa se suoraan osoitteesta: ',
     nextAllDone: 'Kaikki listan tapahtumat on ajettu. Hae tiedot uudelleen IVU:sta.',
@@ -3415,7 +3415,7 @@ var I18N = {
     tbPrint: 'Print / Save PDF',
     tbHint: 'Choose &quot;Save as PDF&quot; as the printer, paper size A4, margins: none, turn off headers and footers, scale 100&nbsp;%.',
     flagFi: 'Suomi', flagEn: 'English',
-    btnNext: 'Next shifts', plusMore: 'More', plusFares: 'HSL single ticket prices', plusKkn: 'Kirkkonummi travel centre: departures', fareTitle: 'HSL single ticket prices', fareAdult: 'Adult', fareChild: 'Child 7–17', fareAdultChild: 'Adult and child (under 18)', fareContactlessAll: 'Contactless', farePens: 'Pensioner / mobility-impaired', fareZones: 'Zones', fareValid: 'Valid (min)', fareValidMach: 'From machine, from purchase (min)', fareApp: 'App, card\nQR ticket, machine', fareContactless: 'Contactless', fareKela: 'HSL card (Kela)', fareMin: ' min', fareNoValid: 'not confirmed', fareNote1: 'Prices valid from 1 January 2026. Source: HSL.', fareNote3: 'Contactless price cap from 2 November 2026: adult single tickets bought by contactless payment only, at most the price of the matching day ticket (2 zones EUR 10.60, 3 zones EUR 12.80, 4 zones EUR 13.80, 5 zones EUR 17.20) within 24 hours.', fareNote4: 'The pensioner (Kela) and mobility-impaired discount applies to the HSL card when the home municipality is in the HSL area or a neighbouring municipality.', kknTitle: 'Kirkkonummi travel centre', kknTitleLine: 'Kirkkonummi travel centre / Terminus', kknNoData: 'Departure times have not been added to the app yet.', kknWd: 'Weekdays', kknSa: 'Sat', kknSu: 'Sun', kknPlat: 'Platform', kknByPlat: 'By platform', kknByLine: 'By line', kknLine: 'Line', kknXCap: 'This line does not call at Kirkkonummi travel centre.', kknDest: 'Destination', kknNone: 'No departures.', kknNote: 'Source: HSL open timetable data (', kknNote2: '). Weekdays = Mon–Fri (departures marked Mon–Thu / Fri run only on those days). Timetables differ on public holidays and around Christmas; check disruptions in the HSL journey planner.', nextTitle: 'Next shifts', nextOk: 'Close', nextCar: 'Vehicle number', nextCirc: 'Circulation number', nextBreak: 'Break', nextTime: 'Departure time', nextWorkStart: 'Work starts', nextWorkEnd: 'Work ends', nextStops: 'Timing stops',
+    btnNext: 'Next shifts', plusMore: 'More', plusFares: 'HSL single ticket prices', plusKkn: 'Kirkkonummi travel centre: departures', fareTitle: 'HSL single ticket prices', fareAdult: 'Adult', fareChild: 'Child 7–17', fareAdultChild: 'Adult and child (under 18)', fareContactlessAll: 'Contactless', farePens: 'Pensioner / mobility-impaired', fareZones: 'Zones', fareValid: 'Valid (min)', fareValidMach: 'From machine, from purchase (min)', fareApp: 'App, card\nQR ticket, machine', fareContactless: 'Contactless', fareKela: 'HSL card (Kela)', fareMin: ' min', fareNoValid: 'not confirmed', fareNote1: 'Prices valid from 1 January 2026. Source: HSL.', fareNote3: 'Contactless price cap from 2 November 2026: adult single tickets bought by contactless payment only, at most the price of the matching day ticket (2 zones EUR 10.60, 3 zones EUR 12.80, 4 zones EUR 13.80, 5 zones EUR 17.20) within 24 hours.', fareNote4: 'The pensioner (Kela) and mobility-impaired discount applies to the HSL card when the home municipality is in the HSL area or a neighbouring municipality.', kknTitle: 'Kirkkonummi travel centre', kknTitleLine: 'Kirkkonummi travel centre / Terminus', kknNoData: 'Departure times have not been added to the app yet.', kknWd: 'Weekdays', kknSa: 'Sat', kknSu: 'Sun', kknPlat: 'Platform', kknByPlat: 'By platform', kknByLine: 'By line', kknLine: 'Line', kknXCap: 'This line does not call at Kirkkonummi travel centre.', kknDest: 'Destination', kknNextDay: '+1 d', kknNone: 'No departures.', kknNote: 'Source: HSL open timetable data (', kknNote2: '). Weekdays = Mon–Fri (departures marked Mon–Thu / Fri run only on those days). Timetables differ on public holidays and around Christmas; check disruptions in the HSL journey planner.', nextTitle: 'Next shifts', nextOk: 'Close', nextCar: 'Vehicle number', nextCirc: 'Circulation number', nextBreak: 'Break', nextTime: 'Departure time', nextWorkStart: 'Work starts', nextWorkEnd: 'Work ends', nextStops: 'Timing stops',
     nextLine: 'Line number', nextRoute: 'Route', nextUnknown: 'not known', nextType: 'Event',
     infoTitle: 'Read me', infoLoading: 'Loading…', infoFail: 'Could not load the file. Open it directly at: ',
     nextAllDone: 'All events in the list are done. Fetch the data from IVU again.',
@@ -4746,7 +4746,10 @@ function plusKkn() {
   plusOpen(T('kknTitle'), function (body) {
     var D = KKN_DATA;
     if (!D || !D.lines || !D.lines.length) { body.appendChild(plusEl('p', '', T('kknNoData'))); return; }
-    var now = new Date(), dow = now.getDay(), cur = dow === 0 ? 'su' : dow === 6 ? 'sa' : 'wd';
+    /* v1.78.4-web: nykyhetki lasketaan jokaisella piirrolla; edellisen vuorokauden yövuorot (aika >= 24:00) näytetään tämän päivän listan alussa (esim. 173N 24:28 -> 00:28) */
+    function nowInfo() { var n = new Date(), d = n.getDay(), y = (d + 6) % 7; return { now: n, cur: d === 0 ? 'su' : d === 6 ? 'sa' : 'wd', py: y === 0 ? 'su' : y === 6 ? 'sa' : 'wd', fri: y === 5 }; }
+    var cur = nowInfo().cur;
+    function noteOk(n, ni) { return !n || ni.py !== 'wd' || (n === 'pe' ? ni.fri : n === 'ma–to' ? !ni.fri : true); }
     /* v1.77.0-web: linjaindeksi: linja -> suunnat (lähtöpaikka -> määränpää). Rivin muoto (k = tyyppi): o: lähtö matkakeskukselta 'LÄHTÖ>LAITURI>PERILLÄ'; e: päättyy matkakeskukseen 'LÄHTÖ>SAAPUU>LAITURI';
        m: kulkee matkakeskuksen kautta 'LÄHTÖ>MATKAKESKUKSELTA>LAITURI>PERILLÄ'; x: ei pysähdy matkakeskuksessa 'LÄHTÖ>PERILLÄ'; perässä mahdollinen '|ma–to' / '|pe' */
     var MKN = 'Kirkkonummen matkakeskus';
@@ -4785,22 +4788,27 @@ function plusKkn() {
       });
     }
     function collect() { /* laituritila: valitun laiturin lähdöt */
-      var rows = ((PI[st.pl] || {})[st.day] || []).slice();
+      var rows = ((PI[st.pl] || {})[st.day] || []).slice(), ni = nowInfo();
+      if (st.day === ni.cur) ((PI[st.pl] || {})[ni.py] || []).forEach(function (x) { if (x.min >= 1440 && noteOk(x.n, ni)) rows.push({ t: x.t, min: x.min - 1440, r: x.r, d: x.d, de: x.de, n: x.n }); });
       rows.sort(function (a, b) { return a.min - b.min || String(a.r).localeCompare(String(b.r)); });
       return rows;
     }
     function tmin(t) { var m = /^(\d{1,2}):(\d{2})/.exec(t); return m ? +m[1] * 60 + +m[2] : 0; }
     function lineRows() { /* linjatila: valitun suunnan vuorot taulukkoriveiksi { min, c: [{t, pl}], n } */
-      var dr = dirsOf(st.line)[st.dir], k = dr.k, rows = [];
-      (dr[st.day] || []).forEach(function (e) {
+      var dr = dirsOf(st.line)[st.dir], k = dr.k, rows = [], ni = nowInfo();
+      function addRows(list, prev) { (list || []).forEach(function (e) {
         var parts = String(e).split('|'), f = parts[0].split('>'), c, o = f[0].split('/'); /* lähtöajan perässä mahdollinen /laituri (Matinkylän terminaalin lähtölaituri) */
         f[0] = o[0];
         if (k === 'x') c = [{ t: f[0], pl: o[1] }, { t: f[1] }];
         else if (k === 'o') c = [{ t: f[0], pl: f[1] }, { t: f[2] }];
         else if (k === 'e') c = [{ t: f[0], pl: o[1] }, { t: f[1], pl: f[2] }];
         else c = [{ t: f[0], pl: o[1] }, { t: f[1], pl: f[2] }, { t: f[3] }];
-        rows.push({ min: tmin(f[0]), c: c, n: noteTr(parts[1] || '') });
-      });
+        var mn = tmin(f[0]);
+        if (prev && (mn < 1440 || !noteOk(parts[1] || '', ni))) return;
+        rows.push({ min: prev ? mn - 1440 : mn, c: c, n: noteTr(parts[1] || '') });
+      }); }
+      addRows(dr[st.day], false);
+      if (st.day === ni.cur) addRows(dr[ni.py], true);
       rows.sort(function (a, b) { return a.min - b.min; });
       return rows;
     }
@@ -4817,7 +4825,7 @@ function plusKkn() {
       cap.hidden = byPl || dr.k !== 'x';
       if (!cap.hidden) cap.textContent = T('kknXCap');
       host.innerHTML = ''; host.className = 'plist kl';
-      var nowMin = now.getHours() * 60 + now.getMinutes(), isToday = (st.day === cur), nxt = -1, nextEl = null;
+      var ni = nowInfo(), nowMin = ni.now.getHours() * 60 + ni.now.getMinutes(), isToday = (st.day === ni.cur), nxt = -1, nextEl = null;
       var rows = byPl ? collect() : lineRows();
       if (isToday) for (var i = 0; i < rows.length; i++) if (rows[i].min >= nowMin) { nxt = i; break; }
       if (!rows.length) host.appendChild(plusEl('div', '', T('kknNone')));
@@ -4832,7 +4840,7 @@ function plusKkn() {
         rows.forEach(function (x, i) {
           var tr = plusEl('tr', (isToday && x.min < nowMin ? 'past' : '') + (i === nxt ? ' nxt' : ''));
           tr.appendChild(plusEl('td', 'rt', x.r));
-          var tdT = plusEl('td', '', hhmm(x.t)); if (x.n) tdT.appendChild(plusEl('span', 'dn', ' (' + noteTr(x.n) + ')')); tr.appendChild(tdT);
+          var tdT = plusEl('td', '', hhmm(x.t)); if (x.min >= 1440) tdT.appendChild(plusEl('span', 'dn', ' ' + T('kknNextDay'))); if (x.n) tdT.appendChild(plusEl('span', 'dn', ' (' + noteTr(x.n) + ')')); tr.appendChild(tdT);
           tr.appendChild(plusEl('td', 'ar', '\u2192'));
           tr.appendChild(plusEl('td', 'wr', hhmm(x.de) + ' ' + pname(x.d)));
           tbd0.appendChild(tr); if (i === nxt) nextEl = tr;
@@ -4854,7 +4862,8 @@ function plusKkn() {
           x.c.forEach(function (cell, ci) {
             if (ci) tr.appendChild(plusEl('td', 'ar', '\u2192'));
             var td = plusEl('td', '', hhmm(cell.t) + (cell.pl ? ' ' + T('kknPlat') + '\u00A0' + cell.pl : ''));
-            if (ci === 0 && x.n) td.appendChild(plusEl('span', 'dn', '(' + x.n + ')'));
+            if (ci === 0 && x.min >= 1440) td.appendChild(plusEl('span', 'dn', ' ' + T('kknNextDay')));
+            if (ci === 0 && x.n) td.appendChild(plusEl('span', 'dn', ' (' + x.n + ')'));
             tr.appendChild(td);
           });
           tbody.appendChild(tr); if (i === nxt) nextEl = tr;
