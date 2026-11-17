@@ -182,6 +182,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 /* v1.73.9-web: piilotetut lisätoiminnot (Suomen lippu 5 x napautus): hintataulukko, Kirkkonummen matkakeskus */
 .pchoice { display: block; width: 100%; text-align: left; margin: 0 0 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--row-alt); color: var(--ink); font-size: .95rem; cursor: pointer; }
 .pchoice:hover { border-color: var(--accent); }
+#appTitle { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
 #plusOverlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
 #plusOverlay[hidden] { display: none; }
 #plusBox { background: var(--bg, #fff); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; max-width: 560px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; padding: 14px; box-sizing: border-box; }
@@ -423,7 +424,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.75.0-web';
+var APP_VERSION = '1.75.2-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3395,7 +3396,7 @@ var I18N = {
     tbPrint: 'Print / Save PDF',
     tbHint: 'Choose &quot;Save as PDF&quot; as the printer, paper size A4, margins: none, turn off headers and footers, scale 100&nbsp;%.',
     flagFi: 'Suomi', flagEn: 'English',
-    btnNext: 'Next shifts', plusMore: 'More', plusFares: 'HSL single ticket prices', plusKkn: 'Kirkkonummi travel centre: departures', fareTitle: 'HSL single ticket prices', fareAdult: 'Adult', fareChild: 'Child 7–17', fareAdultChild: 'Adult and child (under 18)', fareContactlessAll: 'Contactless', farePens: 'Pensioner / mobility-impaired', fareZones: 'Zones', fareValid: 'Valid (min)', fareValidMach: 'From machine, from purchase (min)', fareApp: 'App, card\nQR ticket, machine', fareContactless: 'Contactless', fareKela: 'HSL card (Kela)', fareMin: ' min', fareNoValid: 'not confirmed', fareNote1: 'Prices valid from 1 January 2026. Source: HSL.', fareNote3: 'Contactless price cap from 2 November 2026: adult single tickets bought by contactless payment only, at most the price of the matching day ticket (2 zones EUR 10.60, 3 zones EUR 12.80, 4 zones EUR 13.80, 5 zones EUR 17.20) within 24 hours.', fareNote4: 'The pensioner (Kela) and mobility-impaired discount applies to the HSL card when the home municipality is in the HSL area or a neighbouring municipality.', kknTitle: 'Kirkkonummi travel centre', kknTitleLine: 'Kirkkonummi travel centre / Terminus', kknNoData: 'Departure times have not been added to the app yet.', kknWd: 'Weekdays', kknSa: 'Sat', kknSu: 'Sun', kknPlat: 'Platform', kknByPlat: 'By platform', kknByLine: 'By line', kknLine: 'Line', kknDir: 'Direction (terminus): \u2192 departs from the travel centre, \u2190 arrives at the travel centre', kknArr: 'arrives', kknXCap: 'This line does not call at Kirkkonummi travel centre. The time is the departure from the first stop, and the arrival time is at the terminus.', kknCont: 'continues to', kknInCap: 'The time is the departure from the terminus {o}. The platform is the arrival platform at Kirkkonummi travel centre.', kknNone: 'No departures.', kknNote: 'Source: HSL open timetable data (', kknNote2: '). Weekdays = Mon–Fri (departures marked ma–to / pe run only on those days). Timetables differ on public holidays and around Christmas; check disruptions in the HSL journey planner.', nextTitle: 'Next shifts', nextOk: 'Close', nextCar: 'Vehicle number', nextCirc: 'Circulation number', nextBreak: 'Break', nextTime: 'Departure time', nextWorkStart: 'Work starts', nextWorkEnd: 'Work ends', nextStops: 'Timing stops',
+    btnNext: 'Next shifts', plusMore: 'More', plusFares: 'HSL single ticket prices', plusKkn: 'Kirkkonummi travel centre: departures', fareTitle: 'HSL single ticket prices', fareAdult: 'Adult', fareChild: 'Child 7–17', fareAdultChild: 'Adult and child (under 18)', fareContactlessAll: 'Contactless', farePens: 'Pensioner / mobility-impaired', fareZones: 'Zones', fareValid: 'Valid (min)', fareValidMach: 'From machine, from purchase (min)', fareApp: 'App, card\nQR ticket, machine', fareContactless: 'Contactless', fareKela: 'HSL card (Kela)', fareMin: ' min', fareNoValid: 'not confirmed', fareNote1: 'Prices valid from 1 January 2026. Source: HSL.', fareNote3: 'Contactless price cap from 2 November 2026: adult single tickets bought by contactless payment only, at most the price of the matching day ticket (2 zones EUR 10.60, 3 zones EUR 12.80, 4 zones EUR 13.80, 5 zones EUR 17.20) within 24 hours.', fareNote4: 'The pensioner (Kela) and mobility-impaired discount applies to the HSL card when the home municipality is in the HSL area or a neighbouring municipality.', kknTitle: 'Kirkkonummi travel centre', kknTitleLine: 'Kirkkonummi travel centre / Terminus', kknNoData: 'Departure times have not been added to the app yet.', kknWd: 'Weekdays', kknSa: 'Sat', kknSu: 'Sun', kknPlat: 'Platform', kknByPlat: 'By platform', kknByLine: 'By line', kknLine: 'Line', kknDir: 'Direction (terminus): \u2192 departs from the travel centre, \u2190 arrives at the travel centre', kknArr: 'arrives', kknXCap: 'This line does not call at Kirkkonummi travel centre. The time is the departure from the first stop, and the arrival time is at the terminus.', kknCont: 'continues to', kknInCap: 'The time is the departure from the terminus {o}. The platform is the arrival platform at Kirkkonummi travel centre.', kknNone: 'No departures.', kknNote: 'Source: HSL open timetable data (', kknNote2: '). Weekdays = Mon–Fri (departures marked Mon–Thu / Fri run only on those days). Timetables differ on public holidays and around Christmas; check disruptions in the HSL journey planner.', nextTitle: 'Next shifts', nextOk: 'Close', nextCar: 'Vehicle number', nextCirc: 'Circulation number', nextBreak: 'Break', nextTime: 'Departure time', nextWorkStart: 'Work starts', nextWorkEnd: 'Work ends', nextStops: 'Timing stops',
     nextLine: 'Line number', nextRoute: 'Route', nextUnknown: 'not known', nextType: 'Event',
     infoTitle: 'Read me', infoLoading: 'Loading…', infoFail: 'Could not load the file. Open it directly at: ',
     nextAllDone: 'All events in the list are done. Fetch the data from IVU again.',
@@ -4668,6 +4669,7 @@ function plusKkn() {
     var lblPl = plusEl('div', 'plbl', T('kknPlat')), lblLn = plusEl('div', 'plbl', T('kknLine')), lblDir = plusEl('div', 'plbl', T('kknDir'));
     var names = { wd: T('kknWd'), sa: T('kknSa'), su: T('kknSu') }, dbtn = {}, pbtn = {}, lbtn = {}, mbtn = {}, dirbtn = [];
     function hhmm(t) { var m = /^(\d{1,2}):(\d{2})/.exec(t); if (!m) return t; var h = +m[1]; if (h >= 24) h -= 24; return (h < 10 ? '0' + h : '' + h) + ':' + m[2]; }
+    function noteTr(n) { return uiLang === 'en' ? n.replace('ma–to', 'Mon–Thu').replace(/^pe$/, 'Fri') : n; } /* v1.75.2-web: ma–to / pe englanniksi */
     function press(b, on) { b.setAttribute('aria-pressed', on ? 'true' : 'false'); }
     function drawDirs() {
       dchips.innerHTML = ''; dirbtn = [];
@@ -4682,7 +4684,7 @@ function plusKkn() {
       function add(ln, plN) {
         (ln[st.day] || []).forEach(function (t) {
           var parts = String(t).split('|'), tm = parts[0].split('>'), m = /^(\d{1,2}):(\d{2})$/.exec(tm[0]);
-          if (m) rows.push({ t: tm[0], min: +m[1] * 60 + +m[2], r: ln.r, d: ln.d, n: parts[1] || '', pl: plN, arr: tm[1] || '', cont: tm[2] || '' });
+          if (m) rows.push({ t: tm[0], min: +m[1] * 60 + +m[2], r: ln.r, d: ln.d, n: noteTr(parts[1] || ''), pl: plN, arr: tm[1] || '', cont: tm[2] || '' });
         });
       }
       if (st.mode === 'pl') {
@@ -4758,9 +4760,9 @@ function plusChooser() {
     });
   });
 }
-/* Suomen lippu: 5 napautusta peräkkäin (väli enintään 700 ms) avaa piilotetut lisätoiminnot; kielen vaihto toimii normaalisti */
+/* v1.75.1-web: ohjelman nimi "TyövuoroPdf": 5 napautusta peräkkäin (väli enintään 700 ms) avaa piilotetut lisätoiminnot */
 var flagTaps = [];
-$('flagFi').addEventListener('click', function () {
+$('appTitle').addEventListener('click', function () {
   var t = Date.now();
   if (flagTaps.length && t - flagTaps[flagTaps.length - 1] > 700) flagTaps = [];
   flagTaps.push(t);
