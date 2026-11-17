@@ -217,6 +217,12 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 #plusBody .dep .rt { font-weight: 700; }
 #infoOverlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
 #infoOverlay[hidden] { display: none; }
+#goOverlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
+#goOverlay[hidden] { display: none; }
+#goBox { background: var(--bg, #fff); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; max-width: 460px; width: 100%; padding: 16px 18px; box-shadow: 0 8px 30px rgba(0,0,0,.3); }
+#goBox h2 { margin: 0 0 10px; font-size: 1.15rem; }
+#goBox p { margin: 0 0 14px; white-space: pre-line; line-height: 1.5; }
+#goBtns { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
 #infoBox { background: var(--bg, #fff); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; max-width: 720px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; padding: 16px 18px; box-shadow: 0 8px 30px rgba(0,0,0,.3); }
 #infoBox #infoTop { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 0 0 10px; }
 #infoBox h2 { margin: 0; font-size: 1.15rem; }
@@ -283,6 +289,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 </head>
 <body>
 <div id="infoOverlay" hidden><div id="infoBox" role="dialog" aria-modal="true" aria-labelledby="infoTitle"><div id="infoTop"><h2 id="infoTitle"></h2><button type="button" class="primary small" id="btnInfoClose" data-i="nextOk"></button></div><pre id="infoText"></pre></div></div>
+<div id="goOverlay" hidden><div id="goBox" role="dialog" aria-modal="true" aria-labelledby="goTitle"><h2 id="goTitle" data-i="goTitle"></h2><p id="goText" data-i="goText"></p><div id="goBtns"><button type="button" class="primary" id="btnGoYes" data-i="goYes"></button><button type="button" id="btnGoNo" data-i="goNo"></button></div></div></div>
 <div id="nextOverlay" hidden><div id="nextBox" role="dialog" aria-modal="true" aria-labelledby="nextTitle"><div id="nextTop"><h2 id="nextTitle"></h2><button type="button" class="primary small" id="btnNextOk" data-i="nextOk"></button><span id="nextR"><button type="button" class="fsbtn" id="btnFsNext" aria-label="Koko näyttö"><svg class="i-enter" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M1 6V1h5M10 1h5v5M15 10v5h-5M6 15H1v-5" fill="none" stroke="currentColor" stroke-width="2"/></svg><svg class="i-exit" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M6 1v5H1M15 6h-5V1M10 15v-5h5M1 10h5v5" fill="none" stroke="currentColor" stroke-width="2"/></svg></button></span></div><div id="nextHead2" hidden></div><div id="nextBody"></div></div></div>
 <div id="plusOverlay" hidden><div id="plusBox" role="dialog" aria-modal="true" aria-labelledby="plusTitle"><div id="plusTop"><h2 id="plusTitle"></h2><button type="button" class="primary small" id="btnPlusOk" data-i="nextOk"></button></div><div id="plusBody"></div></div></div>
 <div class="wrap">
@@ -424,7 +431,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.75.2-web';
+var APP_VERSION = '1.76.0-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3277,6 +3284,7 @@ var I18N = {
     ivuBmClick: 'Vedä tämä linkki selaimen kirjanmerkkipalkkiin (älä klikkaa sitä tässä). Aja se sitten IVU-sivulla.',
     ivuOpened: 'IVU avattu. Kirjaudu ja aja hakuskripti IVU-sivulla.',
     ivuPopup: 'Selain esti uuden välilehden – salli ponnahdusikkunat tälle sivulle ja yritä uudelleen.',
+    goTitle: 'Siirrytään IVU:un', goText: 'Tämä sivu vaihtuu IVU:un samassa välilehdessä.\n1. Kirjaudu IVU:un tarvittaessa.\n2. Paina IVU-sivulla Hae IVU-vuorot (kirjanmerkki/painike).\nTiedot haetaan ja palaat tälle sivulle automaattisesti.', goYes: 'Jatka', goNo: 'Peruuta',
     ivuCopyFail: 'Kopiointi ei onnistunut. Käytä kirjanmerkkiä.',
     ivuFetching: 'Haetaan IVU:sta jaksoa {p}…',
     ivuGot: 'IVU: {n} työpäivää haettu jaksolta {p}{off}.', ivuOff: ' ({off} vapaapäivää/ei vuoroa ohitettu)',
@@ -3369,6 +3377,7 @@ var I18N = {
     ivuBmClick: 'Drag this link to your browser\'s bookmarks bar (do not click it here). Then run it on the IVU page.',
     ivuOpened: 'IVU opened. Sign in and run the fetch script on the IVU page.',
     ivuPopup: 'The browser blocked the new tab – allow pop-ups for this page and try again.',
+    goTitle: 'Going to IVU', goText: 'This page switches to IVU in the same tab.\n1. Log in to IVU if needed.\n2. On the IVU page press Fetch IVU shifts (bookmark/button).\nThe data is fetched and you return to this page automatically.', goYes: 'Continue', goNo: 'Cancel',
     ivuCopyFail: 'Copying failed. Use the bookmark instead.',
     ivuFetching: 'Fetching period {p} from IVU…',
     ivuGot: 'IVU: {n} work days fetched for period {p}{off}.', ivuOff: ' ({off} days off / no shift skipped)',
@@ -4054,6 +4063,8 @@ window.addEventListener('drop', function (e) {
    (sivu, joka avasi IVU:n). Vastaanottaja hyväksyy viestit vain IVU:n osoitteesta. */
 var IVU_ORIGIN = 'https://pl-prod-ptp.pl.euc1p.ivucloud.com';
 var IVU_START = IVU_ORIGIN + '/mbweb/duties';
+/* v1.76.0-web: haku samassa välilehdessä (ei välilehden sulkemista): sivun osoite kirjanmerkkiin, tulokset paluuosoitteen #tvlres=-osaan */
+var APP_URL = /^https?:$/.test(location.protocol) ? encodeURI(location.origin + location.pathname + location.search).replace(/'/g, '%27') : '';
 function setIvuStatus(msg, cls) { var s = $('ivuStatus'); s.textContent = msg; s.className = 'status' + (cls ? ' ' + cls : ''); }
 
 function periodStarts() {
@@ -4087,22 +4098,32 @@ function periodDatesIso() {
 /* Hakuskripti. Ei //-kommentteja eikä rivinvaihdosta riippuvia lauseita (kirjanmerkki = rivinvaihdot poistettuna). */
 var IVU_SCRIPT = [
 "(async function(){",
-"var O='" + IVU_ORIGIN + "';",
+"var O='" + IVU_ORIGIN + "',A='" + APP_URL + "';",
 "function note(t,bad){var b=document.createElement('div');b.textContent=t;b.style.cssText='position:fixed;z-index:2147483647;left:10px;right:10px;top:12px;text-align:center;padding:10px 16px;border-radius:8px;font:15px sans-serif;color:white;background:'+(bad?'rgb(179,38,30)':'rgb(27,110,60)');document.body.appendChild(b);setTimeout(function(){b.remove();},bad?9000:6000);}",
 "if(location.origin!==O){alert('Aja tämä IVU-sivulla: '+O);return;}",
 "var tok=sessionStorage.getItem('access_token');",
 "if(!tok){note('IVU: et ole kirjautunut tässä välilehdessä. Kirjaudu ja yritä uudelleen.',1);return;}",
 "try{var jt=JSON.parse(tok);if(jt&&jt.access_token){tok=jt.access_token;}}catch(e){}",
-"var op=window.opener,dates=null,bo='*';",
+"var op=window.opener,dates=null,bo='*',via=false,req=null;",
+"try{if(window.name.indexOf('tvlreq:')===0){req=JSON.parse(window.name.slice(7));}}catch(e){}",
 "if(op){dates=await new Promise(function(res){var to=setTimeout(function(){res(null);},2500);",
 "window.addEventListener('message',function h(e){if(e.source===op&&e.data&&e.data.tvl==='dates'){clearTimeout(to);window.removeEventListener('message',h);bo=e.origin==='null'?'*':e.origin;res(e.data.dates);}});",
-"try{op.postMessage({tvl:'hello'},'*');}catch(x){res(null);}});}",
-"if(!dates){note('Yhteys TyövuoroPdf-sivuun puuttuu. Sulje tämä välilehti ja avaa IVU TyövuoroPdf-sivun Avaa IVU -painikkeella.',1);return;}",
+"try{op.postMessage({tvl:'hello'},'*');}catch(x){res(null);}});if(dates){via=true;}}",
+"if(!dates&&req&&req.dates){dates=req.dates;}",
+"if(!dates){dates=[];var t0=new Date();for(var q=-13;q<=13;q++){var x=new Date(t0.getFullYear(),t0.getMonth(),t0.getDate()+q);dates.push(x.getFullYear()+'-'+('0'+(x.getMonth()+1)).slice(-2)+'-'+('0'+x.getDate()).slice(-2));}}",
 "note('Haetaan '+dates.length+' päivää IVU:sta...');",
 "var out={tvl:'result',v:1,fetched:Date.now(),days:{}};",
 "for(var k=0;k<dates.length;k+=7){await Promise.all(dates.slice(k,k+7).map(async function(d){try{var r=await fetch(O+'/emp/rest/duty-schedule/details/'+d,{headers:{Authorization:'Bearer '+tok,Accept:'application/json'}});out.days[d]=r.ok?{status:r.status,json:await r.json()}:{status:r.status};}catch(e){out.days[d]={status:0,error:String(e)};}}));}",
-"if(op.closed){note('TyövuoroPdf-sivu on suljettu.',1);return;}",
-"op.postMessage(out,bo);note('Tiedot lähetetty TyövuoroPdf-sivulle. Tämä välilehti suljetaan.');setTimeout(function(){window.close();},300);",
+"if(via){if(op.closed){note('TyövuoroPdf-sivu on suljettu.',1);return;}",
+"op.postMessage(out,bo);note('Tiedot lähetetty TyövuoroPdf-sivulle. Tämä välilehti suljetaan.');setTimeout(function(){try{op.focus();}catch(x){}window.close();},300);return;}",
+"var back=(req&&req.app)||A;",
+"if(!/^https?:/.test(back)){note('Paluuosoite puuttuu. Avaa IVU TyövuoroPdf-sivun Avaa IVU -painikkeella.',1);return;}",
+"note('Tiedot haettu. Palataan TyövuoroPdf-sivulle...');",
+"var js=JSON.stringify(out),u8=new TextEncoder().encode(js),kind='p';",
+"try{if(window.CompressionStream){var cs=new Blob([u8]).stream().pipeThrough(new CompressionStream('gzip'));u8=new Uint8Array(await new Response(cs).arrayBuffer());kind='g';}}catch(e){u8=new TextEncoder().encode(js);kind='p';}",
+"var bin='';for(var z=0;z<u8.length;z+=8192){bin+=String.fromCharCode.apply(null,u8.subarray(z,z+8192));}",
+"try{window.name='';}catch(e){}",
+"location.href=back+'#tvlres='+kind+btoa(bin).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');",
 "})();"
 ].join('\n');
 /* Käyttäjäskripti (Violentmonkey / Tampermonkey, Firefox Android): lisää IVU-sivulle painikkeen, joka ajaa saman hakuskriptin. */
@@ -4531,6 +4552,72 @@ function ivuProcess(m) {
   showWarn(warn.join('\n'));
 }
 
+/* v1.76.0-web: IVU-haku samassa välilehdessä. Ennen siirtymää tila (tiedostolista + asetukset) talteen sessionStorageen (vain tämän välilehden ajaksi,
+   poistetaan paluun jälkeen), pyyntö (päivät) window.name-kenttään. IVU-skripti palauttaa tulokset tämän sivun osoitteen #tvlres=-osassa. */
+var TVL_KEY = 'tvl.pending';
+var ivuGoPending = null;
+function ivuLegacyOpen(mode) { /* vanha tapa: uusi välilehti (file://-osoite tai sessionStorage ei käytössä) */
+  ivuMode = mode;
+  var w = window.open(IVU_START, '_blank');
+  if (mode === 'next') setStatus(w ? T('nextOpened') : T('ivuPopup'), w ? '' : 'err');
+  else setIvuStatus(w ? T('ivuOpened') : T('ivuPopup'), w ? '' : 'err');
+}
+function ivuGo(mode) {
+  if (!APP_URL) { ivuLegacyOpen(mode); return; }
+  ivuGoPending = { mode: mode, dates: mode === 'next' ? nextDatesIso() : periodDatesIso() };
+  $('goOverlay').hidden = false;
+  $('btnGoYes').focus();
+}
+$('btnGoNo').addEventListener('click', function () { ivuGoPending = null; $('goOverlay').hidden = true; });
+$('btnGoYes').addEventListener('click', function () {
+  var g = ivuGoPending; if (!g) { $('goOverlay').hidden = true; return; }
+  var lay = document.querySelector('input[name=layout]:checked');
+  var st = { mode: g.mode, dates: g.dates, files: files, period: $('selPeriod').value, layout: lay ? lay.value : '', timing: $('chkTiming').checked,
+    summary: $('chkSummary').checked, font: $('selFont').value, spacing: $('selSpacing').value, outLang: $('selOutLang').value, retro: $('chkRetro').checked };
+  $('goOverlay').hidden = true; ivuGoPending = null;
+  try {
+    sessionStorage.setItem(TVL_KEY, JSON.stringify(st));
+    window.name = 'tvlreq:' + JSON.stringify({ dates: g.dates, app: decodeURI(APP_URL) });
+  } catch (e) { try { sessionStorage.removeItem(TVL_KEY); } catch (e2) { /* ei väliä */ } ivuLegacyOpen(g.mode); return; }
+  location.href = IVU_START;
+});
+function tvlDecode(enc) {
+  var kind = enc.charAt(0), bin = atob(enc.slice(1).replace(/-/g, '+').replace(/_/g, '/')), u8 = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  if (kind === 'g') {
+    if (!window.DecompressionStream) return Promise.reject(new Error('DecompressionStream'));
+    return new Response(new Blob([u8]).stream().pipeThrough(new DecompressionStream('gzip'))).text().then(function (t) { return JSON.parse(t); });
+  }
+  return Promise.resolve(JSON.parse(new TextDecoder().decode(u8)));
+}
+function ivuReturn() {
+  var h = location.hash || '';
+  if (h.indexOf('#tvlres=') !== 0) return;
+  var enc = h.slice(8), st = null;
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* ei väliä */ }
+  try { if (String(window.name).indexOf('tvlreq:') === 0) window.name = ''; } catch (e) { /* ei väliä */ }
+  try { st = JSON.parse(sessionStorage.getItem(TVL_KEY) || 'null'); sessionStorage.removeItem(TVL_KEY); } catch (e) { st = null; }
+  if (!st || !st.dates) { setIvuStatus(T('ivuBad'), 'err'); return; } /* paluu ilman omaa pyyntöä: ei käsitellä */
+  if (Array.isArray(st.files)) files = st.files;
+  try {
+    if (st.period) $('selPeriod').value = st.period;
+    if (st.layout) { var r = document.querySelector('input[name=layout][value="' + st.layout + '"]'); if (r) r.checked = true; }
+    $('chkTiming').checked = !!st.timing; $('chkSummary').checked = !!st.summary; $('chkRetro').checked = !!st.retro;
+    if (st.font) $('selFont').value = st.font;
+    if (st.spacing) $('selSpacing').value = st.spacing;
+    if (st.outLang) $('selOutLang').value = st.outLang;
+  } catch (e) { /* ei väliä */ }
+  renderList();
+  if (files.length) convert();
+  tvlDecode(enc).then(function (m) {
+    var o = {};
+    Object.keys((m && m.days) || {}).forEach(function (k) { if (st.dates.indexOf(k) >= 0) o[k] = m.days[k]; });
+    if (m && typeof m === 'object') m.days = o;
+    if (st.mode === 'next') { ivuMode = 'period'; setStatus(''); nextProcess(m); }
+    else { ivuMode = 'period'; ivuProcess(m); }
+  }, function () { setIvuStatus(T('ivuBad'), 'err'); });
+}
+
 window.addEventListener('message', function (ev) {
   if (ev.origin !== IVU_ORIGIN) return;
   var m = ev.data;
@@ -4543,7 +4630,7 @@ window.addEventListener('message', function (ev) {
     try { window.focus(); } catch (e) { /* selain voi estää */ }
     /* v1.71.13-web: IVU-välilehden sulkee myös tämä sivu (avaajana saa sulkea avaamansa välilehden, vaikka sivun oma window.close() estettäisiin) */
     var src = ev.source;
-    setTimeout(function () { try { if (src && !src.closed) src.close(); } catch (e) { /* ei väliä */ } }, 1200);
+    setTimeout(function () { try { window.focus(); } catch (e) { /* selain voi estää */ } try { if (src && !src.closed) src.close(); } catch (e) { /* ei väliä */ } try { window.focus(); } catch (e) { /* selain voi estää */ } }, 1200); /* v1.75.4-web: tarkennus tähän sivuun ennen ja jälkeen IVU-välilehden sulkemisen */
     if (ivuMode === 'next') { ivuMode = 'period'; setStatus(''); nextProcess(m); }
     else ivuProcess(m);
   }
@@ -4565,11 +4652,7 @@ function legacyCopy(text) {
     return ok;
   } catch (e) { return false; }
 }
-$('btnNext').addEventListener('click', function () {
-  ivuMode = 'next';
-  var w = window.open(IVU_START, '_blank');
-  setStatus(w ? T('nextOpened') : T('ivuPopup'), w ? '' : 'err');
-});
+$('btnNext').addEventListener('click', function () { ivuGo('next'); });
 /* v1.71.60-web: "???" -painike näyttää LueMinut.txt:n sisällön ikkunassa (haetaan GitHubin raw-osoitteesta) */
 var INFO_PAGE = 'https://github.com/vastarannankiiski/tyovuoropdf/blob/main/LueMinut.txt';
 var INFO_RAW = 'https://raw.githubusercontent.com/vastarannankiiski/tyovuoropdf/main/LueMinut.txt';
@@ -4745,7 +4828,7 @@ function plusKkn() {
     });
     body.appendChild(modes);
     body.appendChild(lblPl); body.appendChild(chips);
-    body.appendChild(lblLn); body.appendChild(lchips); body.appendChild(lblDir); body.appendChild(dchips);
+    body.appendChild(lblLn); body.appendChild(lchips); body.appendChild(dchips); /* v1.75.3-web: suunta-selite poistettu */
     body.appendChild(tabs); body.appendChild(cap); body.appendChild(host);
     if (D.updated) body.appendChild(plusEl('p', 'pnote', T('kknNote') + D.updated + T('kknNote2')));
     draw();
@@ -4773,11 +4856,7 @@ $('btnPlusOk').addEventListener('click', function () { $('plusOverlay').hidden =
 /* v1.74.0-web: ikkuna sulkeutuu vain Sulje-painikkeella (ei taustan napautuksella eikä Esc-näppäimellä) */
 /* v1.71.88-web: taustan napautus ei enää sulje Seuraavat vuorot -ikkunaa (vahinkosulkemisen esto); sulkeminen Sulje-painikkeella tai Esc-näppäimellä */
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (!$('plusOverlay').hidden) { /* ei sulje */ } else if (!$('infoOverlay').hidden) $('infoOverlay').hidden = true; else if (!$('nextOverlay').hidden) $('nextOverlay').hidden = true; } });
-$('btnIvuOpen').addEventListener('click', function () {
-  ivuMode = 'period';
-  var w = window.open(IVU_START, '_blank');
-  setIvuStatus(w ? T('ivuOpened') : T('ivuPopup'), w ? '' : 'err');
-});
+$('btnIvuOpen').addEventListener('click', function () { ivuGo('period'); });
 $('ivuBm').setAttribute('href', 'javascript:' + encodeURIComponent(IVU_SCRIPT.replace(/\n/g, '')));
 $('ivuBm').addEventListener('click', function (e) { e.preventDefault(); setIvuStatus(T(document.documentElement.classList.contains('isedge') ? 'ivuBmClickEdge' : 'ivuBmClick')); });
 $('btnIvuCopyUs').addEventListener('click', function () {
@@ -4833,6 +4912,7 @@ fillPeriods();
   setUiLang(lang, false);
   $('selOutLang').value = lang;
   log(T('started', { v: TyoCore.APP_VERSION }));
+  ivuReturn(); /* v1.76.0-web: paluu IVU:sta samassa välilehdessä */
 })();
 })();
 </script>
