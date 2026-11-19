@@ -437,7 +437,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.78.7-web';
+var APP_VERSION = '1.78.8-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3067,6 +3067,27 @@ function ivuIsoClock(iso) {
   var t = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/.exec(String(iso || ''));
   return t ? { date: t[1], min: parseInt(t[2], 10) * 60 + parseInt(t[3], 10) } : null;
 }
+/* v1.78.8-web: kilometrikorvaus IVU:n JSON:sta: etsii rekursiivisesti oliota, jossa on teksti "kilomet..." (avain tai arvo) ja sen vierestä numeerinen arvo
+   (value / amount / quantity / ...), tai avainta "kilomet..." jonka arvo on numero; palauttaa arvon merkkijonona tai '' */
+function ivuFindKm(o, depth) {
+  depth = depth || 0;
+  if (!o || typeof o !== 'object' || depth > 7) return '';
+  var i, k, v, r;
+  if (Array.isArray(o)) { for (i = 0; i < o.length; i++) { r = ivuFindKm(o[i], depth + 1); if (r) return r; } return ''; }
+  var named = false, js0 = '';
+  try { js0 = JSON.stringify(o); } catch (e) { js0 = ''; }
+  named = js0.length < 3000 && /kilomet|mileage/i.test(js0); /* olio (tai sen alaolio) mainitsee kilometrit */
+  for (k in o) {
+    v = o[k];
+    if (/kilomet|mileage/i.test(k) && v !== null && typeof v !== 'object' && parseKmHund(String(v)) > 0) return String(v);
+  }
+  if (named) {
+    var fl = ['value', 'amount', 'quantity', 'formattedValue', 'displayValue', 'count', 'total', 'distance'];
+    for (i = 0; i < fl.length; i++) { v = o[fl[i]]; if (v !== undefined && v !== null && typeof v !== 'object' && parseKmHund(String(v)) > 0) return String(v); }
+  }
+  for (k in o) { if (o[k] && typeof o[k] === 'object') { r = ivuFindKm(o[k], depth + 1); if (r) return r; } }
+  return '';
+}
 function ivuSegmentsDay(js, ads, dateStr, stamp) {
   var segs = [], labels = [], km = '';
   ads.forEach(function (a) {
@@ -3080,13 +3101,9 @@ function ivuSegmentsDay(js, ads, dateStr, stamp) {
     if (!st || !en) { segs.push({ title: title, a: -1, b: -1, h: -1 }); return; }
     var b = en.min + (en.date > st.date ? 1440 : 0);
     segs.push({ title: title, a: st.min, b: b, h: boxClockMin(ivuStr(a.workTime) || ivuAccounting(a, 'Työtunnit')) });
-    (a.allowances || []).forEach(function (al2) {
-      if (!al2 || typeof al2 !== 'object' || JSON.stringify(al2).toLowerCase().indexOf('kilomet') < 0) return;
-      ['value', 'amount', 'quantity', 'formattedValue', 'displayValue'].forEach(function (k) {
-        if (al2[k] !== undefined && al2[k] !== null && parseKmHund(String(al2[k])) > 0 && !km) km = String(al2[k]);
-      });
-    });
+    if (!km) km = ivuFindKm(a); /* v1.78.8-web: myös accountingValues ("Kilometrikorvaus") ja muut rakenteet, ei vain allowances */
   });
+  if (!km) { var rest = {}; Object.keys(js).forEach(function (k) { if (k !== 'allocationDetails') rest[k] = js[k]; }); km = ivuFindKm(rest); }
   var d = { weekday: weekdayShort(dateStr), dateStr: dateStr, shiftCode: labels[0] || '', info: new Map(), events: [], stamp: stamp || 0 };
   d.info.set('Päivämäärä', dateStr);
   if (km) mergeKmInfo(d.info, km);
@@ -3166,6 +3183,7 @@ function ivuDayFromJson(js, stamp) {
       d.info.set(kk === 'Työtunnit' ? 'Työaika' : kk, ivuStr(kv.value));
     }
   });
+  if (!d.info.has('Kilometrikorvaus')) { var kmx = ivuFindKm(a); if (kmx) mergeKmInfo(d.info, kmx); } /* v1.78.8-web */
   comps.forEach(function (c) {
     var title = ivuStr(c.displayType);
     var isLa = isLinjaAjoTitle(title);
