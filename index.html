@@ -451,7 +451,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.79.7-web';
+var APP_VERSION = '1.79.9-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -4466,36 +4466,21 @@ function nextKmDialog() {
     draw();
   });
 }
-/* v1.79.3-web: TILAPÄINEN TESTITILA: "Seuraavat vuorot" ei hae IVU:sta, vaan käyttää alla olevaa päivää (Keskiviikko 18.11.2026 KKN27, luettu työvuorolista-PDF:stä)
-   ikään kuin se olisi seuraava vastaan tuleva työpäivä (tänään, jos Työ loppuu -aika ei ole vielä mennyt, muuten huomenna). Pois päältä: NEXT_TEST_ON = false. */
-var NEXT_TEST_ON = true;
-var NEXT_TEST_DAY = {"weekday":"ke","dateStr":"18.11.2026","shiftCode":"KKN27","info":[["Miehistöpaikka","Kirkkonummi"],["Alkaminen","12.12"],["Päättyminen","19.47"],["Työaika","06:42"],["Laskennallinen työaika","06:42"],["Taukoaika","00:53"],["Iltalisä HSL","01:47"]],"events":[{"evType":"Aloitusaika","isLinjaAjo":false,"startTime":"12.12","endTime":"12.17","fromLoc":"Kirkkonummen varikko","toLoc":"Kirkkonummen varikko","linja":"","kulkuneuvo":"","kierto":"","hasKierto":false,"waypoints":[]},{"evType":"Halliajo","isLinjaAjo":false,"startTime":"12.17","endTime":"12.30","fromLoc":"Kirkkonummen varikko","toLoc":"Kirkkonummi mk","linja":"6171","kulkuneuvo":"1020","kierto":"13040","hasKierto":true,"waypoints":[]},{"evType":"Kääntöaika","isLinjaAjo":false,"startTime":"12.30","endTime":"12.33","fromLoc":"Kirkkonummi mk","toLoc":"Kirkkonummi mk","linja":"","kulkuneuvo":"1020","kierto":"13040","hasKierto":true,"waypoints":[]},{"evType":"Linja-ajo (6171)","isLinjaAjo":true,"startTime":"12.33","endTime":"13.23","fromLoc":"Kirkkonummi mk","toLoc":"Matinkylä (M)","linja":"6171","kulkuneuvo":"1020","kierto":"13040","hasKierto":true,"waypoints":[{"wTime":"13.03","wDur":"00:00:01","wLoc":"Masalan kirjasto"}]},{"evType":"Kääntöaika","isLinjaAjo":false,"startTime":"13.23","endTime":"13.30","fromLoc":"Matinkylä (M)","toLoc":"Matinkylä (M)","linja":"","kulkuneuvo":"1020","kierto":"13040","hasKierto":true,"waypoints":[]},{"evType":"Linja-ajo (6173)","isLinjaAjo":true,"startTime":"13.30","endTime":"14.27","fromLoc":"Matinkylä (M)","toLoc":"Upinniemen koulu","linja":"6173Z","kulkuneuvo":"1020","kierto":"13040","hasKierto":true,"waypoints":[{"wTime":"13.59","wDur":"00:02","wLoc":"Kirkkonummi mk"}]},{"evType":"Kääntöaika","isLinjaAjo":false,"startTime":"14.27","endTime":"14.31","fromLoc":"Upinniemen koulu","toLoc":"Upinniemen koulu","linja":"","kulkuneuvo":"1020","kierto":"13040","hasKierto":true,"waypoints":[]},{"evType":"Linja-ajo (6173)","isLinjaAjo":true,"startTime":"14.31","endTime":"14.43","fromLoc":"Upinniemen koulu","toLoc":"Strömsby","linja":"6173Z","kulkuneuvo":"1020","kierto":"13040","hasKierto":true,"waypoints":[]},{"evType":"Vaihtoautosiirtymä","isLinjaAjo":false,"startTime":"14.43","endTime":"14.50","fromLoc":"Strömsby","toLoc":"Kirkkonummen varikko","linja":"","kulkuneuvo":"","kierto":"","hasKierto":false,"waypoints":[]},{"evType":"Tauko (palkaton)","isLinjaAjo":false,"startTime":"14.50","endTime":"15.43","fromLoc":"Kirkkonummen varikko","toLoc":"Kirkkonummen varikko","linja":"","kulkuneuvo":"","kierto":"","hasKierto":false,"waypoints":[]},{"evType":"Vaihtoautosiirtymä","isLinjaAjo":false,"startTime":"15.43","endTime":"15.50","fromLoc":"Kirkkonummen varikko","toLoc":"Strömsby","linja":"","kulkuneuvo":"","kierto":"","hasKierto":false,"waypoints":[]},{"evType":"Linja-ajo (6173)","isLinjaAjo":true,"startTime":"15.50","endTime":"15.59","fromLoc":"Strömsby","toLoc":"Upinniemen koulu","linja":"6173Z","kulkuneuvo":"947","kierto":"13002","hasKierto":true,"waypoints":[]},{"evType":"Kääntöaika","isLinjaAjo":false,"startTime":"15.59","endTime":"16.02","fromLoc":"Upinniemen koulu","toLoc":"Upinniemen koulu","linja":"","kulkuneuvo":"947","kierto":"13002","hasKierto":true,"waypoints":[]},{"evType":"Linja-ajo (6173)","isLinjaAjo":true,"startTime":"16.02","endTime":"17.00","fromLoc":"Upinniemen koulu","toLoc":"Matinkylä (M)","linja":"6173Z","kulkuneuvo":"947","kierto":"13002","hasKierto":true,"waypoints":[{"wTime":"16.33","wDur":"00:01","wLoc":"Kirkkonummi mk"}]},{"evType":"Kääntöaika","isLinjaAjo":false,"startTime":"17.00","endTime":"17.10","fromLoc":"Matinkylä (M)","toLoc":"Matinkylä (M)","linja":"","kulkuneuvo":"947","kierto":"13002","hasKierto":true,"waypoints":[]},{"evType":"Linja-ajo (6175)","isLinjaAjo":true,"startTime":"17.10","endTime":"17.40","fromLoc":"Matinkylä (M)","toLoc":"Luoma","linja":"6175K","kulkuneuvo":"947","kierto":"13002","hasKierto":true,"waypoints":[{"wTime":"17.34","wDur":"00:00:01","wLoc":"Masalan kirjasto"}]},{"evType":"Siirtoajo","isLinjaAjo":false,"startTime":"17.40","endTime":"17.46","fromLoc":"Luoma","toLoc":"Kauklahden asema","linja":"6175K","kulkuneuvo":"947","kierto":"13002","hasKierto":true,"waypoints":[]},{"evType":"Kääntöaika","isLinjaAjo":false,"startTime":"17.46","endTime":"17.54","fromLoc":"Kauklahden asema","toLoc":"Kauklahden asema","linja":"","kulkuneuvo":"947","kierto":"13002","hasKierto":true,"waypoints":[]},{"evType":"Linja-ajo (6911)","isLinjaAjo":true,"startTime":"17.54","endTime":"18.21","fromLoc":"Kauklahden asema","toLoc":"Kirkkonummi mk","linja":"6911","kulkuneuvo":"947","kierto":"13002","hasKierto":true,"waypoints":[]},{"evType":"Kääntöaika","isLinjaAjo":false,"startTime":"18.21","endTime":"18.32","fromLoc":"Kirkkonummi mk","toLoc":"Kirkkonummi mk","linja":"","kulkuneuvo":"947","kierto":"13002","hasKierto":true,"waypoints":[]},{"evType":"Linja-ajo (6182)","isLinjaAjo":true,"startTime":"18.32","endTime":"18.58","fromLoc":"Kirkkonummi mk","toLoc":"Siuntion uimahalli","linja":"6182A","kulkuneuvo":"947","kierto":"13002","hasKierto":true,"waypoints":[]},{"evType":"Kääntöaika","isLinjaAjo":false,"startTime":"18.58","endTime":"19.00","fromLoc":"Siuntion uimahalli","toLoc":"Siuntion uimahalli","linja":"","kulkuneuvo":"947","kierto":"13002","hasKierto":true,"waypoints":[]},{"evType":"Linja-ajo (6182)","isLinjaAjo":true,"startTime":"19.00","endTime":"19.29","fromLoc":"Siuntion uimahalli","toLoc":"Kirkkonummi mk","linja":"6182A","kulkuneuvo":"947","kierto":"13002","hasKierto":true,"waypoints":[]},{"evType":"Halliajo","isLinjaAjo":false,"startTime":"19.29","endTime":"19.42","fromLoc":"Kirkkonummi mk","toLoc":"Kirkkonummen varikko","linja":"6182A","kulkuneuvo":"947","kierto":"13002","hasKierto":true,"waypoints":[]},{"evType":"Lopetusaika","isLinjaAjo":false,"startTime":"19.42","endTime":"19.47","fromLoc":"Kirkkonummen varikko","toLoc":"Kirkkonummen varikko","linja":"","kulkuneuvo":"","kierto":"","hasKierto":false,"waypoints":[]}]};
-function nextTestKey() {
-  var d = new Date(), pe = '', e = 0, x;
-  NEXT_TEST_DAY.info.forEach(function (kv) { if (kv[0] === 'Päättyminen') pe = kv[1]; });
-  x = /^(\d{1,2})\.(\d{2})/.exec(pe); if (x) e = +x[1] * 60 + +x[2] + (/\+\s*$/.test(pe) ? 1440 : 0);
-  var end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0).getTime() + e * 60000;
-  if (end + 300000 <= d.getTime()) d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
-  return d.getFullYear() + '-' + pad2n(d.getMonth() + 1) + '-' + pad2n(d.getDate());
-}
-function nextTestDay() {
-  return { kind: 'work', day: { weekday: NEXT_TEST_DAY.weekday, dateStr: NEXT_TEST_DAY.dateStr, shiftCode: NEXT_TEST_DAY.shiftCode, info: new Map(NEXT_TEST_DAY.info), events: NEXT_TEST_DAY.events } };
-}
 var NEXT_TYPES = /^(Linja-ajo|Halliajo|Siirtoajo|Vaihtoautosiirtymä)/;
 var NEXT_BREAK = /^(Tauko|Sidonnaisuusaika|Odotusaika)/i;
 /* v1.71.77-web: "Tauko"-rivin aika: palkaton tauko, sidonnaisuustauko ja sidonnaisuus */
 function NEXT_PAUSE(t) { return /^Sidonnaisuus/i.test(t) || (/^Tauko/i.test(t) && /(palkaton|sidonnaisuus)/i.test(t)); }
 function nextShiftFind(m) {
   var now = Date.now(), days = [], authFail = false;
-  var keys = NEXT_TEST_ON ? [nextTestKey()] : Object.keys(m.days || {}).filter(function (k) { return /^\d{4}-\d{2}-\d{2}$/.test(k); }).sort();
+  var keys = Object.keys(m.days || {}).filter(function (k) { return /^\d{4}-\d{2}-\d{2}$/.test(k); }).sort();
   var stamp = (typeof m.fetched === 'number' && m.fetched > 0) ? m.fetched : now;
   function mins(t) { var x = /^(\d{1,2})\.(\d{2})/.exec(t || ''); return x ? +x[1] * 60 + +x[2] : -1; }
   keys.forEach(function (k) {
-    var e = NEXT_TEST_ON ? { status: 200, json: true } : (m.days[k] || {});
+    var e = m.days[k] || {};
     if (e.status === 401 || e.status === 403) { authFail = true; return; }
     if (e.status !== 200 || !e.json) return;
     var r;
-    try { r = NEXT_TEST_ON ? nextTestDay() : TyoCore.ivuDayFromJson(e.json, stamp); } catch (x) { return; }
+    try { r = TyoCore.ivuDayFromJson(e.json, stamp); } catch (x) { return; }
     if (!r || r.kind !== 'work' || !r.day || !r.day.events) return;
     var p = k.split('-'), base = new Date(+p[0], +p[1] - 1, +p[2], 0, 0, 0).getTime();
     var prev = -1, add = 0, evs = [];
@@ -4621,7 +4606,7 @@ try { nextStopsOn = localStorage.getItem('tyovuoropdf.nextStops') === '1'; } cat
 function nextShowDialog(blocks, msg, head, model) {
   nextModel = model || [];
   nextKm.on = false; nextKmTaps = []; nextKm.ext = { items: [] }; nextKm.cache = null;
-  $('nextTitle').textContent = T('nextTitle') + (NEXT_TEST_ON ? ' (TESTI)' : '');
+  $('nextTitle').textContent = T('nextTitle');
   nextClockTick();
   var hd = $('nextHead2');
   hd.textContent = '';
@@ -4974,20 +4959,25 @@ function legacyCopy(text) {
     return ok;
   } catch (e) { return false; }
 }
-$('btnNext').addEventListener('click', function () { if (NEXT_TEST_ON) nextProcess({ tvl: 'result', days: {} }); else ivuGo('next'); }); /* v1.79.3-web: testitila */
-/* v1.71.60-web: "???" -painike näyttää LueMinut.txt:n sisällön ikkunassa (haetaan GitHubin raw-osoitteesta) */
-var INFO_PAGE = 'https://github.com/vastarannankiiski/tyovuoropdf/blob/main/LueMinut.txt';
-var INFO_RAW = 'https://raw.githubusercontent.com/vastarannankiiski/tyovuoropdf/main/LueMinut.txt';
+$('btnNext').addEventListener('click', function () { ivuGo('next'); });
+/* v1.71.60-web: "???" -painike näyttää LueMinut.txt:n sisällön ikkunassa (haetaan GitHubin raw-osoitteesta);
+   v1.79.9-web: Mac-tietokoneella (ei iPhone/iPad) näytetään MAC_OHJE.txt, ja jos sitä ei löydy, LueMinut.txt */
+function isMacDesktop() {
+  var ua = navigator.userAgent || '', pf = navigator.platform || '';
+  return (/Macintosh|MacIntel/i.test(ua + ' ' + pf)) && !/iPhone|iPad|iPod/i.test(ua) && (navigator.maxTouchPoints || 0) < 2;
+}
+var INFO_BASE = 'tyovuoropdf/blob/main/', INFO_RAWBASE = 'https://raw.githubusercontent.com/vastarannankiiski/tyovuoropdf/main/';
+var INFO_STD = 'LueMinut.txt', INFO_FILE = isMacDesktop() ? 'MAC_OHJE.txt' : INFO_STD;
+var INFO_PAGE = 'https://github.com/vastarannankiiski/' + INFO_BASE + INFO_FILE;
+$('linkInfo').href = INFO_PAGE;
 $('linkInfo').addEventListener('click', function (e) {
   e.preventDefault();
   $('infoTitle').textContent = T('infoTitle');
   $('infoText').textContent = T('infoLoading');
   $('infoOverlay').hidden = false;
   $('btnInfoClose').focus();
-  fetch(INFO_RAW).then(function (r) {
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    return r.text();
-  }).then(function (t) { $('infoText').textContent = t; $('infoText').scrollTop = 0; },
+  function get(name) { return fetch(INFO_RAWBASE + name).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); }); }
+  get(INFO_FILE).catch(function (err) { if (INFO_FILE === INFO_STD) throw err; return get(INFO_STD); }).then(function (t) { $('infoText').textContent = t; $('infoText').scrollTop = 0; },
     function () { $('infoText').textContent = T('infoFail') + INFO_PAGE; });
 });
 $('btnInfoClose').addEventListener('click', function () { $('infoOverlay').hidden = true; });
