@@ -1,0 +1,74 @@
+TyövuoroPdf Macilla
+===================
+
+TyövuoroPdf toimii selaimessa, joten mitään ei tarvitse asentaa
+App Storesta. Kaikki käsittely tapahtuu omalla koneellasi: PDF-tiedostot
+eivät lähde minnekään.
+
+Osoite:  https://vastarannankiiski.github.io/tyovuoropdf/
+
+
+-----------------------------------------------------------------
+A) Käyttöönotto ja PDF-muunnos
+-----------------------------------------------------------------
+
+1. Avaa osoite Safarilla tai Chromella.
+
+2. Halutessasi lisää sivu sovellukseksi:
+   - Safari: Arkisto -> "Lisää Dockiin..."
+   - Chrome: osoiterivin oikean reunan asennuskuvake tai
+     valikko -> "Lähetä, tallenna ja jaa" -> "Asenna sivu sovelluksena".
+
+3. Vedä IVU-PDF-tiedostot sivun kohtaan "1. Valitse IVU.PDF-tiedostot"
+   tai paina "Valitse PDF(:t)…" ja valitse tiedostot Finderista.
+   Voit valita useita tiedostoja kerralla.
+
+4. Säädä tarvittaessa "2. Asetukset" (sivujen tulostustapa, fonttikoko,
+   rivinväli jne.).
+
+5. Paina "Tee työvuorolista" ja sen jälkeen "Avaa tulostusnäkymä".
+
+6. Tallenna PDF:
+   Tulostusnäkymässä paina "Tulosta / Tallenna PDF". Valitse
+   - Safarissa: vasemmasta alakulmasta "PDF" -> "Tallenna PDF:nä".
+   - Chromessa: Kohde (Destination) -> "Tallenna PDF:nä".
+   Sivun asetukset: paperi A4, ei marginaaleja, ei otsikoita/alatunnisteita
+   (Safarissa poista valinta "Tulosta otsikot ja alatunnisteet",
+   Chromessa Lisäasetukset -> Marginaalit: Ei mitään ja poista
+   otsikot ja alatunnisteet).
+
+
+-----------------------------------------------------------------
+B) Suora haku IVU:sta (Seuraavat vuorot ym.)
+-----------------------------------------------------------------
+
+Safarilla toimintaa ei ole vielä kokeiltu oikealla Macilla; Chromella
+toiminta on testattu paremmin.
+
+1. Näytä kirjanmerkki-/suosikkipalkki:
+   - Safari: Näytä -> "Näytä suosikkipalkki".
+   - Chrome: Näytä -> "Näytä aina kirjanmerkkipalkki".
+
+2. Etsi sivulta kohta "Tai hae jakso suoraan IVU:sta" ja vedä linkki
+   "Hae IVU-vuorot" kerran palkkiin. Älä klikkaa sitä tällä sivulla.
+
+3. Valitse jakso, paina "Avaa IVU…" ja kirjaudu IVU:un. Jos selain
+   estää uuden ikkunan, salli ponnahdusikkuna tälle sivulle.
+
+4. Kun IVU on auki, paina palkin kirjanmerkkiä "Hae IVU-vuorot".
+   Tiedot siirtyvät TyövuoroPdf-sivulle.
+
+Jos kirjanmerkki ei toimi Safarissa, kokeile Chromea tai Firefoxia, tai
+käytä tavallista PDF-tiedostojen lisäystä (kohta A).
+
+
+-----------------------------------------------------------------
+Vinkkejä
+-----------------------------------------------------------------
+
+ - Uusi versio: jos sivulla näkyy ilmoitus uudesta versiosta, paina
+   "Lataa uudelleen". Jos se ei auta, sulje sivu kokonaan ja avaa se
+   uudelleen.
+ - Kielen voi vaihtaa sivun lippupainikkeilla (Suomi/English).
+ - Jos jokin ei toimi, tarkista, että käytössä on ajantasainen Safari
+   tai Chrome.
