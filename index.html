@@ -201,6 +201,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 #plusBody .pnote { color: var(--muted); font-size: .78rem; margin: 8px 0 0; }
 #plusBody .ptabs { display: flex; gap: 6px; margin: 0 0 10px; flex-wrap: wrap; }
 #plusBody .ptabs button { min-height: 0; padding: 4px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--row-alt); color: var(--ink); cursor: pointer; font-size: .85rem; }
+#plusBody .ptabs button.added { font-weight: 800; } /* v1.80.6-web: jo lisätty linja lihavoituna */
 #plusBody .ptabs button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
 #plusBody .plbl { font-size: .8rem; color: var(--muted); margin: 0 0 4px; }
 #plusBody .plist { max-height: 46vh; overflow-y: auto; position: relative; border-top: 1px solid var(--line); padding-top: 6px; }
@@ -451,7 +452,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.80.5-web';
+var APP_VERSION = '1.80.6-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -4506,9 +4507,10 @@ function nextKmDialog() {
         L.legs.forEach(function (g) { body.appendChild(plusEl('div', 'kleg', nextKmLegText(g))); });
       }
       body.appendChild(plusEl('div', 'plbl', T('kmLinePick')));
-      var chips = plusEl('div', 'ptabs');
+      var chips = plusEl('div', 'ptabs'), addedLn = {};
+      nextKm.ext.items.forEach(function (it) { if (it.kind === 'line') addedLn[it.r] = true; }); /* v1.80.6-web */
       tvlLineNames().forEach(function (ln) {
-        var b = plusEl('button', '', ln); b.type = 'button'; b.setAttribute('aria-pressed', ln === selLine ? 'true' : 'false');
+        var b = plusEl('button', addedLn[ln] ? 'added' : '', ln); b.type = 'button'; b.setAttribute('aria-pressed', ln === selLine ? 'true' : 'false');
         b.addEventListener('click', function () { selLine = ln; selDir = 0; draw(); });
         chips.appendChild(b);
       });
