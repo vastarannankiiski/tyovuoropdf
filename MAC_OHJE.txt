@@ -72,3 +72,7 @@ Vinkkejä
  - Kielen voi vaihtaa sivun lippupainikkeilla (Suomi/English).
  - Jos jokin ei toimi, tarkista, että käytössä on ajantasainen Safari
    tai Chrome.
+
+-----------------------------------------------------------------
+Piilotetut toiminnot
+-----------------------------------------------------------------
