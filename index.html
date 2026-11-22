@@ -287,11 +287,10 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 #nextBox #nextHead2 .l { color: var(--muted); }
 #nextBox #nextHead2 > span { display: inline-flex; align-items: center; gap: .3em; } /* v1.81.4-web: Kiertonro- ja Auton nro -tekstit samalle korkeudelle */
 #nextBox #nextHead2 a.carlk { display: inline-block; color: var(--ink); text-decoration: none; cursor: pointer; padding: 2px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card, var(--bg, #fff)); } /* v1.72.2-web: auton numero pyöreäkulmaisessa suorakaidenapissa */
-#nextBox #nextHead2 #hfpBadge { font-size: .75rem; margin-left: 6px; color: var(--muted); white-space: nowrap; } /* v1.81.0-web */
-#nextBox #nextHead2 #hfpBadge.on { color: #2da44e; font-weight: 600; }
-#nextBox #nextHead2 #hfpNextStop { flex: 1 0 100%; text-align: right; font-size: .72rem; color: var(--muted); margin-top: -2px; } /* v1.82.7-web: KOKEILU: HFP:n next_stop -pysäkin nimi */
+#nextBox #nextHead2 #hfpBadge { display: flex; flex-direction: column; justify-content: center; align-self: stretch; font-size: .68rem; line-height: 1.1; margin-left: 6px; color: var(--muted); white-space: nowrap; } /* v1.81.0-web; v1.82.9-web: kaksi riviä (tila + seuraava pysäkki) yhteensä auton numero -painikkeen korkuisena sen oikealla puolella */
+#nextBox #nextHead2 #hfpBadge.on #hfpL1 { color: #2da44e; font-weight: 600; }
+#nextBox #nextHead2 #hfpNextStop { color: var(--ink); font-weight: 600; max-width: 9.5em; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; } /* v1.82.9-web: "→ pysäkki" */
 #nextBox #nextHead2 #hfpNextStop:empty { display: none; }
-#nextBox #nextHead2 #hfpNextStop b { color: var(--ink); font-weight: 600; }
 #nextBox #nextHead2 a.carlk:hover, #nextBox #nextHead2 a.carlk:focus-visible { border-color: var(--accent); }
 #nextBox #nextHead2 a.carlk:not([href]) { cursor: default; border-color: transparent; background: none; padding: 0; }
 /* v1.71.91-web: väliaikapysäkit-painike auton numeron oikealla puolella; pysäkit näkyvät reitin alla, kun painike on painettu */
@@ -306,9 +305,9 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 #nextBox:not(.showstops) .nstops { display: none; }
 @media (max-width: 480px) { #nextBox #nextHead2 { flex-wrap: wrap; gap: 4px 10px; font-size: .9rem; align-items: center; } #nextBox #nextR #btnNextStops { padding: 3px 6px; } }
 @media (max-width: 480px) { #nextBox #nextHead2 > span { white-space: nowrap; } #nextBox #nextHead2 a.carlk { padding: 2px 7px; } #nextBox #nextHead2 #hfpBadge { margin-left: 4px; } } /* v1.81.2-web: Kiertonro, Auton nro ja HFP-tila samalle riville */
-@media (max-width: 420px) { #nextBox #nextHead2 { font-size: .8rem; gap: 4px 8px; } #nextBox #nextHead2 #hfpBadge { font-size: .68rem; } }
-@media (max-width: 380px) { #nextOverlay { padding: 6px; } #nextBox { padding: 12px 10px; } #nextBox #nextHead2 { font-size: .78rem; gap: 4px 6px; } #nextBox #nextHead2 a.carlk { padding: 1px 5px; } #nextBox #nextHead2 #hfpBadge { font-size: .66rem; margin-left: 3px; } }
-@media (max-width: 340px) { #nextBox #nextHead2 { font-size: .72rem; } #nextBox #nextHead2 #hfpBadge { font-size: .62rem; } }
+@media (max-width: 420px) { #nextBox #nextHead2 { font-size: .8rem; gap: 4px 8px; } #nextBox #nextHead2 #hfpBadge { font-size: .64rem; } }
+@media (max-width: 380px) { #nextOverlay { padding: 6px; } #nextBox { padding: 12px 10px; } #nextBox #nextHead2 { font-size: .78rem; gap: 4px 6px; } #nextBox #nextHead2 a.carlk { padding: 1px 5px; } #nextBox #nextHead2 #hfpBadge { font-size: .62rem; margin-left: 3px; } }
+@media (max-width: 340px) { #nextBox #nextHead2 { font-size: .72rem; } #nextBox #nextHead2 #hfpBadge { font-size: .58rem; } }
 #nextBox #nextBody { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 /* v1.71.89-web: kun ikkuna on auki, sivun "vedä alas päivittääksesi" (pull-to-refresh) ja vierityksen ketjutus estetään, ettei alaspäin vetäminen lataa sivua uudelleen ja sulje ikkunaa */
 html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body, html:has(#infoOverlay:not([hidden])), html:has(#infoOverlay:not([hidden])) body { overscroll-behavior: none; }
@@ -466,7 +465,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.82.8-web';
+var APP_VERSION = '1.83.1-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -4726,7 +4725,7 @@ var nextClk = null;
 /* v1.81.0-web: KOKEILU: auton "linjalla"-tila HSL:n avoimesta HFP-paikannussyötteestä (MQTT 3.1.1 WebSocketin yli, ei kirjastoa). Tilaus: /hfp/v2/journey/ongoing/vp/bus/<liikennöitsijä>/<auto 5 numeroa>/#.
    Sanomia tulee vain, kun auto on kirjautuneena linja-ajolle (ei esim. halli-/siirtoajolla); mikään muu toiminto ei riipu tästä. Yhteys suljetaan, kun ikkuna suljetaan. */
 var HFP_URL = 'wss://mqtt.hsl.fi:443/', HFP_OPER = '0018';
-var hfp = { ws: null, veh: '', state: '', last: 0, since: 0, desi: '', stop: '', buf: new Uint8Array(0), ping: 0, gen: 0 };
+var hfp = { ws: null, veh: '', car: '', state: '', last: 0, since: 0, desi: '', stop: '', buf: new Uint8Array(0), ping: 0, gen: 0 };
 function hfpSet(state) {
   hfp.state = state;
   var e = $('hfpBadge'); if (!e) return;
@@ -4735,7 +4734,7 @@ function hfpSet(state) {
   else if (state === 'off') txt = '\u25CB ' + T('hfpOff');
   else if (state === 'err') txt = T('hfpErr');
   else if (state === 'wait') txt = '\u2026';
-  if (e.textContent !== txt) e.textContent = txt;
+  var l1 = $('hfpL1'); if (l1 && l1.textContent !== txt) l1.textContent = txt;
   e.classList.toggle('on', on);
   e.title = txt ? T('hfpTitle') : '';
   hfpShowStop();
@@ -4746,11 +4745,10 @@ var HFP_STOPS_URL = 'https://services1.arcgis.com/sswNXkUiRoWtrx0t/ArcGIS/rest/s
 var hfpNames = {}, hfpNameTry = {};
 function hfpShowStop() {
   var e = $('hfpNextStop'); if (!e) return;
-  e.textContent = '';
-  if (hfp.state !== 'on' || !hfp.stop) return;
-  var nm = hfpNames[hfp.stop];
-  e.appendChild(document.createTextNode(T('hfpNext') + ': '));
-  var b = document.createElement('b'); b.textContent = nm || hfp.stop; e.appendChild(b);
+  if (hfp.state !== 'on' || !hfp.stop) { e.textContent = ''; e.title = ''; return; }
+  var nm = hfpNames[hfp.stop] || hfp.stop;
+  e.textContent = '\u2192 ' + nm; /* pieni nuoli + pysäkin nimi */
+  e.title = T('hfpNext') + ': ' + nm;
 }
 function hfpLookup(id) {
   if (hfpNames[id] || !/^\d{5,8}$/.test(id)) return;
@@ -4763,6 +4761,15 @@ function hfpLookup(id) {
       })['catch'](function () { /* nimi ei ole pakollinen */ });
   } catch (e) { /* ei väliä */ }
 }
+/* v1.83.1-web: yhteys avataan uudelleen, kun puhelimen näyttö herää / sivu palaa näkyviin / verkko palaa, tai kun yhteys on katkennut (WebSocket kuolee usein näytön sammuessa) */
+function hfpResume() {
+  if (!$('nextOverlay') || $('nextOverlay').hidden || !hfp.car) return;
+  hfp.veh = ''; /* ohittaa "sama auto: yhteys jatkuu" -tarkistuksen */
+  hfpStart(hfp.car);
+}
+document.addEventListener('visibilitychange', function () { if (!document.hidden) hfpResume(); });
+window.addEventListener('pageshow', function () { hfpResume(); });
+window.addEventListener('online', function () { hfpResume(); });
 function hfpStop() {
   hfp.gen++; hfp.veh = ''; hfp.stop = '';
   if (hfp.ws) { try { hfp.ws.close(); } catch (e) { /* ei väliä */ } hfp.ws = null; }
@@ -4781,6 +4788,7 @@ function hfpStart(car) {
   var m = /^\d{1,5}$/.exec(String(car || '').trim());
   if (!m || !window.WebSocket) { hfpStop(); hfpSet(''); return; }
   var veh = ('00000' + m[0]).slice(-5);
+  hfp.car = veh; /* v1.83.1-web: muistetaan auto uudelleenyhdistämistä varten */
   if (hfp.veh === veh && hfp.ws) { hfpSet(hfp.state); return; } /* sama auto: yhteys jatkuu */
   hfpStop();
   hfp.veh = veh; hfp.since = Date.now(); hfp.last = 0; hfp.desi = ''; hfp.stop = ''; hfp.buf = new Uint8Array(0);
@@ -4833,8 +4841,11 @@ $('nextHead2').addEventListener('click', function (e) {
 });
 setInterval(function () {
   if ($('nextOverlay').hidden) { if (hfp.ws || hfp.veh) hfpStop(); return; }
-  if (!hfp.ws || hfp.state === 'err') return;
   var t = Date.now();
+  /* v1.83.1-web: yhteys poissa (suljettu/virhe): yritetään uudelleen n. 10 s välein; hiljaiseksi jäänyt yhteys (aiemmin sanomia, nyt 45 s hiljaisuutta) avataan uudelleen kerran */
+  if ((!hfp.ws || hfp.ws.readyState > 1 || hfp.state === 'err') && hfp.car && !document.hidden && t - hfp.since > 10000) { hfpResume(); return; }
+  if (hfp.ws && hfp.last && t - hfp.last > 45000 && !document.hidden) { hfpResume(); return; }
+  if (!hfp.ws || hfp.state === 'err') return;
   if (hfp.last && t - hfp.last < 20000) { if (hfp.state !== 'on') hfpSet('on'); }
   else if (t - hfp.since > 15000 && hfp.state !== 'err') { if (hfp.state !== 'off') hfpSet('off'); }
 }, 1000);
@@ -4857,11 +4868,12 @@ function nextShowDialog(blocks, msg, head, model) {
       /* v1.72.1-web: auton numero on linkki bussitutkaan (uusi ikkuna) */
       var ca = document.createElement('a'); ca.className = 'carlk'; ca.target = '_blank'; ca.rel = 'noopener';
       ca.appendChild(b); nextCarHref(b); sp.appendChild(ca);
-      var hbd = document.createElement('span'); hbd.id = 'hfpBadge'; sp.appendChild(hbd); /* v1.81.0-web: HFP-tila */
+      var hbd = document.createElement('span'); hbd.id = 'hfpBadge'; /* v1.81.0-web: HFP-tila; v1.82.9-web: rivit: tila + seuraava pysäkki */
+      var hl1 = document.createElement('span'); hl1.id = 'hfpL1'; var hl2 = document.createElement('span'); hl2.id = 'hfpNextStop';
+      hbd.appendChild(hl1); hbd.appendChild(hl2); sp.appendChild(hbd);
     } else sp.appendChild(b);
     hd.appendChild(sp);
   });
-  if (head && head.length) { var hst = document.createElement('div'); hst.id = 'hfpNextStop'; hd.appendChild(hst); } /* v1.82.7-web: seuraava pysäkki omalle rivilleen */
   hfpStart((head && head[1] && head[1][1]) || '');
   /* v1.71.91-web: kellopainike auton numeron oikealle puolelle (vain jos jollain ajolla on väliaikapysäkkejä) */
   var anyStops = (blocks || []).some(function (b) { return b.stops && b.stops.length; });
