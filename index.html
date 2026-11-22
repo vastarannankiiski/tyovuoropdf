@@ -451,7 +451,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.79.9-web';
+var APP_VERSION = '1.80.3-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -629,6 +629,7 @@ var GROUP2_LABELS = [
   'Yölisä HSL', 'Vapaapäivätyölisä HSL', 'Työaika', 'Taukoaika',
   /* englanninkieliset vientiotsikot, kanoninen avain GROUP2_EN_TO_FI:ssä */
   'Work time', 'Paid time', 'Break time',
+  'SID/Matkustus HSL', /* v1.80.0-web: Sidonnaisuus/Matkustus HSL (luetaan, ei näytetä) */
   'Työtunnit'
 ];
 var GROUP2_EN_TO_FI = {
@@ -769,6 +770,22 @@ function rowText(rows, i) {
 }
 
 /* StopMode: 'none' | 'lopetusaika'. Palauttaa {events, i}. */
+/* v1.80.0-web: "MATKUSTUS, Matkustus" / "... Koulutus ..." -lohkon otsikkorivi, jota seuraa otsikkorivi (Date Start End ...) */
+function isBoxTitleAt(rows, i) {
+  if (i + 1 >= rows.length) return false;
+  var t = rows[i].text;
+  if (tryMatchLeadingTime(t)) return false;
+  if (!/matkustus|koulutus|travel|training/i.test(t)) return false;
+  return parseLabelRow(rows[i + 1].text) !== null;
+}
+/* v1.80.0-web: päivä, jossa on matkustus-/koulutuslohko(ja) ja sen jälkeen varsinainen vuoro (esim. työ toisella varikolla):
+   palauttaa vuoron info-otsikkorivin (Depot Start End) indeksin tai -1; vuoron koodi on sitä edeltävällä rivillä */
+function findDutyHeader(rows, i) {
+  for (var k = i + 1; k < rows.length && !isDayStart(rows[k].text); k++) {
+    if ((rows[k].text === INFO_HEADER1 || rows[k].text === INFO_HEADER1_EN) && parseLabelRow(rows[k - 1].text) === null) return k;
+  }
+  return -1;
+}
 function parseEventBlock(rows, i, stopMode, stopEndTime) {
   var n = rows.length;
   var events = [];
@@ -777,6 +794,7 @@ function parseEventBlock(rows, i, stopMode, stopEndTime) {
 
   while (cur.i < n) {
     if (isDayStart(rows[cur.i].text)) break;
+    if (isBoxTitleAt(rows, cur.i)) break; /* v1.80.0-web: vuoron jälkeinen MATKUSTUS-/Koulutus-lohko */
     var ev = {};
     var rest;
     var lt = tryMatchLeadingTime(rows[cur.i].text);
@@ -1197,10 +1215,12 @@ function applyDetailTimes(days) {
   for (var i = 0; i < days.length; i++) {
     var d = days[i];
     if (d.leave || !d.events || d.events.length === 0) continue;
-    if (d.events.some(function (e) { return e.evType === 'Matkustus' || e.evType === 'Koulutus'; })) continue; /* v1.51.0-web: ajat ja tunnit tulevat parseDayBox:sta */
+    function isTT(e) { return e.evType === 'Matkustus' || e.evType === 'Koulutus'; }
+    if (d.events.every(isTT)) continue; /* v1.51.0-web: ajat ja tunnit tulevat parseDayBox:sta; v1.80.0-web: vain jos päivällä ei ole vuoroa */
     var st = { cur: 0, offset: 0 }, minStart = Infinity, maxEnd = -1, deduct = 0, evs = [];
     for (var j = 0; j < d.events.length; j++) {
       var ev = d.events[j];
+      if (isTT(ev)) continue; /* v1.80.0-web: vuoron ulkopuoliset matkustus-/koulutusjaksot */
       var a = detailAbsMin(ev.startTime, st);
       if (a < 0) continue;
       if (a < minStart) minStart = a;
@@ -1232,6 +1252,24 @@ function applyDetailTimes(days) {
   }
 }
 
+/* v1.80.0-web: vuoron ympärillä olevat matkustus-/koulutuslohkot: tapahtumat vuoron alkuun/loppuun, Matkustus-aika ja km-korvaus päivän tietoihin.
+   Työaika, tauot ja lisät lasketaan edelleen vain vuoron omista tapahtumista (applyDetailTimes ohittaa Matkustus/Koulutus-tapahtumat). */
+function mergeTravelBoxes(d, pre, post) {
+  var trav = 0;
+  [pre, post].forEach(function (t) {
+    if (!t) return;
+    if (t.info.has('Matkustus')) trav += parseHHMMToMinutes(t.info.get('Matkustus'));
+    if (t.info.has('Kilometrikorvaus')) mergeKmInfo(d.info, t.info.get('Kilometrikorvaus'));
+  });
+  if (trav > 0) {
+    d.info.set('Matkustus', pad2(Math.floor(trav / 60)) + ':' + pad2(trav % 60));
+    /* v1.80.2-web: matkustusaika lisätään Palkkatunteihin (Laskennallinen työaika) kuten koulutuspäivässä */
+    var pb = d.info.has('Laskennallinen työaika') ? d.info.get('Laskennallinen työaika') : (d.info.has('Työaika') ? d.info.get('Työaika') : '');
+    if (pb !== '') { var pm = parseHHMMToMinutes(pb) + trav; d.info.set('Laskennallinen työaika', pad2(Math.floor(pm / 60)) + ':' + pad2(pm % 60)); }
+  }
+  d.events = (pre ? pre.events : []).concat(d.events, post ? post.events : []);
+}
+
 function parseDays(rows, log) {
   rows = splitMergedWaitRows(rows);
   var n = rows.length, i = 0, days = [], dayOffs = 0;
@@ -1246,6 +1284,16 @@ function parseDays(rows, log) {
     var dayStartIdx = i;
     var shiftCode = rowText(rows, i); i++;
     if (parseLabelRow(shiftCode)) { shiftCode = ''; i--; } /* ei otsikkoriviä */
+    var preTT = null, postTT = null;
+    if (i < n && rows[i].text !== INFO_HEADER1 && rows[i].text !== INFO_HEADER1_EN) {
+      var dk = findDutyHeader(rows, i); /* v1.80.0-web: matkustus-/koulutuslohko ennen varsinaista vuoroa */
+      if (dk > 0) {
+        preTT = { shiftCode: shiftCode, info: new Map(), events: [], rawRows: '' };
+        parseDayBox(rows.slice(0, dk - 1), i, ds, preTT);
+        shiftCode = rows[dk - 1].text;
+        i = dk;
+      }
+    }
     if (i < n && rows[i].text !== INFO_HEADER1 && rows[i].text !== INFO_HEADER1_EN) {
       /* ajoton päivä (koulutus tms.) */
       var dn = { weekday: ds.weekday, dateStr: ds.dateStr, shiftCode: shiftCode, info: new Map(), events: [],
@@ -1305,6 +1353,11 @@ function parseDays(rows, log) {
     var res = parseEventBlock(rows, i, 'lopetusaika', stopEnd);
     i = res.i;
     d.events = res.events;
+    if (i < n && !isDayStart(rows[i].text) && isBoxTitleAt(rows, i)) { /* v1.80.0-web: vuoron jälkeinen matkustus-/koulutuslohko */
+      postTT = { shiftCode: '', info: new Map(), events: [], rawRows: '' };
+      i = parseDayBox(rows, i, ds, postTT);
+    }
+    if (preTT || postTT) mergeTravelBoxes(d, preTT, postTT);
     days.push(d);
     if (log) log.push(Msg('logDay', ds.weekday, ds.dateStr, shiftCode, d.events.length));
   }
@@ -3156,6 +3209,28 @@ function ivuLeaveDay(name, label, dateStr, stamp) {
   d.info.set('Päivämäärä', dateStr);
   return { kind: 'work', dateStr: dateStr, day: d };
 }
+/* v1.80.1-web: päivä, jossa on yksi varsinainen vuoro (tapahtumia) ja sen ennen/jälkeen matkustus-/koulutusjaksoja (esim. työ toisella varikolla):
+   vuoro luetaan normaalisti, jaksot liitetään siihen (sama tulos kuin PDF:llä). Palauttaa null, jos päivä ei ole tällainen. */
+function ivuMixedDay(js, ads, dateStr, stamp) {
+  var duties = [], others = [];
+  ads.forEach(function (a) {
+    var hasComps = a && (a.components || []).some(function (c) { return c && ivuStr(c.displayType) !== ''; });
+    (hasComps ? duties : others).push(a);
+  });
+  if (duties.length !== 1 || others.length === 0) return null;
+  var duty = duties[0], dStart = String(((duty.allocation || {}).start) || '');
+  var r = ivuDayFromJson({ date: js.date, allocationDetails: [duty] }, stamp);
+  if (!r || r.kind !== 'work' || !r.day || !r.day.events || r.day.events.length === 0) return null;
+  var pre = [], post = [];
+  others.forEach(function (a) { (String(((a.allocation || {}).start) || '') < dStart ? pre : post).push(a); });
+  function seg(list) {
+    if (list.length === 0) return null;
+    var x = ivuSegmentsDay(js, list, dateStr, stamp);
+    return x && x.kind === 'work' ? x.day : null;
+  }
+  mergeTravelBoxes(r.day, seg(pre), seg(post));
+  return r;
+}
 function ivuDayFromJson(js, stamp) {
   if (!js || typeof js !== 'object' || !js.date) return { kind: 'unsupported', note: 'ei päivämäärää' };
   var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(js.date));
@@ -3163,7 +3238,7 @@ function ivuDayFromJson(js, stamp) {
   var dateStr = m[3] + '.' + m[2] + '.' + m[1];
   var ads = js.allocationDetails;
   if (!ads || ads.length === 0) return { kind: 'none', dateStr: dateStr };
-  if (ads.length > 1) return ivuSegmentsDay(js, ads, dateStr, stamp);
+  if (ads.length > 1) return ivuMixedDay(js, ads, dateStr, stamp) || ivuSegmentsDay(js, ads, dateStr, stamp);
   var a = ads[0], al = a.allocation || {};
   var name = ivuStr(a.displayName) || ivuStr(al.displayName) || ivuStr(al.abbreviation);
   var comps = (a.components || []).filter(function (c) { return c && ivuStr(c.displayType) !== ''; });
@@ -3355,7 +3430,7 @@ var I18N = {
     tbPrint: 'Tulosta / Tallenna PDF',
     tbHint: 'Valitse tulostimeksi &quot;Tallenna PDF:nä&quot;, paperikoko A4, marginaalit: ei mitään, poista otsikot ja alatunnisteet, mittakaava 100&nbsp;%.',
     flagFi: 'Suomi', flagEn: 'English',
-    btnNext: 'Seuraavat vuorot', kmAddTitle: 'Lisää linjoja', kmPos: 'Sijainti', kmAdded: 'Lisätyt linjat', kmLinePick: 'Linja', kmHallTitle: 'Halliajo varikolle', kmDirHint: 'Napauta reittiä lisätäksesi sen. ⇄ vaihtaa suunnan. Valinta päättyy halliajoon tai OK-painikkeeseen.', kmHall: 'Halliajo', kmXfer: 'Siirtoajo', kmOk: 'OK', plusMore: 'Lisätoiminnot', plusFares: 'HSL-kertalippujen hinnat', plusKkn: 'Kirkkonummen matkakeskus: lähdöt/aikataulut', fareTitle: 'HSL-kertalippujen hinnat', fareAdult: 'Aikuinen', fareChild: 'Lapsi 7–17', fareAdultChild: 'Aikuinen ja lapsi (alle 18 v)', fareContactlessAll: 'Lähimaksu', farePens: 'Eläkeläinen / liikkumisrajoite', fareZones: 'Vyöhykkeet', fareValid: 'Voimassa (min)', fareValidMach: 'Automaatilta ostohetkestä (min)', fareApp: 'Sovellus, kortti\nQR-lippu, automaatti', fareContactless: 'Lähimaksu', fareKela: 'HSL-kortti (Kela)', fareMin: ' min', fareNoValid: 'ei vahvistettu', fareNote1: 'Hinnat voimassa 1.1.2026 alkaen. Lähde: HSL.', fareNote3: 'Lähimaksun hintakatto 2.11.2026 alkaen: vain aikuisten lähimaksulla ostetut kertaliput, enintään vastaavan vyöhykkeen päivälipun hinta (2 vyöhykettä 10,60 €, 3 vyöhykettä 12,80 €, 4 vyöhykettä 13,80 €, 5 vyöhykettä 17,20 €) 24 tunnissa.', fareNote4: 'Eläkeläisen (Kela) ja liikkumisrajoitteisen alennus koskee HSL-korttia, kun kotikunta on HSL-alueella tai sen naapurikunnassa.', kknTitle: 'Kirkkonummen matkakeskus', kknTitleLine: 'Kirkkonummen matkakeskus / Päätepysäkki', kknNoData: 'Lähtöaikoja ei ole vielä lisätty sovellukseen.', kknWd: 'Arki', kknSa: 'La', kknSu: 'Su', kknPlat: 'Laituri', kknByPlat: 'Laiturin mukaan', kknByLine: 'Linjan mukaan', kknLine: 'Linja', kknXCap: 'Linja ei pysähdy Kirkkonummen matkakeskuksessa.', kknDest: 'Määränpää', kknNextDay: '+1 pv', kknNone: 'Ei lähtöjä tälle päivälle.', kknNote: 'Lähde: HSL:n avoin aikatauladata (', kknNote2: '). Arki = ma–pe (ma–to / pe -merkityt lähdöt ajavat vain kyseisinä päivinä). Pyhäpäivinä ja joulun aikaan aikataulu poikkeaa; häiriöt tarkista HSL:n reittioppaasta.', nextTitle: 'Seuraavat vuorot', nextOk: 'Sulje', nextCar: 'Auton numero', nextCirc: 'Kiertonumero', nextBreak: 'Tauko', nextTime: 'Lähtöaika', nextWorkStart: 'Työ alkaa', nextWorkEnd: 'Työ loppuu', nextStops: 'Väliaikapysäkit',
+    btnNext: 'Seuraavat vuorot', kmAddTitle: 'Lisää linjoja', kmPos: 'Sijainti', kmAdded: 'Lisätyt linjat', kmLinePick: 'Linja', kmHallTitle: 'Halliajo varikolle', kmDirHint: 'Napauta reittiä lisätäksesi sen. ⇄ vaihtaa suunnan. Valinta päättyy halliajoon tai OK-painikkeeseen.', kmHall: 'Halliajo', kmXfer: 'Siirtoajo', kmOk: 'OK', plusMore: 'Lisätoiminnot', plusFares: 'HSL-kertalippujen hinnat', plusKkn: 'Kirkkonummen matkakeskus: lähdöt/aikataulut', fareTitle: 'HSL-kertalippujen hinnat', fareAdult: 'Aikuinen', fareChild: 'Lapsi 7–17', fareAdultChild: 'Aikuinen ja lapsi (alle 18 v)', fareContactlessAll: 'Lähimaksu', farePens: 'Eläkeläinen / liikkumisrajoite', fareZones: 'Vyöhykkeet', fareValid: 'Voimassa (min)', fareValidMach: 'Automaatilta ostohetkestä (min)', fareApp: 'Sovellus, kortti\nQR-lippu, automaatti', fareContactless: 'Lähimaksu', fareKela: 'HSL-kortti (Kela)', fareMin: ' min', fareNoValid: 'ei vahvistettu', fareNote1: 'Hinnat voimassa 1.1.2026 alkaen. Lähde: HSL.', fareNote3: 'Lähimaksun hintakatto 2.11.2026 alkaen: vain aikuisten lähimaksulla ostetut kertaliput, enintään vastaavan vyöhykkeen päivälipun hinta (2 vyöhykettä 10,60 €, 3 vyöhykettä 12,80 €, 4 vyöhykettä 13,80 €, 5 vyöhykettä 17,20 €) 24 tunnissa.', fareNote4: 'Eläkeläisen (Kela) ja liikkumisrajoitteisen alennus koskee HSL-korttia, kun kotikunta on HSL-alueella tai sen naapurikunnassa.', kknTitle: 'Kirkkonummen matkakeskus', kknTitleLine: 'Kirkkonummen matkakeskus / Päätepysäkki', kknNoData: 'Lähtöaikoja ei ole vielä lisätty sovellukseen.', kknWd: 'Arki', kknSa: 'La', kknSu: 'Su', kknPlat: 'Laituri', kknByPlat: 'Laiturin mukaan', kknByLine: 'Linjan mukaan', kknLine: 'Linja', kknXCap: 'Linja ei pysähdy Kirkkonummen matkakeskuksessa.', kknDest: 'Määränpää', kknNextDay: '+1 pv', kknNone: 'Ei lähtöjä tälle päivälle.', kknNote: 'Lähde: HSL:n avoin aikatauladata (', kknNote2: '). Arki = ma–pe (ma–to / pe -merkityt lähdöt ajavat vain kyseisinä päivinä). Pyhäpäivinä ja joulun aikaan aikataulu poikkeaa; häiriöt tarkista HSL:n reittioppaasta.', nextTitle: 'Seuraavat vuorot', nextOk: 'Sulje', nextCar: 'Auton numero', nextCirc: 'Kiertonumero', nextTravel: 'Matkustus', nextBreak: 'Tauko', nextTime: 'Lähtöaika', nextWorkStart: 'Työ alkaa', nextWorkEnd: 'Työ loppuu', nextStops: 'Väliaikapysäkit',
     nextLine: 'Linjan numero', nextRoute: 'Reitti', nextUnknown: 'ei tiedossa', nextType: 'Tapahtuma',
     infoTitle: 'Lue minut', infoLoading: 'Ladataan…', infoFail: 'Tiedoston lataus epäonnistui. Avaa se suoraan osoitteesta: ',
     nextAllDone: 'Kaikki listan tapahtumat on ajettu. Hae tiedot uudelleen IVU:sta.',
@@ -3448,7 +3523,7 @@ var I18N = {
     tbPrint: 'Print / Save PDF',
     tbHint: 'Choose &quot;Save as PDF&quot; as the printer, paper size A4, margins: none, turn off headers and footers, scale 100&nbsp;%.',
     flagFi: 'Suomi', flagEn: 'English',
-    btnNext: 'Next shifts', kmAddTitle: 'Add lines', kmPos: 'Position', kmAdded: 'Added lines', kmLinePick: 'Line', kmHallTitle: 'Deadhead to depot', kmDirHint: 'Tap the route to add it. ⇄ switches direction. Choosing ends with a deadhead or the OK button.', kmHall: 'Deadhead', kmXfer: 'Transfer', kmOk: 'OK', plusMore: 'More', plusFares: 'HSL single ticket prices', plusKkn: 'Kirkkonummi travel centre: departures/timetables', fareTitle: 'HSL single ticket prices', fareAdult: 'Adult', fareChild: 'Child 7–17', fareAdultChild: 'Adult and child (under 18)', fareContactlessAll: 'Contactless', farePens: 'Pensioner / mobility-impaired', fareZones: 'Zones', fareValid: 'Valid (min)', fareValidMach: 'From machine, from purchase (min)', fareApp: 'App, card\nQR ticket, machine', fareContactless: 'Contactless', fareKela: 'HSL card (Kela)', fareMin: ' min', fareNoValid: 'not confirmed', fareNote1: 'Prices valid from 1 January 2026. Source: HSL.', fareNote3: 'Contactless price cap from 2 November 2026: adult single tickets bought by contactless payment only, at most the price of the matching day ticket (2 zones EUR 10.60, 3 zones EUR 12.80, 4 zones EUR 13.80, 5 zones EUR 17.20) within 24 hours.', fareNote4: 'The pensioner (Kela) and mobility-impaired discount applies to the HSL card when the home municipality is in the HSL area or a neighbouring municipality.', kknTitle: 'Kirkkonummi travel centre', kknTitleLine: 'Kirkkonummi travel centre / Terminus', kknNoData: 'Departure times have not been added to the app yet.', kknWd: 'Weekdays', kknSa: 'Sat', kknSu: 'Sun', kknPlat: 'Platform', kknByPlat: 'By platform', kknByLine: 'By line', kknLine: 'Line', kknXCap: 'This line does not call at Kirkkonummi travel centre.', kknDest: 'Destination', kknNextDay: '+1 d', kknNone: 'No departures.', kknNote: 'Source: HSL open timetable data (', kknNote2: '). Weekdays = Mon–Fri (departures marked Mon–Thu / Fri run only on those days). Timetables differ on public holidays and around Christmas; check disruptions in the HSL journey planner.', nextTitle: 'Next shifts', nextOk: 'Close', nextCar: 'Vehicle number', nextCirc: 'Circulation number', nextBreak: 'Break', nextTime: 'Departure time', nextWorkStart: 'Work starts', nextWorkEnd: 'Work ends', nextStops: 'Timing stops',
+    btnNext: 'Next shifts', kmAddTitle: 'Add lines', kmPos: 'Position', kmAdded: 'Added lines', kmLinePick: 'Line', kmHallTitle: 'Deadhead to depot', kmDirHint: 'Tap the route to add it. ⇄ switches direction. Choosing ends with a deadhead or the OK button.', kmHall: 'Deadhead', kmXfer: 'Transfer', kmOk: 'OK', plusMore: 'More', plusFares: 'HSL single ticket prices', plusKkn: 'Kirkkonummi travel centre: departures/timetables', fareTitle: 'HSL single ticket prices', fareAdult: 'Adult', fareChild: 'Child 7–17', fareAdultChild: 'Adult and child (under 18)', fareContactlessAll: 'Contactless', farePens: 'Pensioner / mobility-impaired', fareZones: 'Zones', fareValid: 'Valid (min)', fareValidMach: 'From machine, from purchase (min)', fareApp: 'App, card\nQR ticket, machine', fareContactless: 'Contactless', fareKela: 'HSL card (Kela)', fareMin: ' min', fareNoValid: 'not confirmed', fareNote1: 'Prices valid from 1 January 2026. Source: HSL.', fareNote3: 'Contactless price cap from 2 November 2026: adult single tickets bought by contactless payment only, at most the price of the matching day ticket (2 zones EUR 10.60, 3 zones EUR 12.80, 4 zones EUR 13.80, 5 zones EUR 17.20) within 24 hours.', fareNote4: 'The pensioner (Kela) and mobility-impaired discount applies to the HSL card when the home municipality is in the HSL area or a neighbouring municipality.', kknTitle: 'Kirkkonummi travel centre', kknTitleLine: 'Kirkkonummi travel centre / Terminus', kknNoData: 'Departure times have not been added to the app yet.', kknWd: 'Weekdays', kknSa: 'Sat', kknSu: 'Sun', kknPlat: 'Platform', kknByPlat: 'By platform', kknByLine: 'By line', kknLine: 'Line', kknXCap: 'This line does not call at Kirkkonummi travel centre.', kknDest: 'Destination', kknNextDay: '+1 d', kknNone: 'No departures.', kknNote: 'Source: HSL open timetable data (', kknNote2: '). Weekdays = Mon–Fri (departures marked Mon–Thu / Fri run only on those days). Timetables differ on public holidays and around Christmas; check disruptions in the HSL journey planner.', nextTitle: 'Next shifts', nextOk: 'Close', nextCar: 'Vehicle number', nextCirc: 'Circulation number', nextTravel: 'Travel', nextBreak: 'Break', nextTime: 'Departure time', nextWorkStart: 'Work starts', nextWorkEnd: 'Work ends', nextStops: 'Timing stops',
     nextLine: 'Line number', nextRoute: 'Route', nextUnknown: 'not known', nextType: 'Event',
     infoTitle: 'Read me', infoLoading: 'Loading…', infoFail: 'Could not load the file. Open it directly at: ',
     nextAllDone: 'All events in the list are done. Fetch the data from IVU again.',
@@ -4466,7 +4541,8 @@ function nextKmDialog() {
     draw();
   });
 }
-var NEXT_TYPES = /^(Linja-ajo|Halliajo|Siirtoajo|Vaihtoautosiirtymä)/;
+var NEXT_TYPES = /^(Linja-ajo|Halliajo|Siirtoajo|Vaihtoautosiirtymä|Matkustus)/; /* v1.80.2-web: Matkustus omana tapahtumana (ei km:ejä) */
+var NEXT_KMDEPOT = /^R?(KKN|LAP)/i; /* v1.80.2-web: km-laskuri vain Kirkkonummen (KKN) ja Lapinkylän (LAP) vuoroille */
 var NEXT_BREAK = /^(Tauko|Sidonnaisuusaika|Odotusaika)/i;
 /* v1.71.77-web: "Tauko"-rivin aika: palkaton tauko, sidonnaisuustauko ja sidonnaisuus */
 function NEXT_PAUSE(t) { return /^Sidonnaisuus/i.test(t) || (/^Tauko/i.test(t) && /(palkaton|sidonnaisuus)/i.test(t)); }
@@ -4478,9 +4554,9 @@ function nextShiftFind(m) {
   keys.forEach(function (k) {
     var e = m.days[k] || {};
     if (e.status === 401 || e.status === 403) { authFail = true; return; }
-    if (e.status !== 200 || !e.json) return;
+    if (e.status !== 200 || (!e.json && !e.day)) return;
     var r;
-    try { r = TyoCore.ivuDayFromJson(e.json, stamp); } catch (x) { return; }
+    try { r = e.day ? { kind: 'work', day: e.day } : TyoCore.ivuDayFromJson(e.json, stamp); } catch (x) { return; } /* v1.80.3-web: e.day = PDF:stä luettu päivä */
     if (!r || r.kind !== 'work' || !r.day || !r.day.events) return;
     var p = k.split('-'), base = new Date(+p[0], +p[1] - 1, +p[2], 0, 0, 0).getTime();
     var prev = -1, add = 0, evs = [];
@@ -4497,11 +4573,12 @@ function nextShiftFind(m) {
     var wsI = r.day.info.get('Alkaminen'), weI = r.day.info.get('Päättyminen');
     var wsMin = wsI ? mins(wsI) : -1, weMin = weI ? mins(weI) : -1;
     if (weMin >= 0 && /\+\s*$/.test(String(weI))) weMin += 1440;
+    evs.kmOk = NEXT_KMDEPOT.test(String(r.day.shiftCode || '')) || /kirkkonummi|lapinkyl/i.test(String(r.day.info.get('Miehistöpaikka') || '')); /* v1.80.2-web */
     evs.ws = wsMin >= 0 ? base + wsMin * 60000 : 0;
     evs.we = weMin >= 0 ? base + weMin * 60000 : 0;
     if (evs.length) days.push(evs);
   });
-  var list = [], running = false, kierto = '', car = '', di, ei, evs, found = false, wsOut = 0, weOut = 0, curRide = null;
+  var list = [], running = false, kierto = '', car = '', di, ei, evs, found = false, wsOut = 0, weOut = 0, curRide = null, kmOk = false;
   for (di = 0; di < days.length && !found; di++) {
     evs = days[di];
     for (ei = 0; ei < evs.length; ei++) {
@@ -4509,8 +4586,8 @@ function nextShiftFind(m) {
     }
     /* v1.71.94-web: päivä pysyy näkyvissä, kunnes Työ loppuu -ajasta on 5 min (v1.73.7-web, aiemmin 15), vaikka ajoja ei enää olisi */
     if (ei >= evs.length && !(evs.we && evs.we + 300000 > now)) continue;
-    found = true;
-    for (var cq = ei - 1; cq >= 0; cq--) if (NEXT_TYPES.test(evs[cq].ev.evType || '') && evs[cq].end > now) { curRide = evs[cq]; break; } /* v1.78.7-web: kesken oleva, jo listalta poistunut ajo (km-laskuria varten) */
+    found = true; kmOk = !!evs.kmOk;
+    for (var cq = ei - 1; cq >= 0; cq--) if (NEXT_TYPES.test(evs[cq].ev.evType || '') && !/^Matkustus/.test(evs[cq].ev.evType || '') && evs[cq].end > now) { curRide = evs[cq]; break; } /* v1.78.7-web: kesken oleva, jo listalta poistunut ajo (km-laskuria varten) */
     wsOut = evs.ws && evs.ws + 120000 > now ? evs.ws : 0;
     weOut = evs.we && evs.we + 300000 > now ? evs.we : 0;
     running = evs[0].abs <= now && now <= evs[evs.length - 1].end;
@@ -4538,7 +4615,7 @@ function nextShiftFind(m) {
       if (car === '' && evs[bq].ev.kulkuneuvo) car = evs[bq].ev.kulkuneuvo;
     }
   }
-  return { list: list, kierto: kierto, car: car, running: running, authFail: authFail, ws: wsOut, we: weOut, cur: curRide };
+  return { list: list, kierto: kierto, car: car, running: running, authFail: authFail, ws: wsOut, we: weOut, cur: curRide, kmOk: kmOk };
 }
 /* v1.72.1-web: auton numeron (3-4 numeroa) linkki bussitutkaan; ei numeroa -> ei linkkiä */
 function nextCarHref(b) {
@@ -4709,7 +4786,7 @@ function nextProcess(m) {
   var unk = T('nextUnknown');
   var wdn = uiLang === 'en' ? ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'] : ['Su', 'Ma', 'Ti', 'Ke', 'To', 'Pe', 'La'];
   var hm = function (x) { return pad2n(x.getHours()) + ':' + pad2n(x.getMinutes()); };
-  nextKmBase = res.cur ? { s: res.cur.abs, e: res.cur.end, km: tvlKmDist(res.cur.ev), c: res.car || '' } : null; /* v1.78.7-web */
+  nextKmBase = res.cur && res.kmOk ? { s: res.cur.abs, e: res.cur.end, km: tvlKmDist(res.cur.ev), c: res.car || '' } : null; /* v1.78.7-web */
   var lastKierto = res.kierto, lastCar = res.car;
   var blocks = [], model = [], dateDone = false, itemRows = [];
   /* v1.71.94-web: päivämäärä vain ensimmäisessä näytettävässä tapahtumassa, jos se on eri kalenteripäivänä kuin nyt */
@@ -4732,14 +4809,27 @@ function nextProcess(m) {
     if (effC[ei2]) pc2 = effC[ei2]; else effC[ei2] = pc2;
   }
   /* v1.71.94-web: Työ alkaa / Työ loppuu -tapahtumat; model = kaikki tapahtumat otsikon kierto/auto-päivitystä varten */
-  if (res.ws) {
-    var wsRows = [['\u25B6\uFE0F', /* v1.73.0-web: Työ alkaa -> ▶️ */ hm(new Date(res.ws)) + dateSfx(new Date(res.ws))]];
+  /* v1.80.2-web: Työ alkaa lisätään aikajärjestyksessä muiden tapahtumien joukkoon (matkustus voi alkaa ennen työn alkua) */
+  var wsRows = null, wsK = lastKierto, wsC = lastCar;
+  function mkWs() {
+    wsRows = [['\u25B6\uFE0F', /* v1.73.0-web: Työ alkaa -> ▶️ */ hm(new Date(res.ws)) + dateSfx(new Date(res.ws))]];
     wsRows.start = res.ws; wsRows.kind = 'ws'; wsRows.dtCls = 'ico';
-    blocks.push(wsRows);
-    model.push({ s: res.ws, e: res.ws, k: lastKierto, c: lastCar });
+    model.push({ s: res.ws, e: res.ws, k: wsK, c: wsC });
   }
+  if (res.ws && (!res.list.length || res.ws <= res.list[0].abs)) mkWs(); /* ensimmäinen tapahtuma: päivämäärä tulee tähän */
   res.list.forEach(function (it, k) {
     var ev = it.ev, d = new Date(it.abs);
+    if (/^Matkustus/.test(ev.evType || '')) {
+      /* v1.80.2-web: matkustusjakso omana tapahtumanaan (aikaväli, ei reittiä eikä km:ejä); poistuu listalta jakson päätyttyä */
+      var trTxt = hm(d) + dateSfx(d) + ' - ' + hm(new Date(it.end)) + ' ' + T('nextTravel');
+      var trRows = [['\uD83E\uDDF3', trTxt]];
+      trRows.dtCls = 'ico'; trRows.kind = 'tr'; trRows.start = it.abs; trRows.end = it.end;
+      if (it.brk) trRows.brk = true;
+      model.push({ s: it.abs, e: it.end, k: effK[k] || lastKierto, c: effC[k] || lastCar });
+      itemRows[k] = trRows;
+      blocks.push(trRows);
+      return;
+    }
     /* v1.71.90-web: päivämäärä näytetään vain, jos ensimmäinen tapahtuma on eri kalenteripäivänä kuin tämä hetki (seuraavan vuorokauden puolella) */
     var dateSfx0 = dateSfx(d), timeTxt = hm(d) + dateSfx0;
     var ln = /^Linja-ajo/.test(ev.evType || '') ? stripLine6(ev.linja || '') : ''; /* v1.71.65-web: linjanumero vain Linja-ajoissa */
@@ -4788,7 +4878,8 @@ function nextProcess(m) {
     }
     if (nk !== '') lastKierto = nk;
     if (nc !== '') lastCar = nc;
-    rows.km = tvlKmDist(ev); rows.fin = it.end; /* v1.78.7-web */
+    if (res.kmOk) rows.km = tvlKmDist(ev); /* v1.80.2-web: km vain KKN/LAP-vuoroille */
+    rows.fin = it.end; /* v1.78.7-web */
     model.push({ s: it.abs, e: it.end, k: effK[k] || lastKierto, c: effC[k] || lastCar, km: rows.km, lt: ev.evType || '', ll: stripLine6(ev.linja || ''), lf: ev.fromLoc || '', lto: ev.toLoc || '' });
     rows.start = it.abs;
     if (it.brk) rows.brk = true;
@@ -4796,13 +4887,29 @@ function nextProcess(m) {
     blocks.push(rows);
   });
   /* v1.78.7-web: kiertonumeron viimeinen ajo (kierron perättäisten ajojen viimeinen) */
-  res.list.forEach(function (it, k) { if (itemRows[k] && (k === res.list.length - 1 || effK[k + 1] !== effK[k])) itemRows[k].lastk = true; });
+  /* v1.80.2-web: matkustusjaksot ohitetaan */
+  res.list.forEach(function (it, k) {
+    if (!itemRows[k] || itemRows[k].kind === 'tr') return;
+    var nx = k + 1;
+    while (nx < res.list.length && itemRows[nx] && itemRows[nx].kind === 'tr') nx++;
+    if (nx >= res.list.length || effK[nx] !== effK[k]) itemRows[k].lastk = true;
+  });
+  /* Työ alkaa aikajärjestykseen; Työ loppuu ennen mahdollista työn jälkeistä matkustusta */
+  if (res.ws && !wsRows) mkWs(); /* matkustus alkaa ennen työn alkua: päivämäärä on jo ensimmäisessä tapahtumassa */
+  if (wsRows) {
+    var wi = 0;
+    while (wi < blocks.length && !(blocks[wi].start !== undefined && blocks[wi].start >= res.ws)) wi++;
+    blocks.splice(wi, 0, wsRows);
+  }
   if (res.we) {
     var weRows = [['\u23F9\uFE0F', /* v1.73.0-web: Työ loppuu -> ⏹️ */ hm(new Date(res.we)) + dateSfx(new Date(res.we))]];
     weRows.start = res.we; weRows.kind = 'we'; weRows.dtCls = 'ico';
-    blocks.push(weRows);
+    var wj = 0;
+    while (wj < blocks.length && !(blocks[wj].kind === 'tr' && blocks[wj].start >= res.we)) wj++;
+    blocks.splice(wj, 0, weRows);
     model.push({ s: res.we, e: res.we, k: lastKierto, c: lastCar });
   }
+  model.sort(function (a, b) { return a.s - b.s; });
   nextShowDialog(blocks, '', [[T('nextCirc'), res.kierto || unk], [T('nextCar'), res.car || unk]], model);
 }
 function ivuProcess(m) {
@@ -5233,6 +5340,49 @@ $('appTitle').addEventListener('click', function () {
   flagTaps.push(t);
   if (!$('plusOverlay').hidden) { flagTaps = []; return; } /* ikkuna jo auki: lisänapautukset eivät tee mitään */
   if (flagTaps.length >= 5) { flagTaps = []; plusChooser(); }
+});
+/* v1.80.3-web: ohjelman versionumero: 5 napautusta peräkkäin (väli enintään 700 ms) avaa tiedostovalinnan; valitun työvuoro-PDF:n (esim. IVU.pad.pdf)
+   päivät näytetään "Seuraavat vuorot" -ikkunassa ilman IVU-hakua (sama näkymä kuin IVU-haulla) */
+var verTaps = [], nextPdfInp = null;
+function nextPdfDay(d) {
+  var fx = function (t) { return String(t || '').replace(/^(\d{1,2}):(\d{2})/, '$1.$2'); };
+  var info = new Map(d.info);
+  ['Alkaminen', 'Päättyminen'].forEach(function (k) { if (info.has(k)) info.set(k, fx(info.get(k))); });
+  var evs = (d.events || []).map(function (ev) { var c = {}; for (var k in ev) c[k] = ev[k]; c.startTime = fx(ev.startTime); c.endTime = fx(ev.endTime); return c; });
+  return { weekday: d.weekday, dateStr: d.dateStr, shiftCode: d.shiftCode, info: info, events: evs, leave: d.leave };
+}
+async function nextFromPdfs(list) {
+  var m = { tvl: 'result', v: 1, fetched: Date.now(), days: {} };
+  try {
+    for (var fi = 0; fi < list.length; fi++) {
+      var days = await extractDays(list[fi]);
+      days.forEach(function (d) {
+        var p = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(d.dateStr || '');
+        if (!p || d.dayOff || d.leave || !d.events || !d.events.length) return;
+        m.days[p[3] + '-' + p[2] + '-' + p[1]] = { status: 200, day: nextPdfDay(d) };
+      });
+    }
+  } catch (err) { setStatus(String(err && err.message ? err.message : err), 'err'); return; }
+  setStatus('', '');
+  nextProcess(m);
+}
+$('ver').addEventListener('click', function () {
+  var t = Date.now();
+  if (verTaps.length && t - verTaps[verTaps.length - 1] > 700) verTaps = [];
+  verTaps.push(t);
+  if (verTaps.length < 5) return;
+  verTaps = [];
+  if (!nextPdfInp) {
+    nextPdfInp = document.createElement('input');
+    nextPdfInp.type = 'file'; nextPdfInp.accept = 'application/pdf,.pdf'; nextPdfInp.multiple = true; nextPdfInp.hidden = true;
+    nextPdfInp.addEventListener('change', function () {
+      var l = Array.prototype.slice.call(nextPdfInp.files || []).filter(isPdf);
+      nextPdfInp.value = '';
+      if (l.length) nextFromPdfs(l);
+    });
+    document.body.appendChild(nextPdfInp);
+  }
+  nextPdfInp.click();
 });
 $('btnPlusOk').addEventListener('click', function () { $('plusOverlay').hidden = true; });
 /* v1.74.0-web: ikkuna sulkeutuu vain Sulje-painikkeella (ei taustan napautuksella eikä Esc-näppäimellä) */
