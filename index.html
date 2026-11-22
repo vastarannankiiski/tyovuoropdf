@@ -452,7 +452,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.80.6-web';
+var APP_VERSION = '1.80.7-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -1681,9 +1681,13 @@ function detectInsertions(raw) {
   return ins;
 }
 
-function buildRowsForDay(raw, ins, showTimingStops, lang) {
+function buildRowsForDay(raw, ins, showTimingStops, lang, travelKm) {
   var T = L(lang);
   var rows = [];
+  /* v1.80.7-web: päivän matkustuskilometrit (Kilometrikorvaus, sadasosina) jaetaan tasan päivän Matkustus-tapahtumille (alku ja loppu: kumpikin km/2) */
+  var travelN = 0, travelEach = 0;
+  for (var tq = 0; tq < raw.length; tq++) if (raw[tq].evType === 'Matkustus') travelN++;
+  if (travelN > 0 && travelKm > 0) travelEach = Math.round(travelKm / travelN);
   for (var i = 0; i < raw.length; i++) {
     var insRec = null;
     for (var k = 0; k < ins.length; k++) if (ins[k].idx === i) { insRec = ins[k]; break; }
@@ -1719,7 +1723,7 @@ function buildRowsForDay(raw, ins, showTimingStops, lang) {
     } else if (baseType.substr(0, 5) === 'Tauko' || baseType === 'Sidonnaisuusaika' || baseType === 'Odotusaika' || baseType === 'Täyttö' ||
                baseType === 'Matkustus' || baseType === 'Koulutus') {
       rows.push({ kierto: '', startT: formatOutTime(ev.startTime, lang), endT: formatOutTime(ev.endTime, lang), linja: '',
-        tapahtuma: translateEvent(ev.evType, lang), reitti: ev.fromLoc, bold: false,
+        tapahtuma: translateEvent(ev.evType, lang), reitti: baseType === 'Matkustus' && travelEach > 0 ? formatKm(travelEach) + ' km' : ev.fromLoc, bold: false,
         kind: baseType.substr(0, 5) === 'Tauko' ? (isStandbyType(ev.evType) ? 'T' : 'B') : 'O' });
     } else {
       throw new Error(Msg('unknownBuildType', ev.evType));
@@ -1780,7 +1784,7 @@ function buildDisplay(days, showTimingStops, lang) {
       shiftCode: standbyDisplayName(days[i].shiftCode),
       workStart: formatOutTime(days[i].info.get('Alkaminen') || '', lang),
       workEnd: formatOutTime(days[i].info.get('Päättyminen') || '', lang),
-      rows: buildRowsForDay(raw, ins, showTimingStops, lang),
+      rows: buildRowsForDay(raw, ins, showTimingStops, lang, days[i].info.has('Kilometrikorvaus') ? parseKmHund(days[i].info.get('Kilometrikorvaus')) : 0),
       summaryLine: buildSummaryLine(days[i].info, lang, sb),
       retro: buildRetroInfo(days[i].info, raw, sb, lang), /* v1.60.0-web: retro-ulkoasun lisätiedot */
       leave: days[i].leave === true
