@@ -284,11 +284,14 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 #nextBox #nextHead2 { display: flex; flex-wrap: wrap; gap: 4px 18px; padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
 #nextBox #nextHead2[hidden] { display: none; }
 #nextBox #nextHead2 .l { color: var(--muted); }
+#nextBox #nextHead2 > span { display: inline-flex; align-items: center; gap: .3em; } /* v1.81.4-web: Kiertonro- ja Auton nro -tekstit samalle korkeudelle */
 #nextBox #nextHead2 a.carlk { display: inline-block; color: var(--ink); text-decoration: none; cursor: pointer; padding: 2px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card, var(--bg, #fff)); } /* v1.72.2-web: auton numero pyöreäkulmaisessa suorakaidenapissa */
+#nextBox #nextHead2 #hfpBadge { font-size: .75rem; margin-left: 6px; color: var(--muted); white-space: nowrap; } /* v1.81.0-web */
+#nextBox #nextHead2 #hfpBadge.on { color: #2da44e; font-weight: 600; }
 #nextBox #nextHead2 a.carlk:hover, #nextBox #nextHead2 a.carlk:focus-visible { border-color: var(--accent); }
 #nextBox #nextHead2 a.carlk:not([href]) { cursor: default; border-color: transparent; background: none; padding: 0; }
 /* v1.71.91-web: väliaikapysäkit-painike auton numeron oikealla puolella; pysäkit näkyvät reitin alla, kun painike on painettu */
-#nextBox #btnNextStops { margin-left: auto; padding: 2px 8px; min-height: 0; line-height: 1.3; font-size: 1rem; }
+#nextBox #nextR #btnNextStops { margin: 0; padding: 3px 8px; min-height: 30px; min-width: 32px; line-height: 1; font-size: 1rem; } /* v1.81.3-web: kellopainike kokoruutupainikkeen vasemmalle puolelle */
 #nextBox #btnNextStops[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 #nextBox .nstops { color: var(--muted); font-weight: 400; font-size: .92em; line-height: 1.45; }
 /* v1.71.95-web: pysäkit näkyvissä -> reitin alku, väliaikapisteet ja loppu kukin omalla rivillään */
@@ -297,7 +300,11 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 #nextBox .narr { display: none; }
 #nextBox .ar { display: inline; }
 #nextBox:not(.showstops) .nstops { display: none; }
-@media (max-width: 480px) { #nextBox #nextHead2 { flex-wrap: nowrap; gap: 4px 10px; font-size: .9rem; align-items: center; } #nextBox #btnNextStops { padding: 2px 6px; flex: none; } }
+@media (max-width: 480px) { #nextBox #nextHead2 { flex-wrap: nowrap; gap: 4px 10px; font-size: .9rem; align-items: center; } #nextBox #nextR #btnNextStops { padding: 3px 6px; } }
+@media (max-width: 480px) { #nextBox #nextHead2 > span { white-space: nowrap; } #nextBox #nextHead2 a.carlk { padding: 2px 7px; } #nextBox #nextHead2 #hfpBadge { margin-left: 4px; } } /* v1.81.2-web: Kiertonro, Auton nro ja HFP-tila samalle riville */
+@media (max-width: 420px) { #nextBox #nextHead2 { font-size: .8rem; gap: 4px 8px; } #nextBox #nextHead2 #hfpBadge { font-size: .68rem; } }
+@media (max-width: 380px) { #nextOverlay { padding: 6px; } #nextBox { padding: 12px 10px; } #nextBox #nextHead2 { font-size: .78rem; gap: 4px 6px; } #nextBox #nextHead2 a.carlk { padding: 1px 5px; } #nextBox #nextHead2 #hfpBadge { font-size: .66rem; margin-left: 3px; } }
+@media (max-width: 340px) { #nextBox #nextHead2 { font-size: .72rem; } #nextBox #nextHead2 #hfpBadge { font-size: .62rem; } }
 #nextBox #nextBody { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 /* v1.71.89-web: kun ikkuna on auki, sivun "vedä alas päivittääksesi" (pull-to-refresh) ja vierityksen ketjutus estetään, ettei alaspäin vetäminen lataa sivua uudelleen ja sulje ikkunaa */
 html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body, html:has(#infoOverlay:not([hidden])), html:has(#infoOverlay:not([hidden])) body { overscroll-behavior: none; }
@@ -452,7 +459,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.80.10-web';
+var APP_VERSION = '1.82.0-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -3435,7 +3442,7 @@ var I18N = {
     tbPrint: 'Tulosta / Tallenna PDF',
     tbHint: 'Valitse tulostimeksi &quot;Tallenna PDF:nä&quot;, paperikoko A4, marginaalit: ei mitään, poista otsikot ja alatunnisteet, mittakaava 100&nbsp;%.',
     flagFi: 'Suomi', flagEn: 'English',
-    btnNext: 'Seuraavat vuorot', kmAddTitle: 'Lisää linjoja', kmPos: 'Sijainti', kmAdded: 'Lisätyt linjat', kmLinePick: 'Linja', kmHallTitle: 'Halliajo varikolle', kmDirHint: 'Napauta reittiä lisätäksesi sen. ⇄ vaihtaa suunnan. Valinta päättyy halliajoon tai OK-painikkeeseen.', kmHall: 'Halliajo', kmXfer: 'Siirtoajo', kmOk: 'OK', plusMore: 'Lisätoiminnot', plusFares: 'HSL-kertalippujen hinnat', plusKkn: 'Kirkkonummen matkakeskus: lähdöt/aikataulut', fareTitle: 'HSL-kertalippujen hinnat', fareAdult: 'Aikuinen', fareChild: 'Lapsi 7–17', fareAdultChild: 'Aikuinen ja lapsi (alle 18 v)', fareContactlessAll: 'Lähimaksu', farePens: 'Eläkeläinen / liikkumisrajoite', fareZones: 'Vyöhykkeet', fareValid: 'Voimassa (min)', fareValidMach: 'Automaatilta ostohetkestä (min)', fareApp: 'Sovellus, kortti\nQR-lippu, automaatti', fareContactless: 'Lähimaksu', fareKela: 'HSL-kortti (Kela)', fareMin: ' min', fareNoValid: 'ei vahvistettu', fareNote1: 'Hinnat voimassa 1.1.2026 alkaen. Lähde: HSL.', fareNote3: 'Lähimaksun hintakatto 2.11.2026 alkaen: vain aikuisten lähimaksulla ostetut kertaliput, enintään vastaavan vyöhykkeen päivälipun hinta (2 vyöhykettä 10,60 €, 3 vyöhykettä 12,80 €, 4 vyöhykettä 13,80 €, 5 vyöhykettä 17,20 €) 24 tunnissa.', fareNote4: 'Eläkeläisen (Kela) ja liikkumisrajoitteisen alennus koskee HSL-korttia, kun kotikunta on HSL-alueella tai sen naapurikunnassa.', kknTitle: 'Kirkkonummen matkakeskus', kknTitleLine: 'Kirkkonummen matkakeskus / Päätepysäkki', kknNoData: 'Lähtöaikoja ei ole vielä lisätty sovellukseen.', kknWd: 'Arki', kknSa: 'La', kknSu: 'Su', kknPlat: 'Laituri', kknByPlat: 'Laiturin mukaan', kknByLine: 'Linjan mukaan', kknLine: 'Linja', kknXCap: 'Linja ei pysähdy Kirkkonummen matkakeskuksessa.', kknDest: 'Määränpää', kknNextDay: '+1 pv', kknNone: 'Ei lähtöjä tälle päivälle.', kknNote: 'Lähde: HSL:n avoin aikatauladata (', kknNote2: '). Arki = ma–pe (ma–to / pe -merkityt lähdöt ajavat vain kyseisinä päivinä). Pyhäpäivinä ja joulun aikaan aikataulu poikkeaa; häiriöt tarkista HSL:n reittioppaasta.', nextTitle: 'Seuraavat vuorot', nextOk: 'Sulje', nextCar: 'Auton numero', nextCirc: 'Kiertonumero', nextTravel: 'Matkustus', nextTest: 'Testitila: mennyt päivä {d} siirretty alkamaan nyt (kellonajat eivät ole PDF:n mukaiset).', nextBreak: 'Tauko', nextTime: 'Lähtöaika', nextWorkStart: 'Työ alkaa', nextWorkEnd: 'Työ loppuu', nextStops: 'Väliaikapysäkit',
+    btnNext: 'Seuraavat vuorot', kmAddTitle: 'Lisää linjoja', kmPos: 'Sijainti', kmAdded: 'Lisätyt linjat', kmLinePick: 'Linja', kmHallTitle: 'Halliajo varikolle', kmDirHint: 'Napauta reittiä lisätäksesi sen. ⇄ vaihtaa suunnan. Valinta päättyy halliajoon tai OK-painikkeeseen.', kmHall: 'Halliajo', kmXfer: 'Siirtoajo', kmOk: 'OK', plusMore: 'Lisätoiminnot', plusFares: 'HSL-kertalippujen hinnat', plusKkn: 'Kirkkonummen matkakeskus: lähdöt/aikataulut', fareTitle: 'HSL-kertalippujen hinnat', fareAdult: 'Aikuinen', fareChild: 'Lapsi 7–17', fareAdultChild: 'Aikuinen ja lapsi (alle 18 v)', fareContactlessAll: 'Lähimaksu', farePens: 'Eläkeläinen / liikkumisrajoite', fareZones: 'Vyöhykkeet', fareValid: 'Voimassa (min)', fareValidMach: 'Automaatilta ostohetkestä (min)', fareApp: 'Sovellus, kortti\nQR-lippu, automaatti', fareContactless: 'Lähimaksu', fareKela: 'HSL-kortti (Kela)', fareMin: ' min', fareNoValid: 'ei vahvistettu', fareNote1: 'Hinnat voimassa 1.1.2026 alkaen. Lähde: HSL.', fareNote3: 'Lähimaksun hintakatto 2.11.2026 alkaen: vain aikuisten lähimaksulla ostetut kertaliput, enintään vastaavan vyöhykkeen päivälipun hinta (2 vyöhykettä 10,60 €, 3 vyöhykettä 12,80 €, 4 vyöhykettä 13,80 €, 5 vyöhykettä 17,20 €) 24 tunnissa.', fareNote4: 'Eläkeläisen (Kela) ja liikkumisrajoitteisen alennus koskee HSL-korttia, kun kotikunta on HSL-alueella tai sen naapurikunnassa.', kknTitle: 'Kirkkonummen matkakeskus', kknTitleLine: 'Kirkkonummen matkakeskus / Päätepysäkki', kknNoData: 'Lähtöaikoja ei ole vielä lisätty sovellukseen.', kknWd: 'Arki', kknSa: 'La', kknSu: 'Su', kknPlat: 'Laituri', kknByPlat: 'Laiturin mukaan', kknByLine: 'Linjan mukaan', kknLine: 'Linja', kknXCap: 'Linja ei pysähdy Kirkkonummen matkakeskuksessa.', kknDest: 'Määränpää', kknNextDay: '+1 pv', kknNone: 'Ei lähtöjä tälle päivälle.', kknNote: 'Lähde: HSL:n avoin aikatauladata (', kknNote2: '). Arki = ma–pe (ma–to / pe -merkityt lähdöt ajavat vain kyseisinä päivinä). Pyhäpäivinä ja joulun aikaan aikataulu poikkeaa; häiriöt tarkista HSL:n reittioppaasta.', nextTitle: 'Seuraavat vuorot', nextOk: 'Sulje', nextCar: 'Auton nro', nextCirc: 'Kiertonro', nextTravel: 'Matkustus', hfpOn: 'Linjalla', hfpOff: 'Ei HFP-signaalia', hfpErr: 'HFP: ei yhteyttä', hfpNoTitle: 'Auto ei näy bussitutkassa', hfpNoMsg: 'Auton {c} sijaintia ei löydy bussitutkasta: auto ei ole linjalla tai sen paikannus ei toimi.', hfpTitle: 'Kokeilu: HSL:n avoin HFP-paikannussyöte. Linjalla = auto lähettää sijaintia kirjautuneena linja-ajolle (näkyy bussitutkassa). Ei signaalia = ei sanomia (ei linjalla, ei kirjautunut tai ei dataa).', nextTest: 'Testitila: mennyt päivä {d} siirretty alkamaan nyt (kellonajat eivät ole PDF:n mukaiset).', nextBreak: 'Tauko', nextTime: 'Lähtöaika', nextWorkStart: 'Työ alkaa', nextWorkEnd: 'Työ loppuu', nextStops: 'Väliaikapysäkit',
     nextLine: 'Linjan numero', nextRoute: 'Reitti', nextUnknown: 'ei tiedossa', nextType: 'Tapahtuma',
     infoTitle: 'Lue minut', infoLoading: 'Ladataan…', infoFail: 'Tiedoston lataus epäonnistui. Avaa se suoraan osoitteesta: ',
     nextAllDone: 'Kaikki listan tapahtumat on ajettu. Hae tiedot uudelleen IVU:sta.',
@@ -3528,7 +3535,7 @@ var I18N = {
     tbPrint: 'Print / Save PDF',
     tbHint: 'Choose &quot;Save as PDF&quot; as the printer, paper size A4, margins: none, turn off headers and footers, scale 100&nbsp;%.',
     flagFi: 'Suomi', flagEn: 'English',
-    btnNext: 'Next shifts', kmAddTitle: 'Add lines', kmPos: 'Position', kmAdded: 'Added lines', kmLinePick: 'Line', kmHallTitle: 'Deadhead to depot', kmDirHint: 'Tap the route to add it. ⇄ switches direction. Choosing ends with a deadhead or the OK button.', kmHall: 'Deadhead', kmXfer: 'Transfer', kmOk: 'OK', plusMore: 'More', plusFares: 'HSL single ticket prices', plusKkn: 'Kirkkonummi travel centre: departures/timetables', fareTitle: 'HSL single ticket prices', fareAdult: 'Adult', fareChild: 'Child 7–17', fareAdultChild: 'Adult and child (under 18)', fareContactlessAll: 'Contactless', farePens: 'Pensioner / mobility-impaired', fareZones: 'Zones', fareValid: 'Valid (min)', fareValidMach: 'From machine, from purchase (min)', fareApp: 'App, card\nQR ticket, machine', fareContactless: 'Contactless', fareKela: 'HSL card (Kela)', fareMin: ' min', fareNoValid: 'not confirmed', fareNote1: 'Prices valid from 1 January 2026. Source: HSL.', fareNote3: 'Contactless price cap from 2 November 2026: adult single tickets bought by contactless payment only, at most the price of the matching day ticket (2 zones EUR 10.60, 3 zones EUR 12.80, 4 zones EUR 13.80, 5 zones EUR 17.20) within 24 hours.', fareNote4: 'The pensioner (Kela) and mobility-impaired discount applies to the HSL card when the home municipality is in the HSL area or a neighbouring municipality.', kknTitle: 'Kirkkonummi travel centre', kknTitleLine: 'Kirkkonummi travel centre / Terminus', kknNoData: 'Departure times have not been added to the app yet.', kknWd: 'Weekdays', kknSa: 'Sat', kknSu: 'Sun', kknPlat: 'Platform', kknByPlat: 'By platform', kknByLine: 'By line', kknLine: 'Line', kknXCap: 'This line does not call at Kirkkonummi travel centre.', kknDest: 'Destination', kknNextDay: '+1 d', kknNone: 'No departures.', kknNote: 'Source: HSL open timetable data (', kknNote2: '). Weekdays = Mon–Fri (departures marked Mon–Thu / Fri run only on those days). Timetables differ on public holidays and around Christmas; check disruptions in the HSL journey planner.', nextTitle: 'Next shifts', nextOk: 'Close', nextCar: 'Vehicle number', nextCirc: 'Circulation number', nextTravel: 'Travel', nextTest: 'Test mode: past day {d} moved to start now (times differ from the PDF).', nextBreak: 'Break', nextTime: 'Departure time', nextWorkStart: 'Work starts', nextWorkEnd: 'Work ends', nextStops: 'Timing stops',
+    btnNext: 'Next shifts', kmAddTitle: 'Add lines', kmPos: 'Position', kmAdded: 'Added lines', kmLinePick: 'Line', kmHallTitle: 'Deadhead to depot', kmDirHint: 'Tap the route to add it. ⇄ switches direction. Choosing ends with a deadhead or the OK button.', kmHall: 'Deadhead', kmXfer: 'Transfer', kmOk: 'OK', plusMore: 'More', plusFares: 'HSL single ticket prices', plusKkn: 'Kirkkonummi travel centre: departures/timetables', fareTitle: 'HSL single ticket prices', fareAdult: 'Adult', fareChild: 'Child 7–17', fareAdultChild: 'Adult and child (under 18)', fareContactlessAll: 'Contactless', farePens: 'Pensioner / mobility-impaired', fareZones: 'Zones', fareValid: 'Valid (min)', fareValidMach: 'From machine, from purchase (min)', fareApp: 'App, card\nQR ticket, machine', fareContactless: 'Contactless', fareKela: 'HSL card (Kela)', fareMin: ' min', fareNoValid: 'not confirmed', fareNote1: 'Prices valid from 1 January 2026. Source: HSL.', fareNote3: 'Contactless price cap from 2 November 2026: adult single tickets bought by contactless payment only, at most the price of the matching day ticket (2 zones EUR 10.60, 3 zones EUR 12.80, 4 zones EUR 13.80, 5 zones EUR 17.20) within 24 hours.', fareNote4: 'The pensioner (Kela) and mobility-impaired discount applies to the HSL card when the home municipality is in the HSL area or a neighbouring municipality.', kknTitle: 'Kirkkonummi travel centre', kknTitleLine: 'Kirkkonummi travel centre / Terminus', kknNoData: 'Departure times have not been added to the app yet.', kknWd: 'Weekdays', kknSa: 'Sat', kknSu: 'Sun', kknPlat: 'Platform', kknByPlat: 'By platform', kknByLine: 'By line', kknLine: 'Line', kknXCap: 'This line does not call at Kirkkonummi travel centre.', kknDest: 'Destination', kknNextDay: '+1 d', kknNone: 'No departures.', kknNote: 'Source: HSL open timetable data (', kknNote2: '). Weekdays = Mon–Fri (departures marked Mon–Thu / Fri run only on those days). Timetables differ on public holidays and around Christmas; check disruptions in the HSL journey planner.', nextTitle: 'Next shifts', nextOk: 'Close', nextCar: 'Vehicle no.', nextCirc: 'Circ. no.', nextTravel: 'Travel', hfpOn: 'In service', hfpOff: 'No HFP signal', hfpErr: 'HFP: no connection', hfpNoTitle: 'Vehicle not on the bus map', hfpNoMsg: 'The position of vehicle {c} was not found on the bus map: the vehicle is not in service or its positioning is not working.', hfpTitle: 'Experiment: HSL open HFP positioning feed. In service = the vehicle reports its position signed in to a route trip (visible on the bus map). No signal = no messages (not in service, not signed in or no data).', nextTest: 'Test mode: past day {d} moved to start now (times differ from the PDF).', nextBreak: 'Break', nextTime: 'Departure time', nextWorkStart: 'Work starts', nextWorkEnd: 'Work ends', nextStops: 'Timing stops',
     nextLine: 'Line number', nextRoute: 'Route', nextUnknown: 'not known', nextType: 'Event',
     infoTitle: 'Read me', infoLoading: 'Loading…', infoFail: 'Could not load the file. Open it directly at: ',
     nextAllDone: 'All events in the list are done. Fetch the data from IVU again.',
@@ -4345,6 +4352,7 @@ function tvlKmDist(ev) {
 }
 var nextKmBase = null, nextKm = { on: false, upto: '', car: '', ext: { items: [] }, end: null, btn: null, cache: null }, nextKmTaps = [], nextKmTapId = '';
 /* v1.79.5-web: summaan lasketaan vain napautetun (viimeisen) ajon auton kilometrit */
+function nextKmSgOf(id) { for (var i = 0; i < nextModel.length; i++) if (String(nextModel[i].s) === id && nextModel[i].km !== undefined) return nextModel[i].sg; return undefined; }
 function nextKmCarOf(id) { for (var i = 0; i < nextModel.length; i++) if (String(nextModel[i].s) === id && nextModel[i].km !== undefined) return nextModel[i].c || ''; return ''; }
 function nextKmFmt(x) { var t = (Math.round(x * 10) / 10).toFixed(1); return uiLang === 'en' ? t : t.replace('.', ','); }
 /* v1.79.4-web: kilometrilaskurin jatkaminen etapeilla ([+]): linjat ja halliajo varikolle. Linjasuunnat pysäkkeineen TVL_KM:stä. */
@@ -4435,11 +4443,12 @@ function nextKmUpdate() {
   }
   /* summa lasketaan koko mallista (myös jo listalta poistunut, kesken oleva ajo mukaan), nimiöt vain näkyviin lohkoihin */
   var t = Date.now(), cum = 0, unk = false, endMo = null, cumU = 0, unkU = false;
-  if (nextKmBase && nextKmBase.e > t && (!nextKm.car || !nextKmBase.c || nextKmBase.c === nextKm.car)) { if (nextKmBase.km === null) unk = true; else cum += nextKmBase.km * (nextKmBase.e <= nextKmBase.s ? 1 : Math.max(0, Math.min(1, (nextKmBase.e - t) / (nextKmBase.e - nextKmBase.s)))); }
+  if (nextKmBase && nextKmBase.e > t && (!nextKm.car || !nextKmBase.c || nextKmBase.c === nextKm.car) && (nextKm.sg === undefined || nextKmBase.sg === nextKm.sg)) { if (nextKmBase.km === null) unk = true; else cum += nextKmBase.km * (nextKmBase.e <= nextKmBase.s ? 1 : Math.max(0, Math.min(1, (nextKmBase.e - t) / (nextKmBase.e - nextKmBase.s)))); }
   for (i = 0; i < nextModel.length; i++) {
     var mo = nextModel[i];
     if (mo.km === undefined || mo.e <= t) continue;
     if (nextKm.car && mo.c && mo.c !== nextKm.car) continue; /* toisen auton ajo: ei mukaan summaan eikä nimiötä */
+    if (nextKm.sg !== undefined && mo.sg !== nextKm.sg) continue; /* v1.82.0-web: toinen km-ryhmä (varikkotauko + kiertonumeron vaihto) */
     var b = body.querySelector('.nblk[data-start="' + mo.s + '"][data-km]'), txt = '';
     if (mo.km === null) { unk = true; txt = '?'; }
     else {
@@ -4584,7 +4593,7 @@ function nextShiftFind(m) {
     evs.we = weMin >= 0 ? base + weMin * 60000 : 0;
     if (evs.length) days.push(evs);
   });
-  var list = [], running = false, kierto = '', car = '', di, ei, evs, found = false, wsOut = 0, weOut = 0, curRide = null, kmOk = false;
+  var list = [], running = false, kierto = '', car = '', di, ei, evs, found = false, wsOut = 0, weOut = 0, curRide = null, kmOk = false, curBrk = '';
   for (di = 0; di < days.length && !found; di++) {
     evs = days[di];
     for (ei = 0; ei < evs.length; ei++) {
@@ -4594,6 +4603,7 @@ function nextShiftFind(m) {
     if (ei >= evs.length && !(evs.we && evs.we + 300000 > now)) continue;
     found = true; kmOk = !!evs.kmOk;
     for (var cq = ei - 1; cq >= 0; cq--) if (NEXT_TYPES.test(evs[cq].ev.evType || '') && !/^(Matkustus|Vaihtoautosiirtym)/.test(evs[cq].ev.evType || '') && evs[cq].end > now) { curRide = evs[cq]; break; } /* v1.78.7-web: kesken oleva, jo listalta poistunut ajo (km-laskuria varten) */
+    if (curRide) { for (var cb = ei - 1; cb >= 0 && evs[cb] !== curRide; cb--) if (NEXT_PAUSE(evs[cb].ev.evType || '')) { curBrk = evs[cb].ev.fromLoc || evs[cb].ev.toLoc || ''; break; } } /* v1.82.0-web: tauko kesken olevan ajon ja ensimmäisen listatun ajon välillä (km-ryhmien erotus) */
     wsOut = evs.ws && evs.ws + 120000 > now ? evs.ws : 0;
     weOut = evs.we && evs.we + 300000 > now ? evs.we : 0;
     running = evs[0].abs <= now && now <= evs[evs.length - 1].end;
@@ -4621,7 +4631,7 @@ function nextShiftFind(m) {
       if (car === '' && evs[bq].ev.kulkuneuvo) car = evs[bq].ev.kulkuneuvo;
     }
   }
-  return { list: list, kierto: kierto, car: car, running: running, authFail: authFail, ws: wsOut, we: weOut, cur: curRide, kmOk: kmOk };
+  return { list: list, kierto: kierto, car: car, running: running, authFail: authFail, ws: wsOut, we: weOut, cur: curRide, kmOk: kmOk, curBrk: curBrk };
 }
 /* v1.72.1-web: auton numeron (3-4 numeroa) linkki bussitutkaan; ei numeroa -> ei linkkiä */
 function nextCarHref(b) {
@@ -4651,7 +4661,7 @@ function nextClockTick() {
     var hb = $('nextHead2').querySelectorAll('b');
     if (hb.length >= 2) {
       if (cur.k && hb[0].textContent !== cur.k) hb[0].textContent = cur.k;
-      if (cur.c && hb[1].textContent !== cur.c) { hb[1].textContent = cur.c; nextCarHref(hb[1]); }
+      if (cur.c && hb[1].textContent !== cur.c) { hb[1].textContent = cur.c; nextCarHref(hb[1]); hfpStart(cur.c); }
     }
     var hr = body.querySelectorAll('.nblk[data-hk]');
     for (var hi = 0; hi < hr.length; hi++) {
@@ -4684,6 +4694,94 @@ function nextClockTick() {
   nextClk.textContent = (diff > 0 ? '+' : '-') + pad2n(Math.floor(sec / 3600)) + ':' + pad2n(Math.floor(sec / 60) % 60) + ':' + pad2n(sec % 60);
 }
 var nextClk = null;
+/* v1.81.0-web: KOKEILU: auton "linjalla"-tila HSL:n avoimesta HFP-paikannussyötteestä (MQTT 3.1.1 WebSocketin yli, ei kirjastoa). Tilaus: /hfp/v2/journey/ongoing/vp/bus/<liikennöitsijä>/<auto 5 numeroa>/#.
+   Sanomia tulee vain, kun auto on kirjautuneena linja-ajolle (ei esim. halli-/siirtoajolla); mikään muu toiminto ei riipu tästä. Yhteys suljetaan, kun ikkuna suljetaan. */
+var HFP_URL = 'wss://mqtt.hsl.fi:443/', HFP_OPER = '0018';
+var hfp = { ws: null, veh: '', state: '', last: 0, since: 0, desi: '', buf: new Uint8Array(0), ping: 0, gen: 0 };
+function hfpSet(state) {
+  hfp.state = state;
+  var e = $('hfpBadge'); if (!e) return;
+  var txt = '', on = false;
+  if (state === 'on') { txt = '\u25CF ' + T('hfpOn') + (hfp.desi ? ' ' + hfp.desi : ''); on = true; }
+  else if (state === 'off') txt = '\u25CB ' + T('hfpOff');
+  else if (state === 'err') txt = T('hfpErr');
+  else if (state === 'wait') txt = '\u2026';
+  if (e.textContent !== txt) e.textContent = txt;
+  e.classList.toggle('on', on);
+  e.title = txt ? T('hfpTitle') : '';
+}
+function hfpStop() {
+  hfp.gen++; hfp.veh = '';
+  if (hfp.ws) { try { hfp.ws.close(); } catch (e) { /* ei väliä */ } hfp.ws = null; }
+  if (hfp.ping) { clearInterval(hfp.ping); hfp.ping = 0; }
+}
+function hfpUtf(s) { var b = new TextEncoder().encode(s), o = new Uint8Array(2 + b.length); o[0] = b.length >> 8; o[1] = b.length & 255; o.set(b, 2); return o; }
+function hfpPacket(first, parts) {
+  var len = 0, rl = [], x, d, p = 1, o;
+  parts.forEach(function (q) { len += q.length; });
+  x = len; do { d = x % 128; x = Math.floor(x / 128); if (x > 0) d |= 128; rl.push(d); } while (x > 0);
+  o = new Uint8Array(1 + rl.length + len); o[0] = first; o.set(rl, 1); p = 1 + rl.length;
+  parts.forEach(function (q) { o.set(q, p); p += q.length; });
+  return o;
+}
+function hfpStart(car) {
+  var m = /^\d{1,5}$/.exec(String(car || '').trim());
+  if (!m || !window.WebSocket) { hfpStop(); hfpSet(''); return; }
+  var veh = ('00000' + m[0]).slice(-5);
+  if (hfp.veh === veh && hfp.ws) { hfpSet(hfp.state); return; } /* sama auto: yhteys jatkuu */
+  hfpStop();
+  hfp.veh = veh; hfp.since = Date.now(); hfp.last = 0; hfp.desi = ''; hfp.buf = new Uint8Array(0);
+  var gen = hfp.gen, ws;
+  hfpSet('wait');
+  try { ws = new WebSocket(HFP_URL, 'mqtt'); } catch (e) { hfpSet('err'); return; }
+  ws.binaryType = 'arraybuffer'; hfp.ws = ws;
+  ws.onopen = function () {
+    if (gen !== hfp.gen) return;
+    ws.send(hfpPacket(0x10, [new Uint8Array([0, 4, 77, 81, 84, 84, 4, 2, 0, 60]), hfpUtf('tvl' + Math.random().toString(16).slice(2, 10))]));
+  };
+  ws.onmessage = function (ev) {
+    if (gen !== hfp.gen) return;
+    var add = new Uint8Array(ev.data), nb = new Uint8Array(hfp.buf.length + add.length);
+    nb.set(hfp.buf, 0); nb.set(add, hfp.buf.length); hfp.buf = nb;
+    while (hfp.buf.length >= 2) {
+      var b = hfp.buf, i = 1, mult = 1, rl = 0, c, ok = true;
+      do { if (i >= b.length) { ok = false; break; } c = b[i++]; rl += (c & 127) * mult; mult *= 128; } while (c & 128);
+      if (!ok || b.length < i + rl) return;
+      var type = b[0] >> 4, body = b.subarray(i, i + rl);
+      hfp.buf = b.subarray(i + rl);
+      if (type === 2) { /* CONNACK */
+        if (body[1] !== 0) { hfpSet('err'); return; }
+        ws.send(hfpPacket(0x82, [new Uint8Array([0, 1]), hfpUtf('/hfp/v2/journey/ongoing/vp/bus/' + HFP_OPER + '/' + veh + '/#'), new Uint8Array([0])]));
+        hfp.ping = setInterval(function () { if (ws.readyState === 1) ws.send(new Uint8Array([0xC0, 0])); }, 25000);
+      } else if (type === 3) { /* PUBLISH: auto lähettää sijaintia linja-ajolla */
+        hfp.last = Date.now();
+        try {
+          var tl = (body[0] << 8) | body[1], off = 2 + tl + (((b[0] >> 1) & 3) ? 2 : 0);
+          var vp = JSON.parse(new TextDecoder().decode(body.subarray(off))).VP;
+          hfp.desi = vp && vp.desi ? String(vp.desi) : hfp.desi;
+        } catch (e) { /* sanoman sisältö ei ole pakollinen */ }
+        hfpSet('on');
+      }
+    }
+  };
+  ws.onerror = function () { if (gen === hfp.gen) hfpSet('err'); };
+  ws.onclose = function () { if (gen === hfp.gen) { if (hfp.ping) { clearInterval(hfp.ping); hfp.ping = 0; } hfp.ws = null; if (hfp.state !== 'on' && hfp.state !== 'off') hfpSet('err'); else hfpSet('off'); } };
+}
+/* v1.81.1-web: auton numeron napautus: jos HFP-syötteessä ei ole auton sijaintia (tila "Ei HFP-signaalia"), bussitutkaa ei avata vaan ikkuna kertoo, että auto ei ole linjalla tai sen paikannus ei toimi; ikkuna suljetaan Sulje-painikkeella */
+$('nextHead2').addEventListener('click', function (e) {
+  var a = e.target && e.target.closest ? e.target.closest('a.carlk') : null;
+  if (!a || hfp.state !== 'off') return;
+  e.preventDefault();
+  var car = a.textContent.trim();
+  plusOpen(T('hfpNoTitle'), function (body) { body.appendChild(plusEl('p', '', T('hfpNoMsg', { c: car }))); });
+});
+setInterval(function () {
+  if ($('nextOverlay').hidden) { if (hfp.ws || hfp.veh) hfpStop(); return; }
+  if (!hfp.ws || hfp.state === 'err') return;
+  var t = Date.now();
+  if (hfp.last && t - hfp.last < 20000) { if (hfp.state !== 'on') hfpSet('on'); }
+  else if (t - hfp.since > 15000 && hfp.state !== 'err') { if (hfp.state !== 'off') hfpSet('off'); }
+}, 1000);
 setInterval(function () { if (!$('nextOverlay').hidden) nextClockTick(); }, 1000);
 var nextModel = []; /* v1.71.94-web: tapahtumat {s, e, k, c} otsikon kierto/auto-päivitystä varten */
 var nextStopsOn = false;
@@ -4695,6 +4793,7 @@ function nextShowDialog(blocks, msg, head, model) {
   nextClockTick();
   var hd = $('nextHead2');
   hd.textContent = '';
+  var oldSb = $('btnNextStops'); if (oldSb && oldSb.parentNode) oldSb.parentNode.removeChild(oldSb); /* v1.81.3-web: painike on ylärivillä (nextR), ei otsikossa */
   (head || []).forEach(function (h, hi) {
     var sp = document.createElement('span'), lb = document.createElement('span'), b = document.createElement('b');
     lb.className = 'l'; lb.textContent = h[0] + ' '; b.textContent = h[1]; sp.appendChild(lb);
@@ -4702,14 +4801,16 @@ function nextShowDialog(blocks, msg, head, model) {
       /* v1.72.1-web: auton numero on linkki bussitutkaan (uusi ikkuna) */
       var ca = document.createElement('a'); ca.className = 'carlk'; ca.target = '_blank'; ca.rel = 'noopener';
       ca.appendChild(b); nextCarHref(b); sp.appendChild(ca);
+      var hbd = document.createElement('span'); hbd.id = 'hfpBadge'; sp.appendChild(hbd); /* v1.81.0-web: HFP-tila */
     } else sp.appendChild(b);
     hd.appendChild(sp);
   });
+  hfpStart((head && head[1] && head[1][1]) || '');
   /* v1.71.91-web: kellopainike auton numeron oikealle puolelle (vain jos jollain ajolla on väliaikapysäkkejä) */
   var anyStops = (blocks || []).some(function (b) { return b.stops && b.stops.length; });
   if (anyStops && head && head.length) {
     var sb = document.createElement('button');
-    sb.type = 'button'; sb.id = 'btnNextStops'; sb.textContent = '\uD83D\uDD53';
+    sb.type = 'button'; sb.id = 'btnNextStops'; sb.className = 'fsbtn'; sb.textContent = '\uD83D\uDD53';
     sb.title = T('nextStops'); sb.setAttribute('aria-label', T('nextStops'));
     sb.setAttribute('aria-pressed', nextStopsOn ? 'true' : 'false');
     sb.addEventListener('click', function () {
@@ -4718,7 +4819,7 @@ function nextShowDialog(blocks, msg, head, model) {
       $('nextBox').classList.toggle('showstops', nextStopsOn);
       try { localStorage.setItem('tyovuoropdf.nextStops', nextStopsOn ? '1' : '0'); } catch (e) { /* ei väliä */ }
     });
-    hd.appendChild(sb);
+    $('nextR').insertBefore(sb, $('btnFsNext')); /* v1.81.3-web: kokoruutupainikkeen vasemmalle puolelle */
   }
   $('nextBox').classList.toggle('showstops', nextStopsOn && anyStops);
   hd.hidden = !(head && head.length);
@@ -4731,7 +4832,7 @@ function nextShowDialog(blocks, msg, head, model) {
     var wrap = document.createElement('div');
     wrap.className = 'nblk' + (rows.brk ? ' brk' : '') + (rows.pause ? ' pause' : ''); if (rows.start) wrap.setAttribute('data-start', rows.start);
     if (rows.end) wrap.setAttribute('data-end', rows.end);
-    if (rows.km !== undefined) { wrap.setAttribute('data-km', rows.km === null ? '?' : String(Math.round(rows.km * 100) / 100)); wrap.setAttribute('data-fin', rows.fin); if (rows.lastk) wrap.setAttribute('data-lastk', '1'); } /* v1.78.7-web */
+    if (rows.km !== undefined) { wrap.setAttribute('data-km', rows.km === null ? '?' : String(Math.round(rows.km * 100) / 100)); wrap.setAttribute('data-fin', rows.fin); wrap.setAttribute('data-kk', rows.kk || ''); wrap.setAttribute('data-sg', String(rows.sg || 0)); if (rows.lastk) wrap.setAttribute('data-lastk', '1'); } /* v1.78.7-web */
     if (rows.kind) { wrap.setAttribute('data-kind', rows.kind); if (rows.kind === 'we') wrap.setAttribute('data-hold', '300000'); } /* Työ loppuu näkyy himmeänä 5 min */
     if (rows.head) { wrap.setAttribute('data-hk', rows.hk || ''); wrap.setAttribute('data-hc', rows.hc || ''); }
     var dl = document.createElement('dl');
@@ -4794,8 +4895,10 @@ function nextProcess(m) {
   var unk = T('nextUnknown');
   var wdn = uiLang === 'en' ? ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'] : ['Su', 'Ma', 'Ti', 'Ke', 'To', 'Pe', 'La'];
   var hm = function (x) { return pad2n(x.getHours()) + ':' + pad2n(x.getMinutes()); };
-  nextKmBase = res.cur && res.kmOk ? { s: res.cur.abs, e: res.cur.end, km: tvlKmDist(res.cur.ev), c: res.car || '' } : null; /* v1.78.7-web */
+  nextKmBase = res.cur && res.kmOk ? { s: res.cur.abs, e: res.cur.end, km: tvlKmDist(res.cur.ev), c: res.car || '', sg: 0 } : null; /* v1.78.7-web */
   var lastKierto = res.kierto, lastCar = res.car;
+  /* v1.82.0-web: km-ryhmät: jos tauko on Sundsbergin tai Kirkkonummen varikolla ja kiertonumero vaihtuu (auto sama tai eri), kiertojen ajot ovat eri ryhmiä (sg), joita ei lasketa yhteen */
+  var DEPOT_BRK = /^(Sundsbergin|Kirkkonummen) varikko/i, segN = 0, pendDepot = !!(res.cur && res.curBrk && DEPOT_BRK.test(res.curBrk)), prevKk = res.cur ? (res.cur.ev.kierto || '') : null;
   var blocks = [], model = [], dateDone = false, itemRows = [];
   /* v1.71.94-web: päivämäärä vain ensimmäisessä näytettävässä tapahtumassa, jos se on eri kalenteripäivänä kuin nyt */
   function dateSfx(dt) {
@@ -4827,6 +4930,7 @@ function nextProcess(m) {
   if (res.ws && (!res.list.length || res.ws <= res.list[0].abs)) mkWs(); /* ensimmäinen tapahtuma: päivämäärä tulee tähän */
   res.list.forEach(function (it, k) {
     var ev = it.ev, d = new Date(it.abs);
+    if (it.tk && DEPOT_BRK.test(it.tk.l || '')) pendDepot = true;
     if (/^Matkustus/.test(ev.evType || '')) {
       /* v1.80.2-web: matkustusjakso omana tapahtumanaan (aikaväli, ei reittiä eikä km:ejä); poistuu listalta jakson päätyttyä */
       var trTxt = hm(d) + dateSfx(d) + ' - ' + hm(new Date(it.end)) + ' ' + T('nextTravel');
@@ -4886,9 +4990,14 @@ function nextProcess(m) {
     }
     if (nk !== '') lastKierto = nk;
     if (nc !== '') lastCar = nc;
-    if (res.kmOk && !/^Vaihtoautosiirtym/.test(ev.evType || '')) rows.km = tvlKmDist(ev); /* v1.80.2-web: km vain KKN/LAP-vuoroille; v1.80.5-web: ei vaihtoautosiirtymiä (henkilöauto, ei sähköbussin ajoakkua) */
+    var kmRide = res.kmOk && !/^Vaihtoautosiirtym/.test(ev.evType || ''), kkNow = effK[k] || '';
+    if (kmRide) {
+      if (pendDepot && prevKk !== null && prevKk !== '' && kkNow !== '' && kkNow !== prevKk) segN++;
+      pendDepot = false; prevKk = kkNow; rows.kk = kkNow; rows.sg = segN;
+    }
+    if (kmRide) rows.km = tvlKmDist(ev); /* v1.80.2-web: km vain KKN/LAP-vuoroille; v1.80.5-web: ei vaihtoautosiirtymiä (henkilöauto, ei sähköbussin ajoakkua) */
     rows.fin = it.end; /* v1.78.7-web */
-    model.push({ s: it.abs, e: it.end, k: effK[k] || lastKierto, c: effC[k] || lastCar, km: rows.km, lt: ev.evType || '', ll: stripLine6(ev.linja || ''), lf: ev.fromLoc || '', lto: ev.toLoc || '' });
+    model.push({ s: it.abs, e: it.end, k: effK[k] || lastKierto, c: effC[k] || lastCar, km: rows.km, sg: kmRide ? segN : undefined, lt: ev.evType || '', ll: stripLine6(ev.linja || ''), lf: ev.fromLoc || '', lto: ev.toLoc || '' });
     rows.start = it.abs;
     if (it.brk) rows.brk = true;
     itemRows[k] = rows;
@@ -5330,14 +5439,19 @@ function plusChooser() {
 /* v1.78.7-web: Seuraavat vuorot: kiertonumeron viimeisen ajon 5 napautusta (väli enintään 700 ms) näyttää/piilottaa jäljellä olevat kilometrit */
 $('nextBody').addEventListener('click', function (e) {
   if (e.target && e.target.closest && e.target.closest('button')) return; /* v1.79.4-web: [+] ei lasketa 5 napautukseen */
-  var blk = e.target && e.target.closest ? e.target.closest('.nblk[data-lastk]') : null, t = Date.now();
+  /* v1.82.0-web: 5 napautusta mitä tahansa saman kiertonumeron ajoa (ei vain viimeistä); summa ulottuu kiertonumeron viimeiseen ajoon */
+  var blk = e.target && e.target.closest ? e.target.closest('.nblk[data-km]') : null, t = Date.now();
   if (!blk) { nextKmTaps = []; return; }
-  var id = blk.getAttribute('data-start');
+  var id = (blk.getAttribute('data-kk') || '') + '|' + (blk.getAttribute('data-sg') || '0');
   if (nextKmTaps.length && (nextKmTapId !== id || t - nextKmTaps[nextKmTaps.length - 1] > 700)) nextKmTaps = [];
   nextKmTapId = id; nextKmTaps.push(t);
   if (nextKmTaps.length >= 5) {
     nextKmTaps = [];
-    if (nextKm.on && nextKm.upto === id) nextKm.on = false; else { nextKm.on = true; nextKm.upto = id; nextKm.car = nextKmCarOf(id); nextKm.ext = { items: [] }; nextKm.cache = null; }
+    var allKm = $('nextBody').querySelectorAll('.nblk[data-km]'), up = null, ai = Array.prototype.indexOf.call(allKm, blk);
+    for (var aj = ai; aj < allKm.length; aj++) { if (allKm[aj].hasAttribute('data-lastk')) { up = allKm[aj]; break; } }
+    if (!up) up = blk;
+    var upId = up.getAttribute('data-start');
+    if (nextKm.on && nextKm.upto === upId) nextKm.on = false; else { nextKm.on = true; nextKm.upto = upId; nextKm.car = nextKmCarOf(upId); nextKm.sg = nextKmSgOf(upId); nextKm.ext = { items: [] }; nextKm.cache = null; }
     nextKmUpdate();
   }
 });
