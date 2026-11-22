@@ -8,3 +8,7 @@ Puhelimessa pitää asentaa Violentmonkey laajennus ja antaa sille lupa omien sc
 Sovellus toimii Windows/Linuxissa chromium pohjaisilla selaimilla: Google Chrome, Vivaldi, Titanium, Quetta, Edge…
 Android puhelimessa sovellus toimii Firefoxilla, mutta parhaan käyttäjäkokemuksen saamiseksi käytä androidissa chromium pohjaista selainta, joka sallii laajennusten asentamisen selaimeen, esim. Vivaldi, Titanium, Quetta, Edge…, ei kuitenkaan Google Chrome, joka ei salli laajennusten asentamista selaimeen androidissa.
 Selainkohtaiset ohjeen saat avaamalla sovelluksen valitsemassasi selaimessa ja painamalla "Avaa IVU..." kohdalla oikealla puolella olevaa "i" näppäintä.
+Piiloetut toiminnot, napauta sormella tai hiirellä viisi kertaa:
+1. Sovelluksen nimeä
+2. Sovelluksen versionumeroa
+3. "Seuraavat vuorot" ikkunassa siirto-, halli- tai linja-ajoa.
