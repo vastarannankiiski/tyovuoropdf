@@ -76,3 +76,8 @@ Vinkkejä
 -----------------------------------------------------------------
 Piilotetut toiminnot
 -----------------------------------------------------------------
+
+Napauta sormella tai hiirellä viisi kertaa:
+1. Sovelluksen nimeä
+2. Sovelluksen versionumeroa
+3. "Seuraavat vuorot" ikkunassa siirto-, halli- tai linja-ajoa.
