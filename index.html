@@ -466,7 +466,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.83.4-web';
+var APP_VERSION = '1.83.5-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -4340,6 +4340,9 @@ function tvlNorm(n) {
   n = String(n || '').replace(/\s+/g, ' ').trim().toLowerCase();
   return /^kirkkonummi mk$|^kirkkonummen mk$|^kirkkonummen matkakeskus$/.test(n) ? 'kirkkonummen matkakeskus' : n;
 }
+/* v1.83.5-web: saman paikan eri nimet etäisyystaulukossa (väli 0 km); varikkoetäisyydet (TVL_PL) säilyvät erillisinä */
+var TVL_SAME = { 'kamppi, tulo': 'kamppi' };
+function tvlSameKey(n) { return TVL_SAME[n] || n; }
 function tvlDepot(n) { return /^(kirkkonummen varikko|strömsby)$/.test(n) ? 'kv' : (n === 'sundsbergin varikko' ? 'sv' : (n === 'lapinkylän varikko' ? 'lk' : '')); }
 var TVL_DI = { kv: 0, sv: 1, lk: 2 };
 /* matka (km) pysäkistä a pysäkille b linjasuunnan pysäkkilistaa pitkin; line = '' -> kaikki linjat (lyhin); ei löydy -> null */
@@ -4366,7 +4369,7 @@ function tvlKmScan(a, b, line) {
 function tvlKmDist(ev) {
   var a = tvlNorm(ev.fromLoc), b = tvlNorm(ev.toLoc);
   if (!a || !b) return null;
-  if (a === b) return 0;
+  if (a === b || tvlSameKey(a) === tvlSameKey(b)) return 0; /* v1.83.5-web: "Kamppi, tulo" ja "Kamppi" ovat sama paikka (0 km) */
   var isLine = /^Linja-ajo/.test(ev.evType || ''), ln = isLine ? stripLine6(ev.linja || '').toLowerCase() : '', r = null;
   if (ln) r = tvlKmScan(a, b, ln);
   if (r === null) {
