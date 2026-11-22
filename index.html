@@ -266,6 +266,7 @@ button.nextbtn:hover:not(:disabled) { background: var(--accent); filter: brightn
 #nextBox .nblk + .nblk.brk { border-top: 5px double var(--ink); padding-top: 12px; } /* v1.71.76-web: tauko = tumma kaksoisviiva */
 #nextBox dt { color: var(--muted); }
 #nextBox dd { margin: 0; font-weight: 700; word-break: break-word; }
+#nextBox dd .ndate { font-size: .8em; font-weight: 600; color: var(--muted); line-height: 1.2; } /* v1.83.2-web: ensimmäisen tapahtuman päivämäärä */
 #nextBox dd .tm { font-size: 1.15em; } /* v1.72.3-web: alkamisaika hiukan isompi */
 /* v1.71.106-web: linjanumero (isompi) tai kulkuneuvokuvake nimikesarakkeessa */
 #nextBox dt.ln { font-size: 1.8rem; font-weight: 700; color: var(--ink); line-height: 1.15; align-self: center; }
@@ -465,7 +466,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.83.1-web';
+var APP_VERSION = '1.83.3-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -4619,6 +4620,14 @@ function nextShiftFind(m) {
     evs.kmOk = NEXT_KMDEPOT.test(String(r.day.shiftCode || '')) || /kirkkonummi|lapinkyl/i.test(String(r.day.info.get('Miehistöpaikka') || '')); /* v1.80.2-web */
     evs.ws = wsMin >= 0 ? base + wsMin * 60000 : 0;
     evs.we = weMin >= 0 ? base + weMin * 60000 : 0;
+    /* v1.83.3-web: koulutuspäivä (ei ajoja): Työ alkaa = ensimmäisen koulutuksen alku ja Työ loppuu = viimeisen koulutuksen loppu, jolloin matkustukset jäävät työn alku- ja loppumerkin ulkopuolelle (kuten varikolla alkavassa päivässä) */
+    var trnS = 0, trnE = 0, drv = false;
+    evs.forEach(function (q) {
+      var et = q.ev.evType || '';
+      if (/^Koulutus/.test(et)) { if (!trnS || q.abs < trnS) trnS = q.abs; if (q.end > trnE) trnE = q.end; }
+      else if (NEXT_TYPES.test(et) && !/^Matkustus/.test(et)) drv = true;
+    });
+    if (trnS && !drv) { evs.ws = trnS; evs.we = trnE; }
     if (evs.length) days.push(evs);
   });
   var list = [], running = false, kierto = '', car = '', di, ei, evs, found = false, wsOut = 0, weOut = 0, curRide = null, kmOk = false, curBrk = '';
@@ -4918,11 +4927,12 @@ function nextShowDialog(blocks, msg, head, model) {
       var dt = document.createElement('dt'), dd = document.createElement('dd');
       dt.textContent = r[0];
       if (rows.dtCls && r === rows[rows.length - 1]) dt.className = rows.dtCls; /* v1.71.106-web */
+      if (rows.dateTop && r === rows[rows.length - 1]) { var ndt = document.createElement('div'); ndt.className = 'ndate'; ndt.textContent = rows.dateTop; dd.appendChild(ndt); } /* v1.83.2-web: päivämäärä kellonajan yläpuolelle */
       if (rows.routeSplit && r === rows[rows.length - 1]) {
         /* v1.71.92-web: Reitti-rivi: alku, väliaikapysäkit (vain painikkeella) ja loppu; pysäkit alku- ja loppupisteen välissä */
         var sa = document.createElement('span'); sa.className = 'nrs';
         var stm = document.createElement('span'); stm.className = 'tm'; stm.textContent = rows.tmTxt; sa.appendChild(stm);
-        sa.appendChild(document.createTextNode((rows.tmSfx || '') + ' ' + rows.routeSplit[0]));
+        sa.appendChild(document.createTextNode(' ' + rows.routeSplit[0]));
         dd.appendChild(sa);
         var sa2 = document.createElement('span'); sa2.className = 'ar'; sa2.textContent = ' →'; sa.appendChild(sa2); /* nuoli pisteiden välille (pysäkit näkyvissä) */
         var sar = document.createElement('span'); sar.className = 'narr'; sar.textContent = ' → '; dd.appendChild(sar);
@@ -4974,7 +4984,7 @@ function nextProcess(m) {
     if (dateDone) return '';
     dateDone = true;
     if (res.running || dt.toDateString() === new Date().toDateString()) return '';
-    return ' (' + wdn[dt.getDay()] + ' ' + dt.getDate() + '.' + (dt.getMonth() + 1) + '.' + dt.getFullYear() + ')';
+    return wdn[dt.getDay()] + ' ' + dt.getDate() + '.' + (dt.getMonth() + 1) + '.' + dt.getFullYear(); /* v1.83.2-web: ilman sulkeita; näytetään tapahtuman ylimmällä rivillä kellonajan yläpuolella (rows.dateTop) */
   }
   /* v1.71.94-web: otsikon kierto/auto per ajo: ajo ilman omaa kiertoa (esim. Vaihtoautosiirtymä) kuuluu seuraavaan kiertoon/autoon, joten otsikko vaihtuu heti edellisen kierron viimeisen ajon jälkeen */
   var effK = [], effC = [], nxK = '', nxC = '', ei2, pk2 = res.kierto, pc2 = res.car;
@@ -4992,7 +5002,8 @@ function nextProcess(m) {
   /* v1.80.2-web: Työ alkaa lisätään aikajärjestyksessä muiden tapahtumien joukkoon (matkustus voi alkaa ennen työn alkua) */
   var wsRows = null, wsK = lastKierto, wsC = lastCar;
   function mkWs() {
-    wsRows = [['\u25B6\uFE0F', /* v1.73.0-web: Työ alkaa -> ▶️ */ hm(new Date(res.ws)) + dateSfx(new Date(res.ws))]];
+    wsRows = [['\u25B6\uFE0F', /* v1.73.0-web: Työ alkaa -> ▶️ */ hm(new Date(res.ws))]];
+    wsRows.dateTop = dateSfx(new Date(res.ws));
     wsRows.start = res.ws; wsRows.kind = 'ws'; wsRows.dtCls = 'ico';
     model.push({ s: res.ws, e: res.ws, k: wsK, c: wsC });
   }
@@ -5003,9 +5014,10 @@ function nextProcess(m) {
     if (/^(Matkustus|Koulutus)/.test(ev.evType || '')) {
       /* v1.80.2-web: matkustusjakso omana tapahtumanaan (aikaväli, ei reittiä eikä km:ejä); poistuu listalta jakson päätyttyä */
       var isTrain = /^Koulutus/.test(ev.evType || ''); /* v1.82.1-web: koulutus 👨🏻‍🏫 matkustusten välissä */
-      var trTxt = hm(d) + dateSfx(d) + ' - ' + hm(new Date(it.end)) + ' ' + T(isTrain ? 'nextTrain' : 'nextTravel');
+      var trDate = dateSfx(d);
+      var trTxt = hm(d) + ' - ' + hm(new Date(it.end)) + ' ' + T(isTrain ? 'nextTrain' : 'nextTravel');
       var trRows = [[isTrain ? '\uD83D\uDC68\uD83C\uDFFB\u200D\uD83C\uDFEB' : '\uD83E\uDDF3', trTxt]];
-      trRows.dtCls = 'ico'; trRows.kind = 'tr'; trRows.start = it.abs; trRows.end = it.end;
+      trRows.dtCls = 'ico'; trRows.kind = 'tr'; trRows.start = it.abs; trRows.end = it.end; trRows.dateTop = trDate;
       if (it.brk) trRows.brk = true;
       model.push({ s: it.abs, e: it.end, k: effK[k] || lastKierto, c: effC[k] || lastCar });
       itemRows[k] = trRows;
@@ -5013,7 +5025,7 @@ function nextProcess(m) {
       return;
     }
     /* v1.71.90-web: päivämäärä näytetään vain, jos ensimmäinen tapahtuma on eri kalenteripäivänä kuin tämä hetki (seuraavan vuorokauden puolella) */
-    var dateSfx0 = dateSfx(d), timeTxt = hm(d) + dateSfx0;
+    var dateTop0 = dateSfx(d);
     var ln = /^Linja-ajo/.test(ev.evType || '') ? stripLine6(ev.linja || '') : ''; /* v1.71.65-web: linjanumero vain Linja-ajoissa */
     /* v1.71.106-web: lähtöaika (hh:mm) lähtöpisteen eteen; nimikkeen ("Lähtöaika"/"Reitti") tilalla kuvake (halli-/siirtoajo: linja-auto, vaihtoautosiirtymä: henkilöauto) tai linjanumero (linja-ajo, isommalla) */
     var routeStart = ev.fromLoc || '?', routeEnd = (ev.toLoc || '?'); /* v1.71.92-web: alku ja loppu erikseen, väliaikapysäkit tulevat niiden väliin */
@@ -5033,7 +5045,7 @@ function nextProcess(m) {
     rows.dtCls = dtCls;
     /* v1.71.91-web: reitin väliaikapysäkit (kellonkuva + paikka + (hh:mm)); näkyvät vain painikkeella */
     var wps = (ev.waypoints || []).filter(function (w) { return w && w.wLoc; });
-    rows.routeSplit = [routeStart, routeEnd]; rows.tmTxt = hm(d); rows.tmSfx = dateSfx0; /* v1.72.3-web: alkamisaika omana elementtinä (isompi fontti) */ /* v1.71.96-web: alku ja loppu omille riveilleen myös ilman väliaikapisteitä */
+    rows.routeSplit = [routeStart, routeEnd]; rows.tmTxt = hm(d); rows.dateTop = dateTop0; /* v1.72.3-web: alkamisaika omana elementtinä (isompi fontti) */ /* v1.71.96-web: alku ja loppu omille riveilleen myös ilman väliaikapisteitä */
     if (wps.length) rows.stops = wps.map(function (w) { return [w.wLoc, String(w.wTime || '').replace(/^(\d{1,2})[.:](\d{2})/, '$1:$2')]; });
     /* v1.71.76-web: kierto / auto vaihtuu päivän aikana -> näytetään uusi arvo ensimmäisessä sen jälkeisessä tapahtumassa */
     var nk = ev.kierto || '', nc = ev.kulkuneuvo || '';
@@ -5090,7 +5102,8 @@ function nextProcess(m) {
     blocks.splice(wi, 0, wsRows);
   }
   if (res.we) {
-    var weRows = [['\u23F9\uFE0F', /* v1.73.0-web: Työ loppuu -> ⏹️ */ hm(new Date(res.we)) + dateSfx(new Date(res.we))]];
+    var weRows = [['\u23F9\uFE0F', /* v1.73.0-web: Työ loppuu -> ⏹️ */ hm(new Date(res.we))]];
+    weRows.dateTop = dateSfx(new Date(res.we));
     weRows.start = res.we; weRows.kind = 'we'; weRows.dtCls = 'ico';
     var wj = 0;
     while (wj < blocks.length && !(blocks[wj].kind === 'tr' && blocks[wj].start >= res.we)) wj++;
