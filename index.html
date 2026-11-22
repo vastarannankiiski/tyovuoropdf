@@ -452,7 +452,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.80.7-web';
+var APP_VERSION = '1.80.10-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -4661,9 +4661,11 @@ function nextClockTick() {
     }
   }
   /* ajastin juoksee kaikkiin tapahtumiin; Työ alkaa -ajan mentyä ajastin siirtyy heti seuraavaan tapahtumaan (Työ alkaa näkyy himmeänä 2 min) */
-  var first = null, cands = body.querySelectorAll('.nblk[data-start]');
+  var first = null, cands = body.querySelectorAll('.nblk[data-start]'), wsBlk = body.querySelector('.nblk[data-kind="ws"]');
   for (var fi = 0; fi < cands.length; fi++) {
     if (cands[fi].getAttribute('data-kind') === 'ws' && +cands[fi].getAttribute('data-start') <= t) continue;
+    /* v1.80.10-web: työpäivän alun matkustus (ennen Työ alkaa -tapahtumaa) ei ole ajastimen kohde: ajastin on aina Työ alkaa -tapahtumassa ja käy siihen asti */
+    if (cands[fi].getAttribute('data-kind') === 'tr' && wsBlk && (cands[fi].compareDocumentPosition(wsBlk) & 4)) continue;
     first = cands[fi]; break;
   }
   if (first === null && body.getAttribute('data-had') === '1' && !body.querySelector('.nmsg')) {
@@ -4863,7 +4865,7 @@ function nextProcess(m) {
     var nk = ev.kierto || '', nc = ev.kulkuneuvo || '';
     var nextK = '';
     for (var jj = k; jj < res.list.length && nextK === ''; jj++) nextK = res.list[jj].ev.kierto || '';
-    var hasTb = !!(it.tk && nextK !== '' && nextK !== lastKierto); /* kierron vaihtuessa on tauko juuri ennen tätä tapahtumaa */
+    var hasTb = !!it.tk; /* v1.80.8-web: tauko (palkaton tauko / sidonnaisuus) näytetään aina, myös saman kierron sisällä; aiemmin vain kierron vaihtuessa */
     var kChanged = k > 0 && nk !== '' && nk !== lastKierto;
     if (k > 0 && (kChanged || (nc !== '' && nc !== lastCar))) {
       /* uusi kierto/auto: tekstit kuten otsikkorivillä (nimike himmeä, numero kirkas) */
