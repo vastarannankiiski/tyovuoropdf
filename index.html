@@ -466,7 +466,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.83.5-web';
+var APP_VERSION = '1.83.7-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -4338,6 +4338,7 @@ var TVL_PL = {"Kirkkonummen matkakeskus":[805,1039,1545],"Bobäcks skola":[1879,
 var tvlKmIx = null, tvlPlIx = null;
 function tvlNorm(n) {
   n = String(n || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  if (n === 'kauklahden asema') return 'hansakallio'; /* v1.83.6-web: linjan 911 pysäkki E5136 Hansakallio on IVU:ssa nimellä "Kauklahden asema" */
   return /^kirkkonummi mk$|^kirkkonummen mk$|^kirkkonummen matkakeskus$/.test(n) ? 'kirkkonummen matkakeskus' : n;
 }
 /* v1.83.5-web: saman paikan eri nimet etäisyystaulukossa (väli 0 km); varikkoetäisyydet (TVL_PL) säilyvät erillisinä */
@@ -4350,7 +4351,7 @@ function tvlKmScan(a, b, line) {
   if (!tvlKmIx) {
     tvlKmIx = TVL_KM.d.map(function (dir) {
       var m = {};
-      dir.s.forEach(function (q, i) { var k = tvlNorm(TVL_KM.n[q[0]]); (m[k] || (m[k] = [])).push([i, q[1]]); });
+      dir.s.forEach(function (q, i) { var k = tvlNorm(TVL_KM.n[q[0]]); (m[k] || (m[k] = [])).push([i, q[1]]); if (TVL_SAME[k]) (m[TVL_SAME[k]] || (m[TVL_SAME[k]] = [])).push([i, q[1]]); }); /* v1.83.7-web: "Kamppi, tulo" löytyy myös nimellä "Kamppi" (esim. 173N Upinniemen koulu -> Kamppi) */
       return { r: dir.r.toLowerCase(), m: m };
     });
   }
