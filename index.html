@@ -466,7 +466,7 @@ html:has(#nextOverlay:not([hidden])), html:has(#nextOverlay:not([hidden])) body,
 (function (root) {
 'use strict';
 
-var APP_VERSION = '1.83.7-web';
+var APP_VERSION = '1.83.8-web';
 
 /* ---------- Viestit (virheet ja loki), suomi / englanti ---------- */
 var MSGS = {
@@ -4367,6 +4367,15 @@ function tvlKmScan(a, b, line) {
   return best;
 }
 /* tapahtuman (ajon) pituus km tai null, jos reittiä ei tunneta */
+/* v1.83.8-web: suorat tieetäisyydet paikkaparien välillä, joille ei ole yhteistä linjaa datassa (km, molempiin suuntiin).
+   Matinkylä (M) - Kamppi: 12,45 km tietä pitkin (OpenStreetMap-pohjainen autoreititys Matinkylän terminaalista Kampin terminaaliin Länsiväylän kautta). */
+var TVL_ROAD = { 'matinkylä (m)|kamppi': 12.45 };
+function tvlRoad(a, b) {
+  a = tvlSameKey(a); b = tvlSameKey(b);
+  var x = TVL_ROAD[a + '|' + b];
+  if (x === undefined) x = TVL_ROAD[b + '|' + a];
+  return x === undefined ? null : x;
+}
 function tvlKmDist(ev) {
   var a = tvlNorm(ev.fromLoc), b = tvlNorm(ev.toLoc);
   if (!a || !b) return null;
@@ -4381,6 +4390,7 @@ function tvlKmDist(ev) {
     else if (db && tvlPlIx[a]) r = tvlPlIx[a][TVL_DI[db]] / 100;
   }
   if (r === null) r = tvlKmScan(a, b, '');
+  if (r === null) r = tvlRoad(a, b); /* v1.83.8-web */
   return r;
 }
 var nextKmBase = null, nextKm = { on: false, upto: '', car: '', ext: { items: [] }, end: null, btn: null, cache: null }, nextKmTaps = [], nextKmTapId = '';
